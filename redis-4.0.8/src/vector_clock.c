@@ -94,7 +94,7 @@ sds VCToSds(const vc *c)
         while (*p != '\0') p++;
     }
     *(p - 1) = '|';
-    sprintf(p, "%d", c->size);
+    sprintf(p, "%d", c->id);
     while (*p != '\0') p++;
     return sdsnewlen(vc_str_buf, p - vc_str_buf);
 }
@@ -146,18 +146,6 @@ void vcnewCommand(client *c)
             dbAdd(c->db,c->rargv[1],createObject(OBJ_VECTOR_CLOCK,vc));
             server.dirty +=1;
     CRDT_END
-
-    robj* vco= lookupKeyWrite(c->db,c->argv[1]);
-    if(vco)
-    {
-        addReply(c,shared.alreadyexisterr);
-        return;
-    }
-    vc* vc=newVC(server.p2p_count,server.p2p_id);
-    vco=createObject(OBJ_VECTOR_CLOCK,vc);
-    dbAdd(c->db,c->argv[1],vco);
-    server.dirty +=1;
-    addReply(c,shared.ok);
 }
 void vcgetCommand(client *c)
 {
@@ -168,7 +156,7 @@ void vcgetCommand(client *c)
         addReply(c,shared.wrongtypeerr);
         return;
     }
-    addReplySds(c,VCToSds(o->ptr));
+    addReplyBulkSds(c,VCToSds(o->ptr));
 }
 void vcincCommand(client *c)
 {
@@ -204,15 +192,4 @@ void vcincCommand(client *c)
             }
             else deleteVC(vc);
     CRDT_END
-
-    robj *o;
-    if ((o = lookupKeyWriteOrReply(c,c->argv[1],shared.nokeyerr)) == NULL)return;
-    if(o->type != OBJ_VECTOR_CLOCK)
-    {
-        addReply(c,shared.wrongtypeerr);
-        return;
-    }
-    increaseVC(o->ptr,server.p2p_id);
-    server.dirty +=1;
-    addReply(c,shared.ok);
 }

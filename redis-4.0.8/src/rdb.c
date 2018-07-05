@@ -929,6 +929,8 @@ int rdbSaveRio(rio *rdb, int *error, int flags, rdbSaveInfo *rsi) {
             robj key, *o = dictGetVal(de);
             long long expire;
 
+            if(o->type==OBJ_VECTOR_CLOCK)continue;
+
             initStaticStringObject(key,keystr);
             expire = getExpire(db,&key);
             if (rdbSaveKeyValuePair(rdb,&key,o,expire,now) == -1) goto werr;
