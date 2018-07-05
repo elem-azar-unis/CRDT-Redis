@@ -1,0 +1,463 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="redis_4_0_8"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="redis_4_0_8">
+				<Option output="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/redis_4_0_8" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/user/Redis-RPQ/redis-4.0.8/deps/hiredis"/>
+					<Add directory="/home/user/Redis-RPQ/redis-4.0.8/deps/linenoise"/>
+					<Add directory="/home/user/Redis-RPQ/redis-4.0.8/deps/lua/src"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 redis_4_0_8"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="redis_4_0_8/fast">
+				<Option output="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/redis_4_0_8" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add directory="/home/user/Redis-RPQ/redis-4.0.8/deps/hiredis"/>
+					<Add directory="/home/user/Redis-RPQ/redis-4.0.8/deps/linenoise"/>
+					<Add directory="/home/user/Redis-RPQ/redis-4.0.8/deps/lua/src"/>
+					<Add directory="/usr/include/c++/5"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
+					<Add directory="/usr/include/c++/5/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 redis_4_0_8/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/adlist.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/adlist.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ae.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ae.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ae_epoll.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ae_evport.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ae_kqueue.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ae_select.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/anet.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/anet.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/aof.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/asciilogo.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/atomicvar.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/bio.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/bio.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/bitops.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/blocked.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/childinfo.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/cluster.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/cluster.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/config.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/config.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/crc16.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/crc64.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/crc64.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/db.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/debug.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/debugmacro.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/defrag.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/dict.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/dict.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/endianconv.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/endianconv.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/evict.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/expire.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/fmacros.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/geo.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/geo.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/geohash.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/geohash.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/geohash_helper.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/geohash_helper.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/help.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/hyperloglog.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/intset.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/intset.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/latency.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/latency.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/lazyfree.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/lzf.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/lzfP.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/lzf_c.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/lzf_d.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/memtest.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/module.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/modules/helloblock.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/modules/hellotype.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/modules/helloworld.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/modules/testmodule.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/multi.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/networking.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/notify.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/object.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/p2p.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/pqsort.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/pqsort.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/pubsub.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/quicklist.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/quicklist.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rand.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rand.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rax.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rax.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rax_malloc.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rdb.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rdb.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/redis-benchmark.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/redis-check-aof.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/redis-check-rdb.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/redis-cli.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/redisassert.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/redismodule.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/release.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/release.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/replication.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rio.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/rio.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/scripting.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sds.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sds.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sdsalloc.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sentinel.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/server.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/server.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/setproctitle.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sha1.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sha1.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/siphash.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/slowlog.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/slowlog.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/solarisfixes.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sort.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sparkline.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/sparkline.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/syncio.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_hash.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_list.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_set.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_string.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_zset.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/testhelp.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/util.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/util.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/vector_clock.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/vector_clock.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/version.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ziplist.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/ziplist.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/zipmap.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/zipmap.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/zmalloc.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/zmalloc.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

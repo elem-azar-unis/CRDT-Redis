@@ -1,0 +1,34 @@
+//
+// Created by user on 18-6-21.
+//
+
+#ifndef REDIS_4_0_8_VECTOR_CLOCK_H
+
+#include "sds.h"
+
+typedef struct vector_clock{
+    int* vector;
+    int size;
+    int id;
+} vc;
+
+#define CLOCK_LESS (-2)
+#define CLOCK_C_LESS (-1)
+#define CLOCK_ERROR 0
+#define CLOCK_C_GREATER 1
+#define CLOCK_GREATER 2
+
+#define CONCURRENT(x) ((x)==CLOCK_C_LESS || (x)==CLOCK_C_GREATER)
+
+vc* newVC(int size, int id);
+void deleteVC(vc* c);
+vc* increaseVC(vc * c,int id);
+vc* duplicateVC(const vc * c);
+int compareVC(const vc* c1,const vc* c2);
+vc* updateVC(vc* tar,const vc* m);
+sds VCToSds(const vc* c);
+vc* SdsToVC(sds s);
+
+#define REDIS_4_0_8_VECTOR_CLOCK_H
+
+#endif //REDIS_4_0_8_VECTOR_CLOCK_H
