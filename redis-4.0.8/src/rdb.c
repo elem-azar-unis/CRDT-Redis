@@ -31,6 +31,7 @@
 #include "lzf.h"    /* LZF compression library */
 #include "zipmap.h"
 #include "endianconv.h"
+#include "vector_clock.h"
 
 #include <math.h>
 #include <sys/types.h>
@@ -624,6 +625,8 @@ int rdbSaveObjectType(rio *rdb, robj *o) {
             serverPanic("Unknown hash encoding");
     case OBJ_MODULE:
         return rdbSaveType(rdb,RDB_TYPE_MODULE_2);
+    case OBJ_VECTOR_CLOCK:
+        return rdbSaveType(rdb,RDB_TYPE_VECTOR_CLOCK);
     default:
         serverPanic("Unknown object type");
     }
@@ -647,7 +650,16 @@ ssize_t rdbSaveObject(rio *rdb, robj *o) {
         /* Save a string value */
         if ((n = rdbSaveStringObject(rdb,o)) == -1) return -1;
         nwritten += n;
-    } else if (o->type == OBJ_LIST) {
+    }
+    else if(o->type == OBJ_VECTOR_CLOCK)
+    {
+        sds s = VCToSds(o->ptr);
+        n = rdbSaveRawString(rdb, (unsigned char *) s, sdslen(s));
+        sdsfree(s);
+        if(n==-1)return -1;
+        nwritten += n;
+    }
+    else if (o->type == OBJ_LIST) {
         /* Save a list value */
         if (o->encoding == OBJ_ENCODING_QUICKLIST) {
             quicklist *ql = o->ptr;
@@ -929,8 +941,6 @@ int rdbSaveRio(rio *rdb, int *error, int flags, rdbSaveInfo *rsi) {
             robj key, *o = dictGetVal(de);
             long long expire;
 
-            if(o->type==OBJ_VECTOR_CLOCK)continue;
-
             initStaticStringObject(key,keystr);
             expire = getExpire(db,&key);
             if (rdbSaveKeyValuePair(rdb,&key,o,expire,now) == -1) goto werr;
@@ -1175,7 +1185,15 @@ robj *rdbLoadObject(int rdbtype, rio *rdb) {
         /* Read string value */
         if ((o = rdbLoadEncodedStringObject(rdb)) == NULL) return NULL;
         o = tryObjectEncoding(o);
-    } else if (rdbtype == RDB_TYPE_LIST) {
+    }
+    else if(rdbtype == RDB_TYPE_VECTOR_CLOCK)
+    {
+        robj* tmp;
+        if ((tmp = rdbLoadEncodedStringObject(rdb)) == NULL) return NULL;
+        o=createObject(OBJ_VECTOR_CLOCK,SdsToVC(tmp->ptr));
+        decrRefCount(tmp);
+    }
+    else if (rdbtype == RDB_TYPE_LIST) {
         /* Read list value */
         if ((len = rdbLoadLen(rdb,NULL)) == RDB_LENERR) return NULL;
 
