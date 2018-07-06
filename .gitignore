@@ -8,6 +8,12 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 
+#----------idea----------
+*.iml
+.idea/
+*.ipr
+*.iws
+
 .directory
 *.rdb
 *.log
