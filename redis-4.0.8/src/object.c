@@ -316,6 +316,7 @@ void decrRefCount(robj *o) {
         case OBJ_ZSET: freeZsetObject(o); break;
         case OBJ_HASH: freeHashObject(o); break;
         case OBJ_MODULE: freeModuleObject(o); break;
+        case OBJ_VECTOR_CLOCK: deleteVC(o->ptr);break;
         default: serverPanic("Unknown object type"); break;
         }
         zfree(o);
