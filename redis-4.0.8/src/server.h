@@ -2014,6 +2014,19 @@ void pfdebugCommand(client *c);
 void latencyCommand(client *c);
 void moduleCommand(client *c);
 void securityWarningCommand(client *c);
+
+#define PREPARE_RARGC(n) \
+do{\
+    c->rargc = (n);\
+    c->rargv = zmalloc(sizeof(robj *) * (n));\
+}while(0)
+
+#define COPY_ARG_TO_RARG(a,r) \
+do{\
+    c->rargv[(r)] = c->argv[(a)];\
+    incrRefCount(c->rargv[(r)]);\
+}while(0)
+
 void vcnewCommand(client *c);
 void vcgetCommand(client *c);
 void vcincCommand(client *c);
@@ -2023,7 +2036,7 @@ void ozincrbyCommand(client *c);
 void ozremCommand(client *c);
 void ozscoreCommand(client *c);
 void ozmaxCommand(client *c);
-robj* getInnerHTOrCreate(redisDb *db,sds tname,const char* suffix);
+robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create);
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));

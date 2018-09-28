@@ -4,7 +4,6 @@
 
 #include "server.h"
 
-char vc_str_buf[1024];
 int vc_int_buf[100];
 
 vc *newVC(int size, int id)
@@ -42,13 +41,13 @@ vc *duplicateVC(const vc *c)
     return clock;
 }
 
-int equalVC(const vc* c1,const vc* c2)
+int equalVC(const vc *c1, const vc *c2)
 {
-    if (c1==c2)return 1;
+    if (c1 == c2)return 1;
     if (c1->size != c2->size) return 0;
     if (c1->id != c2->id) return 0;
     for (int i = 0; i < c1->size; ++i)
-        if(c1->vector[i] != c2->vector[i])
+        if (c1->vector[i] != c2->vector[i])
             return 0;
     return 1;
 }
@@ -98,16 +97,12 @@ vc *updateVC(vc *tar, const vc *m)
 
 sds VCToSds(const vc *c)
 {
-    char *p = vc_str_buf;
-    for (int i = 0; i < c->size; ++i)
-    {
-        sprintf(p, "%d,", c->vector[i]);
-        while (*p != '\0') p++;
-    }
-    *(p - 1) = '|';
-    sprintf(p, "%d", c->id);
-    while (*p != '\0') p++;
-    return sdsnewlen(vc_str_buf, p - vc_str_buf);
+    sds p = sdsempty();
+    int i;
+    for (i = 0; i < c->size - 1; ++i)
+        sdscatprintf(p, "%d,", c->vector[i]);
+    sdscatprintf(p, "%d|%d", c->vector[i], c->id);
+    return p;
 }
 
 vc *SdsToVC(sds s)
@@ -139,7 +134,7 @@ void vcnewCommand(client *c)
         CRDT_ATSOURCE
             if (c->argc > 2)
             {
-                addReply(c,shared.syntaxerr);
+                addReply(c, shared.syntaxerr);
                 return;
             }
             robj *vco = lookupKeyWrite(c->db, c->argv[1]);
@@ -149,14 +144,12 @@ void vcnewCommand(client *c)
                 return;
             }
 
+            PREPARE_RARGC(3);
+            COPY_ARG_TO_RARG(0,0);
+            COPY_ARG_TO_RARG(1,1);
             vc *vc = l_newVC;
-            c->rargc = 3;
-            c->rargv = zmalloc(sizeof(robj *) * 3);
-            c->rargv[0] = c->argv[0];
-            incrRefCount(c->rargv[0]);
-            c->rargv[1] = c->argv[1];
-            incrRefCount(c->rargv[1]);
             c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
+            deleteVC(vc);
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
             vc *vc = SdsToVC(c->rargv[2]->ptr);
@@ -183,7 +176,7 @@ void vcincCommand(client *c)
         CRDT_ATSOURCE
             if (c->argc > 2)
             {
-                addReply(c,shared.syntaxerr);
+                addReply(c, shared.syntaxerr);
                 return;
             }
             robj *o;
@@ -194,12 +187,9 @@ void vcincCommand(client *c)
                 return;
             }
 
-            c->rargc = 3;
-            c->rargv = zmalloc(sizeof(robj *) * 3);
-            c->rargv[0] = c->argv[0];
-            incrRefCount(c->rargv[0]);
-            c->rargv[1] = c->argv[1];
-            incrRefCount(c->rargv[1]);
+            PREPARE_RARGC(3);
+            COPY_ARG_TO_RARG(0,0);
+            COPY_ARG_TO_RARG(1,1);
             vc *vc = duplicateVC(o->ptr);
             l_increaseVC(vc);
             c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
@@ -214,6 +204,7 @@ void vcincCommand(client *c)
                 o->ptr = vc;
                 deleteVC(tmp);
                 server.dirty++;
-            } else deleteVC(vc);
+            }
+            else deleteVC(vc);
     CRDT_END
 }

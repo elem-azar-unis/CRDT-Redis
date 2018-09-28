@@ -53,6 +53,18 @@ ct *ct_dup(ct *t)
     return n;
 }
 
+sds ctToSds(const ct *t)
+{
+    return sdscatprintf(sdsempty(), "%d,%d", t->x, t->id);
+}
+
+ct *sdsToCt(sds s)
+{
+    ct *t = zmalloc(sizeof(ct));
+    sscanf(s, "%d,%d", &t->x, &t->id);
+    return t;
+}
+
 oze *ozeNew()
 {
     oze *e = zmalloc(sizeof(oze));
@@ -181,11 +193,11 @@ void resort(oze *e)
     }
 }
 
-robj *getInnerHTOrCreate(redisDb *db, sds tname, const char *suffix)
+robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create)
 {
     robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(tname), suffix));
     robj *ht = lookupKeyRead(db, htname);
-    if (ht == NULL)
+    if (create && ht == NULL)
     {
         ht = createHashObject();
         dbAdd(db, htname, ht);
@@ -194,16 +206,19 @@ robj *getInnerHTOrCreate(redisDb *db, sds tname, const char *suffix)
     return ht;
 }
 
-oze *ozeHTGetOrCreate(redisDb *db, robj *tname, robj *key)
+oze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
 {
-    robj *ht = getInnerHTOrCreate(db, tname->ptr, ORI_RPQ_TABLE_SUFFIX);
+    robj *ht = getInnerHT(db, tname->ptr, ORI_RPQ_TABLE_SUFFIX, create);
+    if (ht == NULL)return NULL;
     robj *value = hashTypeGetValueObject(ht, key->ptr);
     oze *e;
     if (value == NULL)
     {
+        if (!create)return NULL;
         e = ozeNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(oze *)), HASH_SET_TAKE_VALUE);
-    } else
+    }
+    else
     {
         e = *(oze **) (value->ptr);
         decrRefCount(value);
@@ -211,11 +226,11 @@ oze *ozeHTGetOrCreate(redisDb *db, robj *tname, robj *key)
     return e;
 }
 
-int checkArgcAndZsetType(client *c,int max)
+int checkArgcAndZsetType(client *c, int max)
 {
     if (c->argc > max)
     {
-        addReply(c,shared.syntaxerr);
+        addReply(c, shared.syntaxerr);
         return 1;
     }
     robj *zset = lookupKeyRead(c->db, c->argv[1]);
@@ -231,14 +246,24 @@ void ozaddCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_ATSOURCE
-            if (checkArgcAndZsetType(c,4)) return;
-            oze *e = ozeHTGetOrCreate(c->db, c->argv[1], c->argv[2]);
+            if (checkArgcAndZsetType(c, 4)) return;
+            oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 1);
             if (LOOKUP(e))
             {
                 addReply(c, shared.ele_exist);
                 return;
             }
-            // TODO 准备 rargv
+
+            PREPARE_RARGC(5);
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
+            COPY_ARG_TO_RARG(2, 2);
+            COPY_ARG_TO_RARG(3, 3);
+
+            ct *t = ct_new(e);
+            c->rargv[4] = createObject(OBJ_STRING, ctToSds(t));
+            zfree(t);
+            addReply(c, shared.ok);
         CRDT_DOWNSTREAM
     CRDT_END
 }
@@ -247,8 +272,30 @@ void ozincrbyCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_ATSOURCE
-            if (checkArgcAndZsetType(c,4)) return;
-            // TODO 准备 rargv
+            if (checkArgcAndZsetType(c, 4)) return;
+            oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            if (e == NULL || !LOOKUP(e))
+            {
+                addReply(c, shared.ele_nexist);
+                return;
+            }
+
+            PREPARE_RARGC(4 + listLength(e->aset));
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
+            COPY_ARG_TO_RARG(2, 2);
+            COPY_ARG_TO_RARG(3, 3);
+
+            int i = 4;
+            listNode *ln;
+            listIter li;
+            listRewind(e->aset, &li);
+            while ((ln = listNext(&li)))
+            {
+                ase *a = ln->value;
+                c->rargv[i] = createObject(OBJ_STRING, ctToSds(a->t));
+                i++;
+            }
         CRDT_DOWNSTREAM
     CRDT_END
 }
@@ -257,8 +304,29 @@ void ozremCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_ATSOURCE
-            if (checkArgcAndZsetType(c,3)) return;
-            // TODO 准备 rargv
+            if (checkArgcAndZsetType(c, 3)) return;
+            oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            if (e == NULL || !LOOKUP(e))
+            {
+                addReply(c, shared.ele_nexist);
+                return;
+            }
+
+            PREPARE_RARGC(3 + listLength(e->aset));
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
+            COPY_ARG_TO_RARG(2, 2);
+
+            int i = 3;
+            listNode *ln;
+            listIter li;
+            listRewind(e->aset, &li);
+            while ((ln = listNext(&li)))
+            {
+                ase *a = ln->value;
+                c->rargv[i] = createObject(OBJ_STRING, ctToSds(a->t));
+                i++;
+            }
         CRDT_DOWNSTREAM
     CRDT_END
 }
@@ -269,29 +337,32 @@ void ozscoreCommand(client *c)
     robj *zobj;
     double score;
 
-    if ((zobj = lookupKeyReadOrReply(c,key,shared.nullbulk)) == NULL ||
-        checkType(c,zobj,OBJ_ZSET)) return;
+    if ((zobj = lookupKeyReadOrReply(c, key, shared.nullbulk)) == NULL ||
+        checkType(c, zobj, OBJ_ZSET))
+        return;
 
-    if (zsetScore(zobj,c->argv[2]->ptr,&score) == C_ERR) {
-        addReply(c,shared.nullbulk);
+    if (zsetScore(zobj, c->argv[2]->ptr, &score) == C_ERR)
+    {
+        addReply(c, shared.nullbulk);
     }
     else
     {
-        addReplyDouble(c,score);
+        addReplyDouble(c, score);
     }
 }
 
 void ozmaxCommand(client *c)
 {
-    robj* zobj;
-    if ((zobj = lookupKeyReadOrReply(c,c->argv[1],shared.emptymultibulk)) == NULL
-        || checkType(c,zobj,OBJ_ZSET)) return;
-    if(zsetLength(zobj)==0)
+    robj *zobj;
+    if ((zobj = lookupKeyReadOrReply(c, c->argv[1], shared.emptymultibulk)) == NULL
+        || checkType(c, zobj, OBJ_ZSET))
+        return;
+    if (zsetLength(zobj) == 0)
     {
-        addReply(c,shared.emptymultibulk);
+        addReply(c, shared.emptymultibulk);
         return;
     }
-    addReplyMultiBulkLen(c,2);
+    addReplyMultiBulkLen(c, 2);
     if (zobj->encoding == OBJ_ENCODING_ZIPLIST)
     {
         unsigned char *zl = zobj->ptr;
@@ -300,26 +371,26 @@ void ozmaxCommand(client *c)
         unsigned int vlen;
         long long vlong;
 
-        eptr=ziplistIndex(zl,-2);
-        sptr = ziplistNext(zl,eptr);
+        eptr = ziplistIndex(zl, -2);
+        sptr = ziplistNext(zl, eptr);
 
-        serverAssertWithInfo(c,zobj,eptr != NULL && sptr != NULL);
-        serverAssertWithInfo(c,zobj,ziplistGet(eptr,&vstr,&vlen,&vlong));
+        serverAssertWithInfo(c, zobj, eptr != NULL && sptr != NULL);
+        serverAssertWithInfo(c, zobj, ziplistGet(eptr, &vstr, &vlen, &vlong));
         if (vstr == NULL)
-            addReplyBulkLongLong(c,vlong);
+            addReplyBulkLongLong(c, vlong);
         else
-            addReplyBulkCBuffer(c,vstr,vlen);
-        addReplyDouble(c,zzlGetScore(sptr));
+            addReplyBulkCBuffer(c, vstr, vlen);
+        addReplyDouble(c, zzlGetScore(sptr));
     }
-    else if(zobj->encoding == OBJ_ENCODING_SKIPLIST)
+    else if (zobj->encoding == OBJ_ENCODING_SKIPLIST)
     {
         zset *zs = zobj->ptr;
         zskiplist *zsl = zs->zsl;
         zskiplistNode *ln = zsl->tail;
-        serverAssertWithInfo(c,zobj,ln != NULL);
+        serverAssertWithInfo(c, zobj, ln != NULL);
         sds ele = ln->ele;
-        addReplyBulkCBuffer(c,ele,sdslen(ele));
-        addReplyDouble(c,ln->score);
+        addReplyBulkCBuffer(c, ele, sdslen(ele));
+        addReplyDouble(c, ln->score);
     }
     else
     {
