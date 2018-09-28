@@ -20,6 +20,10 @@ typedef struct vector_clock{
 
 #define CONCURRENT(x) ((x)==CLOCK_C_LESS || (x)==CLOCK_C_GREATER)
 
+#define PID server.p2p_id
+#define l_newVC newVC(server.p2p_count, PID)
+#define l_increaseVC(c) increaseVC((c), PID)
+
 vc* newVC(int size, int id);
 void deleteVC(vc* c);
 vc* increaseVC(vc * c,int id);
@@ -28,6 +32,7 @@ int compareVC(const vc* c1,const vc* c2);
 vc* updateVC(vc* tar,const vc* m);
 sds VCToSds(const vc* c);
 vc* SdsToVC(sds s);
+int equalVC(const vc* c1,const vc* c2);
 
 #define REDIS_4_0_8_VECTOR_CLOCK_H
 

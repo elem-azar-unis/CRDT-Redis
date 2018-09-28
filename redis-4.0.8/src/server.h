@@ -753,6 +753,7 @@ struct sharedObjectsStruct {
     *busykeyerr, *oomerr, *plus, *messagebulk, *pmessagebulk, *subscribebulk,
     *unsubscribebulk, *psubscribebulk, *punsubscribebulk, *del, *unlink,
     *rpop, *lpop, *lpush, *emptyscan, *replhandshake, *multi, *exec,
+    *ele_exist,*ele_nexist,
     *select[PROTO_SHARED_SELECT_CMDS],
     *integers[OBJ_SHARED_INTEGERS],
     *mbulkhdr[OBJ_SHARED_BULKHDR_LEN], /* "*<value>\r\n" */
@@ -2016,6 +2017,13 @@ void securityWarningCommand(client *c);
 void vcnewCommand(client *c);
 void vcgetCommand(client *c);
 void vcincCommand(client *c);
+
+void ozaddCommand(client *c);
+void ozincrbyCommand(client *c);
+void ozremCommand(client *c);
+void ozscoreCommand(client *c);
+void ozmaxCommand(client *c);
+robj* getInnerHTOrCreate(redisDb *db,sds tname,const char* suffix);
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));

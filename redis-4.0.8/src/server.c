@@ -198,6 +198,11 @@ struct redisCommand redisCommandTable[] = {
     {"zrank",zrankCommand,3,"rF",0,NULL,1,1,1,0,0},
     {"zrevrank",zrevrankCommand,3,"rF",0,NULL,1,1,1,0,0},
     {"zscan",zscanCommand,-3,"rR",0,NULL,1,1,1,0,0},
+    {"ozadd",ozaddCommand,-4,"wmF",0,NULL,1,1,1,0,0},
+    {"ozincrby",ozincrbyCommand,-4,"wmF",0,NULL,1,1,1,0,0},
+    {"ozrem",ozremCommand,-3,"wF",0,NULL,1,1,1,0,0},
+    {"ozscore",ozscoreCommand,3,"rF",0,NULL,1,1,1,0,0},
+    {"ozmax",ozmaxCommand,2,"rF",0,NULL,1,1,1,0,0},
     {"hset",hsetCommand,-4,"wmF",0,NULL,1,1,1,0,0},
     {"hsetnx",hsetnxCommand,4,"wmF",0,NULL,1,1,1,0,0},
     {"hget",hgetCommand,3,"rF",0,NULL,1,1,1,0,0},
@@ -1275,6 +1280,10 @@ void createSharedObjects(void) {
         "-WRONGTYPE Operation against a key holding the wrong kind of value\r\n"));
     shared.nokeyerr = createObject(OBJ_STRING,sdsnew(
         "-ERR no such key\r\n"));
+    shared.ele_exist=createObject(OBJ_STRING,sdsnew(
+            "-Element already exists\r\n"));
+    shared.ele_nexist=createObject(OBJ_STRING,sdsnew(
+            "-Element does not exist\r\n"));
     shared.syntaxerr = createObject(OBJ_STRING,sdsnew(
         "-ERR syntax error\r\n"));
     shared.sameobjecterr = createObject(OBJ_STRING,sdsnew(

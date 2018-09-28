@@ -42,6 +42,17 @@ vc *duplicateVC(const vc *c)
     return clock;
 }
 
+int equalVC(const vc* c1,const vc* c2)
+{
+    if (c1==c2)return 1;
+    if (c1->size != c2->size) return 0;
+    if (c1->id != c2->id) return 0;
+    for (int i = 0; i < c1->size; ++i)
+        if(c1->vector[i] != c2->vector[i])
+            return 0;
+    return 1;
+}
+
 int compareVC(const vc *c1, const vc *c2)
 {
     if (c1->size != c2->size) return CLOCK_ERROR;
@@ -126,6 +137,11 @@ void vcnewCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_ATSOURCE
+            if (c->argc > 2)
+            {
+                addReply(c,shared.syntaxerr);
+                return;
+            }
             robj *vco = lookupKeyWrite(c->db, c->argv[1]);
             if (vco)
             {
@@ -133,7 +149,7 @@ void vcnewCommand(client *c)
                 return;
             }
 
-            vc *vc = newVC(server.p2p_count, server.p2p_id);
+            vc *vc = l_newVC;
             c->rargc = 3;
             c->rargv = zmalloc(sizeof(robj *) * 3);
             c->rargv[0] = c->argv[0];
@@ -165,6 +181,11 @@ void vcincCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_ATSOURCE
+            if (c->argc > 2)
+            {
+                addReply(c,shared.syntaxerr);
+                return;
+            }
             robj *o;
             if ((o = lookupKeyWriteOrReply(c, c->argv[1], shared.nokeyerr)) == NULL)return;
             if (o->type != OBJ_VECTOR_CLOCK)
@@ -180,7 +201,7 @@ void vcincCommand(client *c)
             c->rargv[1] = c->argv[1];
             incrRefCount(c->rargv[1]);
             vc *vc = duplicateVC(o->ptr);
-            increaseVC(vc, server.p2p_id);
+            l_increaseVC(vc);
             c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
             deleteVC(vc);
             addReply(c, shared.ok);

@@ -1986,6 +1986,33 @@ src/t_list.c.s:
 	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/src/t_list.c.s
 .PHONY : src/t_list.c.s
 
+src/t_ozset.o: src/t_ozset.c.o
+
+.PHONY : src/t_ozset.o
+
+# target to build an object file
+src/t_ozset.c.o:
+	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/src/t_ozset.c.o
+.PHONY : src/t_ozset.c.o
+
+src/t_ozset.i: src/t_ozset.c.i
+
+.PHONY : src/t_ozset.i
+
+# target to preprocess a source file
+src/t_ozset.c.i:
+	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/src/t_ozset.c.i
+.PHONY : src/t_ozset.c.i
+
+src/t_ozset.s: src/t_ozset.c.s
+
+.PHONY : src/t_ozset.s
+
+# target to generate assembly for a file
+src/t_ozset.c.s:
+	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/src/t_ozset.c.s
+.PHONY : src/t_ozset.c.s
+
 src/t_set.o: src/t_set.c.o
 
 .PHONY : src/t_set.o
@@ -2418,6 +2445,9 @@ help:
 	@echo "... src/t_list.o"
 	@echo "... src/t_list.i"
 	@echo "... src/t_list.s"
+	@echo "... src/t_ozset.o"
+	@echo "... src/t_ozset.i"
+	@echo "... src/t_ozset.s"
 	@echo "... src/t_set.o"
 	@echo "... src/t_set.i"
 	@echo "... src/t_set.s"

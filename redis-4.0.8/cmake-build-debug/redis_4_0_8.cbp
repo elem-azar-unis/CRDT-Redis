@@ -411,6 +411,9 @@
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_list.c">
 			<Option target="redis_4_0_8"/>
 		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_ozset.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_set.c">
 			<Option target="redis_4_0_8"/>
 		</Unit>
