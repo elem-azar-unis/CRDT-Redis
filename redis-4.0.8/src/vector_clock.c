@@ -145,8 +145,8 @@ void vcnewCommand(client *c)
             }
 
             PREPARE_RARGC(3);
-            COPY_ARG_TO_RARG(0,0);
-            COPY_ARG_TO_RARG(1,1);
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
             vc *vc = l_newVC;
             c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
             deleteVC(vc);
@@ -188,8 +188,8 @@ void vcincCommand(client *c)
             }
 
             PREPARE_RARGC(3);
-            COPY_ARG_TO_RARG(0,0);
-            COPY_ARG_TO_RARG(1,1);
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
             vc *vc = duplicateVC(o->ptr);
             l_increaseVC(vc);
             c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));

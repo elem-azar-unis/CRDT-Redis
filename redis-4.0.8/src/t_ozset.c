@@ -242,11 +242,33 @@ int checkArgcAndZsetType(client *c, int max)
     return 0;
 }
 
+robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
+{
+    robj *zobj = lookupKeyWrite(db, zset_name);
+    if (zobj == NULL)
+    {
+        if (server.zset_max_ziplist_entries == 0 ||
+            server.zset_max_ziplist_value < sdslen(element_name->ptr))
+        {
+            zobj = createZsetObject();
+        }
+        else
+        {
+            zobj = createZsetZiplistObject();
+        }
+        dbAdd(db, zset_name, zobj);
+    }
+    return zobj;
+}
+
 void ozaddCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 4)) return;
+            double v;
+            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
+                return;
             oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 1);
             if (LOOKUP(e))
             {
@@ -265,6 +287,18 @@ void ozaddCommand(client *c)
             zfree(t);
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+            double v;
+            getDoubleFromObject(c->rargv[3], &v);
+            ct *t = sdsToCt(c->rargv[4]->ptr);
+            oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            if (update_innate_value(e, t, v))
+            {
+                robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
+                int flags = ZADD_NONE;
+                zsetAdd(zset, score(e), c->rargv[2]->ptr, &flags, NULL);
+            }
+            zfree(t);
+            server.dirty++;
     CRDT_END
 }
 
@@ -273,6 +307,9 @@ void ozincrbyCommand(client *c)
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 4)) return;
+            double v;
+            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
+                return;
             oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
@@ -296,7 +333,25 @@ void ozincrbyCommand(client *c)
                 c->rargv[i] = createObject(OBJ_STRING, ctToSds(a->t));
                 i++;
             }
+            addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+            double v;
+            getDoubleFromObject(c->rargv[3], &v);
+            oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            int changed = 0;
+            for (int i = 4; i < c->rargc; i++)
+            {
+                ct *t = sdsToCt(c->rargv[i]->ptr);
+                changed += update_acquired_value(e, t, v);
+                zfree(t);
+            }
+            if (changed)
+            {
+                robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
+                int flags = ZADD_NONE;
+                zsetAdd(zset, score(e), c->rargv[2]->ptr, &flags, NULL);
+            }
+            server.dirty++;
     CRDT_END
 }
 
@@ -327,7 +382,30 @@ void ozremCommand(client *c)
                 c->rargv[i] = createObject(OBJ_STRING, ctToSds(a->t));
                 i++;
             }
+            addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+            oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            for (int i = 3; i < c->rargc; i++)
+            {
+                ct *t = sdsToCt(c->rargv[i]->ptr);
+                remove_tag(e, t);
+                zfree(t);
+            }
+            if (e->innate == NULL || e->acquired == NULL)
+            {
+                resort(e);
+                robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
+                if (LOOKUP(e))
+                {
+                    int flags = ZADD_NONE;
+                    zsetAdd(zset, score(e), c->rargv[2]->ptr, &flags, NULL);
+                }
+                else
+                {
+                    zsetDel(zset,c->rargv[2]->ptr);
+                }
+            }
+            server.dirty++;
     CRDT_END
 }
 
