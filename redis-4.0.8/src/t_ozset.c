@@ -150,7 +150,8 @@ int update_acquired_value(oze *e, ct *t, double v)
     if (a == NULL) a = add_ase(e, t);
     a->inc += v;
     a->count += (v > 0) ? v : -v;
-    if (e->acquired->count < a->count || (e->acquired->count == a->count && ct_cmp(e->acquired->t, a->t) < 0))
+    if (e->acquired == NULL || e->acquired->count < a->count ||
+        (e->acquired->count == a->count && ct_cmp(e->acquired->t, a->t) < 0))
     {
         e->acquired = a;
         return 1;
@@ -402,7 +403,7 @@ void ozremCommand(client *c)
                 }
                 else
                 {
-                    zsetDel(zset,c->rargv[2]->ptr);
+                    zsetDel(zset, c->rargv[2]->ptr);
                 }
             }
             server.dirty++;
