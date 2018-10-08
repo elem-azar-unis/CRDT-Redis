@@ -121,6 +121,6 @@ add_executable(redis_4_0_8
         src/zipmap.c
         src/zipmap.h
         src/zmalloc.c
-        src/zmalloc.h src/p2p.c src/vector_clock.h src/vector_clock.c src/t_ozset.c)
+        src/zmalloc.h src/p2p.c src/vector_clock.h src/vector_clock.c src/t_ozset.c src/t_rzset.c)
 
 include_directories(deps/hiredis deps/linenoise deps/lua/src)

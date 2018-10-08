@@ -5,7 +5,7 @@
 #include "server.h"
 
 #define ORI_RPQ_TABLE_SUFFIX "_ozets_"
-#define LOOKUP(e) listLength((e)->aset) != 0
+#define LOOKUP(e) (listLength((e)->aset) != 0)
 
 typedef struct clock_tag
 {

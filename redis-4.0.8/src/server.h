@@ -2031,12 +2031,21 @@ void vcnewCommand(client *c);
 void vcgetCommand(client *c);
 void vcincCommand(client *c);
 
+robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create);
+int checkArgcAndZsetType(client *c, int max);
+robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
+
 void ozaddCommand(client *c);
 void ozincrbyCommand(client *c);
 void ozremCommand(client *c);
 void ozscoreCommand(client *c);
 void ozmaxCommand(client *c);
-robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create);
+
+void rzaddCommand(client *c);
+void rzincrbyCommand(client *c);
+void rzremCommand(client *c);
+void rzscoreCommand(client *c);
+void rzmaxCommand(client *c);
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));
