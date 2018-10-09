@@ -52,6 +52,20 @@ int equalVC(const vc *c1, const vc *c2)
     return 1;
 }
 
+int causally_ready(const vc *current, const vc *next)
+{
+    serverAssert(current->size == next->size);
+    int o = next->id;
+    for (int i = 0; i < current->size; ++i)
+    {
+        if (i == o)continue;
+        if (next->vector[i] > current->vector[i])return 0;
+    }
+    if (next->vector[o] <= current->vector[o] + 1)
+        return 1;
+    return 0;
+}
+
 int compareVC(const vc *c1, const vc *c2)
 {
     if (c1->size != c2->size) return CLOCK_ERROR;

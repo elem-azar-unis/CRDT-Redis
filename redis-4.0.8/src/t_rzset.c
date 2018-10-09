@@ -11,7 +11,7 @@ typedef struct RW_RPQ_element
     vc *current;
     double innate;
     double acquired;
-    list *aset;
+    vc *avc;
     list *rset;
     list *ops;
 } rze;
@@ -21,8 +21,7 @@ typedef struct RW_RPQ_element
 typedef struct unready_command
 {
     int type;
-    int argc;
-    robj **argv;
+    robj *argv[4];
 } ucmd;
 
 rze *rzeNew()
@@ -31,7 +30,7 @@ rze *rzeNew()
     e->current = l_newVC;
     e->innate = 0;
     e->acquired = 0;
-    e->aset = listCreate();
+    e->avc = NULL;
     e->rset = listCreate();
     e->ops = listCreate();
 }
@@ -40,22 +39,19 @@ ucmd *ucmdNew(client *c, int type)
 {
     ucmd *cmd = zmalloc(sizeof(ucmd));
     cmd->type = type;
-    cmd->argc = c->rargc - 1;
-    cmd->argv = zmalloc(sizeof(robj *) * cmd->argc);
-    for (int i = 0; i < cmd->argc; ++i)
+    for (int i = 0; i < 4; ++i)
     {
-        cmd->argv[i]=c->rargv[i+1];
+        cmd->argv[i] = c->rargv[i + 1];
         incrRefCount(cmd->argv[i]);
     }
 }
 
-void ucmdDelete(ucmd* cmd)
+void ucmdDelete(ucmd *cmd)
 {
-    for (int i = 0; i < cmd->argc; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         decrRefCount(cmd->argv[i]);
     }
-    zfree(cmd->argv);
     zfree(cmd);
 }
 
@@ -85,15 +81,9 @@ int increaseCheck(rze *e, vc *t)
         if (compareVC(t, a) != CLOCK_GREATER)
             return 0;
     }
-
-    listRewind(e->aset, &li);
-    while ((ln = listNext(&li)))
-    {
-        vc *a = ln->value;
-        int c = compareVC(t, a);
-        if (CONCURRENT(c))
-            return 1;
-    }
+    int c = compareVC(t, e->avc);
+    if (CONCURRENT(c))
+        return 1;
     return 0;
 }
 
@@ -112,7 +102,14 @@ int removeCheck(rze *e, vc *t)
     return 1;
 }
 
-#define LOOKUP(e) (listLength((e)->aset) != 0)
+sds now(rze *e)
+{
+    sds s = VCToSds(e->current);
+    l_increaseVC(e->current);
+    return s;
+}
+
+#define LOOKUP(e) ((e)->avc != NULL)
 #define SCORE(e) ((e)->innate+(e)->acquired)
 
 rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
@@ -135,11 +132,82 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
     return e;
 }
 
-void rzaddCommand(client *c);
+void rzaddCommand(client *c)
+{
+    CRDT_BEGIN
+        CRDT_ATSOURCE
+            if (checkArgcAndZsetType(c, 4)) return;
+            double v;
+            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
+                return;
+            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 1);
+            if (LOOKUP(e))
+            {
+                addReply(c, shared.ele_exist);
+                return;
+            }
 
-void rzincrbyCommand(client *c);
+            PREPARE_RARGC(5);
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
+            COPY_ARG_TO_RARG(2, 2);
+            COPY_ARG_TO_RARG(3, 3);
 
-void rzremCommand(client *c);
+            c->rargv[4] = createObject(OBJ_STRING, now(e));
+            addReply(c, shared.ok);
+        CRDT_DOWNSTREAM
+    CRDT_END
+}
+
+void rzincrbyCommand(client *c)
+{
+    CRDT_BEGIN
+        CRDT_ATSOURCE
+            if (checkArgcAndZsetType(c, 4)) return;
+            double v;
+            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
+                return;
+            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            if (e == NULL || !LOOKUP(e))
+            {
+                addReply(c, shared.ele_nexist);
+                return;
+            }
+
+            PREPARE_RARGC(5);
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
+            COPY_ARG_TO_RARG(2, 2);
+            COPY_ARG_TO_RARG(3, 3);
+
+            c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->avc));
+            addReply(c, shared.ok);
+        CRDT_DOWNSTREAM
+    CRDT_END
+}
+
+void rzremCommand(client *c)
+{
+    CRDT_BEGIN
+        CRDT_ATSOURCE
+            if (checkArgcAndZsetType(c, 3)) return;
+            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            if (e == NULL || !LOOKUP(e))
+            {
+                addReply(c, shared.ele_nexist);
+                return;
+            }
+
+            PREPARE_RARGC(4);
+            COPY_ARG_TO_RARG(0, 0);
+            COPY_ARG_TO_RARG(1, 1);
+            COPY_ARG_TO_RARG(2, 2);
+
+            c->rargv[3] = createObject(OBJ_STRING, now(e));
+            addReply(c, shared.ok);
+        CRDT_DOWNSTREAM
+    CRDT_END
+}
 
 void rzscoreCommand(client *c)
 {
