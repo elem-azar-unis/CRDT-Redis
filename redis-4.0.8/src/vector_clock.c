@@ -45,7 +45,6 @@ int equalVC(const vc *c1, const vc *c2)
 {
     if (c1 == c2)return 1;
     if (c1->size != c2->size) return 0;
-    if (c1->id != c2->id) return 0;
     for (int i = 0; i < c1->size; ++i)
         if (c1->vector[i] != c2->vector[i])
             return 0;
@@ -61,7 +60,7 @@ int causally_ready(const vc *current, const vc *next)
         if (i == o)continue;
         if (next->vector[i] > current->vector[i])return 0;
     }
-    if (next->vector[o] <= current->vector[o] + 1)
+    if (next->vector[o] == current->vector[o] + 1)
         return 1;
     return 0;
 }
@@ -114,8 +113,8 @@ sds VCToSds(const vc *c)
     sds p = sdsempty();
     int i;
     for (i = 0; i < c->size - 1; ++i)
-        sdscatprintf(p, "%d,", c->vector[i]);
-    sdscatprintf(p, "%d|%d", c->vector[i], c->id);
+        p = sdscatprintf(p, "%d,", c->vector[i]);
+    p = sdscatprintf(p, "%d|%d", c->vector[i], c->id);
     return p;
 }
 

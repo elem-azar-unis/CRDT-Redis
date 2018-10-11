@@ -8,11 +8,10 @@
 
 typedef struct RW_RPQ_element
 {
-    vc *current;
     double innate;
     double acquired;
-    vc *avc;
-    list *rset;
+    int aid;
+    vc *current;
     list *ops;
 } rze;
 
@@ -21,7 +20,9 @@ typedef struct RW_RPQ_element
 typedef struct unready_command
 {
     int type;
-    robj *argv[4];
+    robj *tname, *element;
+    double value;
+    vc *t;
 } ucmd;
 
 rze *rzeNew()
@@ -30,86 +31,67 @@ rze *rzeNew()
     e->current = l_newVC;
     e->innate = 0;
     e->acquired = 0;
-    e->avc = NULL;
-    e->rset = listCreate();
+    e->aid = -1;
     e->ops = listCreate();
+    return e;
 }
 
-ucmd *ucmdNew(client *c, int type)
+// 获得 t 所有权
+ucmd *ucmdNew(int type, robj *tname, robj *element, double value, vc *t)
 {
     ucmd *cmd = zmalloc(sizeof(ucmd));
     cmd->type = type;
-    for (int i = 0; i < 4; ++i)
-    {
-        cmd->argv[i] = c->rargv[i + 1];
-        incrRefCount(cmd->argv[i]);
-    }
+    cmd->tname = tname;
+    incrRefCount(tname);
+    cmd->element = element;
+    incrRefCount(element);
+    cmd->value = value;
+    cmd->t = t;
+    return cmd;
 }
 
 void ucmdDelete(ucmd *cmd)
 {
-    for (int i = 0; i < 4; ++i)
-    {
-        decrRefCount(cmd->argv[i]);
-    }
+    decrRefCount(cmd->tname);
+    decrRefCount(cmd->element);
+    deleteVC(cmd->t);
     zfree(cmd);
 }
 
 int insertCheck(rze *e, vc *t)
 {
-    listNode *ln;
-    listIter li;
-    listRewind(e->rset, &li);
-    while ((ln = listNext(&li)))
-    {
-        vc *a = ln->value;
-        if (compareVC(t, a) != CLOCK_GREATER)
-            return 0;
-    }
-    return 1;
+    if (equalVC(t, e->current) == 0)return 0;
+    return e->aid < t->id;
 }
 
 int increaseCheck(rze *e, vc *t)
 {
-    listNode *ln;
-    listIter li;
-
-    listRewind(e->rset, &li);
-    while ((ln = listNext(&li)))
-    {
-        vc *a = ln->value;
-        if (compareVC(t, a) != CLOCK_GREATER)
-            return 0;
-    }
-    int c = compareVC(t, e->avc);
-    if (CONCURRENT(c))
-        return 1;
-    return 0;
+    return equalVC(t, e->current);
 }
 
 int removeCheck(rze *e, vc *t)
 {
-    listNode *ln;
-    listIter li;
-
-    listRewind(e->rset, &li);
-    while ((ln = listNext(&li)))
-    {
-        vc *a = ln->value;
-        if (compareVC(t, a) == CLOCK_LESS)
-            return 0;
-    }
-    return 1;
+    int id = t->id;
+    if (e->current->vector[id] < t->vector[id])return 1;
+    return compareVC(t, e->current) != CLOCK_LESS;
 }
 
-sds now(rze *e)
+int readyCheck(rze *e, vc *t)
 {
-    sds s = VCToSds(e->current);
-    l_increaseVC(e->current);
-    return s;
+    int *current = e->current->vector;
+    int *next = t->vector;
+    int equal = 1;
+    for (int i = 0; i < t->size; ++i)
+    {
+        if (current[i] > next[i])
+            return 1;
+        if (current[i] < next[i])
+            equal = 0;
+    }
+    return equal;
 }
 
-#define LOOKUP(e) ((e)->avc != NULL)
+#define LOOKUP(e) ((e)->aid >= 0)
 #define SCORE(e) ((e)->innate+(e)->acquired)
 
 rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
@@ -130,6 +112,61 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
         decrRefCount(value);
     }
     return e;
+}
+
+// 下面两个不进行内存释放
+void insertFunc(rze *e,redisDb *db, robj *tname, robj *element, double value, vc *t)
+{
+    if (!insertCheck(e, t))return;
+    e->aid = t->id;
+    e->innate = value;
+    robj *zset = getZsetOrCreate(db, tname, element);
+    int flags = ZADD_NONE;
+    zsetAdd(zset, SCORE(e), element->ptr, &flags, NULL);
+    server.dirty++;
+}
+
+void increaseFunc(rze *e,redisDb *db, robj *tname, robj *element, double value, vc *t)
+{
+    if (!increaseCheck(e, t))return;
+    e->acquired += value;
+    robj *zset = getZsetOrCreate(db, tname, element);
+    int flags = ZADD_NONE;
+    zsetAdd(zset, SCORE(e), element->ptr, &flags, NULL);
+    server.dirty++;
+}
+
+void notifyLoop(rze *e,redisDb *db)
+{
+    listNode *ln;
+    listIter li;
+    listRewind(e->ops, &li);
+    while ((ln = listNext(&li)))
+    {
+        ucmd *cmd = ln->value;
+        if(readyCheck(e,cmd->t))
+        {
+            switch (cmd->type)
+            {
+                case RZADD:
+                    insertFunc(e,db,cmd->tname,cmd->element,cmd->value,cmd->t);
+                    break;
+                case RZINCBY:
+                    increaseFunc(e,db,cmd->tname,cmd->element,cmd->value,cmd->t);
+                    break;
+                default:
+                    serverPanic("unknown rzset cmd type.");
+            }
+            listDelNode(e->ops,ln);
+            ucmdDelete(cmd);
+        }
+    }
+}
+
+sds now(rze *e)
+{
+    l_increaseVC(e->current);
+    return VCToSds(e->current);
 }
 
 void rzaddCommand(client *c)
@@ -153,9 +190,23 @@ void rzaddCommand(client *c)
             COPY_ARG_TO_RARG(2, 2);
             COPY_ARG_TO_RARG(3, 3);
 
-            c->rargv[4] = createObject(OBJ_STRING, now(e));
+            c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->current));
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+            double v;
+            getDoubleFromObject(c->rargv[3], &v);
+            vc *t = SdsToVC(c->rargv[4]->ptr);
+            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            if (readyCheck(e, t))
+            {
+                insertFunc(e,c->db, c->rargv[1], c->rargv[2], v, t);
+                deleteVC(t);
+            }
+            else
+            {
+                ucmd *cmd = ucmdNew(RZADD, c->rargv[1], c->rargv[2], v, t);
+                listAddNodeTail(e->ops, cmd);
+            }
     CRDT_END
 }
 
@@ -180,9 +231,23 @@ void rzincrbyCommand(client *c)
             COPY_ARG_TO_RARG(2, 2);
             COPY_ARG_TO_RARG(3, 3);
 
-            c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->avc));
+            c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->current));
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+            double v;
+            getDoubleFromObject(c->rargv[3], &v);
+            vc *t = SdsToVC(c->rargv[4]->ptr);
+            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            if (readyCheck(e, t))
+            {
+                increaseFunc(e,c->db, c->rargv[1], c->rargv[2], v, t);
+                deleteVC(t);
+            }
+            else
+            {
+                ucmd *cmd = ucmdNew(RZINCBY, c->rargv[1], c->rargv[2], v, t);
+                listAddNodeTail(e->ops, cmd);
+            }
     CRDT_END
 }
 
@@ -206,6 +271,20 @@ void rzremCommand(client *c)
             c->rargv[3] = createObject(OBJ_STRING, now(e));
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            vc *t = SdsToVC(c->rargv[3]->ptr);
+            if (removeCheck(e, t))
+            {
+                updateVC(e->current, t);
+                e->aid = -1;
+                e->acquired = 0;
+                e->innate = 0;
+                robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
+                zsetDel(zset, c->rargv[2]->ptr);
+                server.dirty++;
+                notifyLoop(e,c->db);
+            }
+            deleteVC(t);
     CRDT_END
 }
 
