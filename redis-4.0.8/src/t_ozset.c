@@ -30,6 +30,11 @@ typedef struct ORI_RPQ_element
     list *rset;
 } oze;
 
+sds aseToSds(ase* a)
+{
+    return sdscatprintf(sdsempty(),"(%d,%d),%f,%f,%f",a->t->x,a->t->id,a->x,a->inc,a->count);
+}
+
 int ct_cmp(ct *t1, ct *t2)
 {
     if (t1->id != t2->id)return t1->id - t2->id;
@@ -474,5 +479,49 @@ void ozmaxCommand(client *c)
     else
     {
         serverPanic("Unknown sorted set encoding");
+    }
+}
+
+void ozestatusCommand(client* c)
+{
+    oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
+    if(e==NULL)
+    {
+        addReply(c, shared.emptymultibulk);
+        return;
+    }
+
+    unsigned long len=6+listLength(e->aset)+listLength(e->rset);
+    addReplyMultiBulkLen(c,len);
+
+    addReplyBulkSds(c,sdscatprintf(sdsempty(),"current:%d",e->current));
+
+    addReplyBulkSds(c,sdsnew("innate,acquired:"));
+    if(e->innate==NULL)
+        addReply(c,shared.emptybulk);
+    else
+        addReplyBulkSds(c,aseToSds(e->innate));
+    if(e->acquired==NULL)
+        addReply(c,shared.emptybulk);
+    else
+        addReplyBulkSds(c,aseToSds(e->acquired));
+
+    listNode *ln;
+    listIter li;
+
+    addReplyBulkSds(c,sdsnew("Add Set:"));
+    listRewind(e->aset, &li);
+    while ((ln = listNext(&li)))
+    {
+        ase *a = ln->value;
+        addReplyBulkSds(c,aseToSds(a));
+    }
+
+    addReplyBulkSds(c,sdsnew("Remove Set:"));
+    listRewind(e->rset, &li);
+    while ((ln = listNext(&li)))
+    {
+        ct* a = ln->value;
+        addReplyBulkSds(c,ctToSds(a));
     }
 }

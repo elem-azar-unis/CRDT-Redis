@@ -25,6 +25,19 @@ typedef struct unready_command
     vc *t;
 } ucmd;
 
+sds ucmdToSds(ucmd *cmd)
+{
+    char *tp[] = {"RZADD", "RZINCBY"};
+    sds vc_s = VCToSds(cmd->t);
+    sds s = sdscatprintf(sdsempty(), "%s %s %s %f %s",
+                         tp[cmd->type],
+                         (char *) cmd->tname->ptr,
+                         (char *) cmd->element->ptr,
+                         cmd->value, vc_s);
+    sdsfree(vc_s);
+    return s;
+}
+
 rze *rzeNew()
 {
     rze *e = zmalloc(sizeof(rze));
@@ -115,7 +128,7 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
 }
 
 // 下面两个不进行内存释放
-void insertFunc(rze *e,redisDb *db, robj *tname, robj *element, double value, vc *t)
+void insertFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
 {
     if (!insertCheck(e, t))return;
     e->aid = t->id;
@@ -126,7 +139,7 @@ void insertFunc(rze *e,redisDb *db, robj *tname, robj *element, double value, vc
     server.dirty++;
 }
 
-void increaseFunc(rze *e,redisDb *db, robj *tname, robj *element, double value, vc *t)
+void increaseFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
 {
     if (!increaseCheck(e, t))return;
     e->acquired += value;
@@ -136,7 +149,7 @@ void increaseFunc(rze *e,redisDb *db, robj *tname, robj *element, double value, 
     server.dirty++;
 }
 
-void notifyLoop(rze *e,redisDb *db)
+void notifyLoop(rze *e, redisDb *db)
 {
     listNode *ln;
     listIter li;
@@ -144,20 +157,20 @@ void notifyLoop(rze *e,redisDb *db)
     while ((ln = listNext(&li)))
     {
         ucmd *cmd = ln->value;
-        if(readyCheck(e,cmd->t))
+        if (readyCheck(e, cmd->t))
         {
             switch (cmd->type)
             {
                 case RZADD:
-                    insertFunc(e,db,cmd->tname,cmd->element,cmd->value,cmd->t);
+                    insertFunc(e, db, cmd->tname, cmd->element, cmd->value, cmd->t);
                     break;
                 case RZINCBY:
-                    increaseFunc(e,db,cmd->tname,cmd->element,cmd->value,cmd->t);
+                    increaseFunc(e, db, cmd->tname, cmd->element, cmd->value, cmd->t);
                     break;
                 default:
                     serverPanic("unknown rzset cmd type.");
             }
-            listDelNode(e->ops,ln);
+            listDelNode(e->ops, ln);
             ucmdDelete(cmd);
         }
     }
@@ -199,7 +212,7 @@ void rzaddCommand(client *c)
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             if (readyCheck(e, t))
             {
-                insertFunc(e,c->db, c->rargv[1], c->rargv[2], v, t);
+                insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
                 deleteVC(t);
             }
             else
@@ -240,7 +253,7 @@ void rzincrbyCommand(client *c)
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             if (readyCheck(e, t))
             {
-                increaseFunc(e,c->db, c->rargv[1], c->rargv[2], v, t);
+                increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
                 deleteVC(t);
             }
             else
@@ -282,7 +295,7 @@ void rzremCommand(client *c)
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
                 zsetDel(zset, c->rargv[2]->ptr);
                 server.dirty++;
-                notifyLoop(e,c->db);
+                notifyLoop(e, c->db);
             }
             deleteVC(t);
     CRDT_END
@@ -352,5 +365,35 @@ void rzmaxCommand(client *c)
     else
     {
         serverPanic("Unknown sorted set encoding");
+    }
+}
+
+void rzestatusCommand(client *c)
+{
+    rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+    if(e==NULL)
+    {
+        addReply(c, shared.emptymultibulk);
+        return;
+    }
+
+    unsigned long len=6+listLength(e->ops);
+    addReplyMultiBulkLen(c,len);
+
+    addReplyBulkSds(c,sdscatprintf(sdsempty(),"innate:%f",e->innate));
+    addReplyBulkSds(c,sdscatprintf(sdsempty(),"acquired:%f",e->acquired));
+    addReplyBulkSds(c,sdscatprintf(sdsempty(),"add id:%d",e->aid));
+
+    addReplyBulkSds(c,sdsnew("current:"));
+    addReplyBulkSds(c,VCToSds(e->current));
+
+    addReplyBulkSds(c,sdsnew("unready commands:"));
+    listNode *ln;
+    listIter li;
+    listRewind(e->ops, &li);
+    while ((ln = listNext(&li)))
+    {
+        ucmd *cmd = ln->value;
+        addReplyBulkSds(c,ucmdToSds(cmd));
     }
 }

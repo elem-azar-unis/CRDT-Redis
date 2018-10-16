@@ -1919,7 +1919,6 @@ void touchCommand(client *c);
 void pttlCommand(client *c);
 void persistCommand(client *c);
 void slaveofCommand(client *c);
-void replicateCommand(client *c);
 void roleCommand(client *c);
 void debugCommand(client *c);
 void msetCommand(client *c);
@@ -2027,6 +2026,9 @@ do{\
     incrRefCount(c->rargv[(r)]);\
 }while(0)
 
+void replicateCommand(client *c);
+void repltestCommand(client* c);
+
 void vcnewCommand(client *c);
 void vcgetCommand(client *c);
 void vcincCommand(client *c);
@@ -2040,12 +2042,14 @@ void ozincrbyCommand(client *c);
 void ozremCommand(client *c);
 void ozscoreCommand(client *c);
 void ozmaxCommand(client *c);
+void ozestatusCommand(client* c);
 
 void rzaddCommand(client *c);
 void rzincrbyCommand(client *c);
 void rzremCommand(client *c);
 void rzscoreCommand(client *c);
 void rzmaxCommand(client *c);
+void rzestatusCommand(client* c);
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));

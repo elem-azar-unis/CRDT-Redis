@@ -17,6 +17,27 @@ int connectWithReplica(char *ip, int port, int *fd)
     return C_OK;
 }
 
+void repltestCommand(client* c)
+{
+    /* REPLICATE is not allowed in cluster mode. */
+    if (server.cluster_enabled)
+    {
+        addReplyError(c, "SLAVEOF not allowed in cluster mode.");
+        return;
+    }
+
+    c->flags |= CLIENT_REPLICA;
+    c->authenticated = 1;
+    listAddNodeTail(server.replicas, c);
+    serverLog(LL_NOTICE, "Replica handshake received.");
+
+    long id,size;
+    getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
+    getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
+    server.p2p_count=(int)size;
+    server.p2p_id=(int)id;
+}
+
 void replicateCommand(client *c)
 {
     /* REPLICATE is not allowed in cluster mode. */
