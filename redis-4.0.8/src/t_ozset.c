@@ -118,8 +118,10 @@ ct *rsetGet(oze *e, ct *t, int delete)
 double score(oze *e)
 {
     double x = 0;
-    if (e->innate != NULL)x = e->innate->x;
-    if (e->acquired != NULL)x += e->acquired->inc;
+    if (e->innate != NULL)
+        x = e->innate->x;
+    if (e->acquired != NULL)
+        x += e->acquired->inc;
     return x;
 }
 

@@ -27,15 +27,20 @@ void repltestCommand(client* c)
     }
 
     c->flags |= CLIENT_REPLICA;
+    c->flags |= CLIENT_REPLICA_MESSAGE;
     c->authenticated = 1;
     listAddNodeTail(server.replicas, c);
-    serverLog(LL_NOTICE, "Replica handshake received.");
+    serverLog(LL_NOTICE, "A fake replica.");
 
-    long id,size;
-    getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
-    getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
-    server.p2p_count=(int)size;
-    server.p2p_id=(int)id;
+    if(c->argc==3)
+    {
+        long id, size;
+        getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
+        getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
+        server.p2p_count = (int) size;
+        server.p2p_id = (int) id;
+    }
+    addReply(c, shared.ok);
 }
 
 void replicateCommand(client *c)

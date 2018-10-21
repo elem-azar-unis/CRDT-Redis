@@ -1582,7 +1582,7 @@ typedef struct {
 #define CRDT_BEGIN if(REPLICATION_MODE){
 #define CRDT_ATSOURCE if(!(c->flags & CLIENT_REPLICA)){
 #define CRDT_DOWNSTREAM }{
-#define CRDT_END }return;}
+#define CRDT_END }if(c->flags & CLIENT_REPLICA_MESSAGE){addReply(c, shared.ok);}return;}
 
 zskiplist *zslCreate(void);
 void zslFree(zskiplist *zsl);
