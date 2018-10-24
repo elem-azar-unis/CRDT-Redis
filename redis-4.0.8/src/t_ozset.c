@@ -6,6 +6,8 @@
 
 #define ORI_RPQ_TABLE_SUFFIX "_ozets_"
 #define LOOKUP(e) (listLength((e)->aset) != 0)
+#define SCORE(e) (((e)->innate == NULL ? 0 : (e)->innate->x)\
+                  + ((e)->acquired == NULL ? 0 : (e)->acquired->inc))
 
 typedef struct clock_tag
 {
@@ -30,9 +32,13 @@ typedef struct ORI_RPQ_element
     list *rset;
 } oze;
 
-sds aseToSds(ase* a)
+#define OZESIZE(e) (sizeof(oze) + 2 * sizeof(list) \
+                    + listLength((e)->aset) * (sizeof(ase) + sizeof(ct) + sizeof(listNode)) \
+                    + listLength((e)->rset) * (sizeof(ct) + sizeof(listNode)));
+
+sds aseToSds(ase *a)
 {
-    return sdscatprintf(sdsempty(),"(%d,%d),%f,%f,%f",a->t->x,a->t->id,a->x,a->inc,a->count);
+    return sdscatprintf(sdsempty(), "(%d,%d),%f,%f,%f", a->t->x, a->t->id, a->x, a->inc, a->count);
 }
 
 int ct_cmp(ct *t1, ct *t2)
@@ -115,16 +121,6 @@ ct *rsetGet(oze *e, ct *t, int delete)
     return NULL;
 }
 
-double score(oze *e)
-{
-    double x = 0;
-    if (e->innate != NULL)
-        x = e->innate->x;
-    if (e->acquired != NULL)
-        x += e->acquired->inc;
-    return x;
-}
-
 // 下面函数对自己参数 t 没有所有权
 ase *add_ase(oze *e, ct *t)
 {
@@ -157,6 +153,8 @@ int update_acquired_value(oze *e, ct *t, double v)
     if (a == NULL) a = add_ase(e, t);
     a->inc += v;
     a->count += (v > 0) ? v : -v;
+    if (e->acquired == a)
+        return 1;
     if (e->acquired == NULL || e->acquired->count < a->count ||
         (e->acquired->count == a->count && ct_cmp(e->acquired->t, a->t) < 0))
     {
@@ -303,7 +301,7 @@ void ozaddCommand(client *c)
             {
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
                 int flags = ZADD_NONE;
-                zsetAdd(zset, score(e), c->rargv[2]->ptr, &flags, NULL);
+                zsetAdd(zset, SCORE(e), c->rargv[2]->ptr, &flags, NULL);
             }
             zfree(t);
             server.dirty++;
@@ -357,7 +355,7 @@ void ozincrbyCommand(client *c)
             {
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
                 int flags = ZADD_NONE;
-                zsetAdd(zset, score(e), c->rargv[2]->ptr, &flags, NULL);
+                zsetAdd(zset, SCORE(e), c->rargv[2]->ptr, &flags, NULL);
             }
             server.dirty++;
     CRDT_END
@@ -406,7 +404,7 @@ void ozremCommand(client *c)
                 if (LOOKUP(e))
                 {
                     int flags = ZADD_NONE;
-                    zsetAdd(zset, score(e), c->rargv[2]->ptr, &flags, NULL);
+                    zsetAdd(zset, SCORE(e), c->rargv[2]->ptr, &flags, NULL);
                 }
                 else
                 {
@@ -484,46 +482,46 @@ void ozmaxCommand(client *c)
     }
 }
 
-void ozestatusCommand(client* c)
+void ozestatusCommand(client *c)
 {
     oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
-    if(e==NULL)
+    if (e == NULL)
     {
         addReply(c, shared.emptymultibulk);
         return;
     }
 
-    unsigned long len=6+listLength(e->aset)+listLength(e->rset);
-    addReplyMultiBulkLen(c,len);
+    unsigned long len = 6 + listLength(e->aset) + listLength(e->rset);
+    addReplyMultiBulkLen(c, len);
 
-    addReplyBulkSds(c,sdscatprintf(sdsempty(),"current:%d",e->current));
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "current:%d", e->current));
 
-    addReplyBulkSds(c,sdsnew("innate,acquired:"));
-    if(e->innate==NULL)
-        addReply(c,shared.emptybulk);
+    addReplyBulkSds(c, sdsnew("innate,acquired:"));
+    if (e->innate == NULL)
+        addReply(c, shared.emptybulk);
     else
-        addReplyBulkSds(c,aseToSds(e->innate));
-    if(e->acquired==NULL)
-        addReply(c,shared.emptybulk);
+        addReplyBulkSds(c, aseToSds(e->innate));
+    if (e->acquired == NULL)
+        addReply(c, shared.emptybulk);
     else
-        addReplyBulkSds(c,aseToSds(e->acquired));
+        addReplyBulkSds(c, aseToSds(e->acquired));
 
     listNode *ln;
     listIter li;
 
-    addReplyBulkSds(c,sdsnew("Add Set:"));
+    addReplyBulkSds(c, sdsnew("Add Set:"));
     listRewind(e->aset, &li);
     while ((ln = listNext(&li)))
     {
         ase *a = ln->value;
-        addReplyBulkSds(c,aseToSds(a));
+        addReplyBulkSds(c, aseToSds(a));
     }
 
-    addReplyBulkSds(c,sdsnew("Remove Set:"));
+    addReplyBulkSds(c, sdsnew("Remove Set:"));
     listRewind(e->rset, &li);
     while ((ln = listNext(&li)))
     {
-        ct* a = ln->value;
-        addReplyBulkSds(c,ctToSds(a));
+        ct *a = ln->value;
+        addReplyBulkSds(c, ctToSds(a));
     }
 }

@@ -1578,7 +1578,7 @@ typedef struct {
     int minex, maxex; /* are min or max exclusive? */
 } zlexrangespec;
 
-#define REPLICATION_MODE listLength(server.replicas)
+#define REPLICATION_MODE listLength(server.replicas) || server.p2p_count
 #define CRDT_BEGIN if(REPLICATION_MODE){
 #define CRDT_ATSOURCE if(!(c->flags & CLIENT_REPLICA)){
 #define CRDT_DOWNSTREAM }{

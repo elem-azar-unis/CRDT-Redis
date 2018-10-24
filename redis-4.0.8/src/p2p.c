@@ -29,8 +29,11 @@ void repltestCommand(client* c)
     c->flags |= CLIENT_REPLICA;
     c->flags |= CLIENT_REPLICA_MESSAGE;
     c->authenticated = 1;
-    listAddNodeTail(server.replicas, c);
-    serverLog(LL_NOTICE, "A fake replica.");
+    if(c->argc==1)
+    {
+        listAddNodeTail(server.replicas, c);
+        serverLog(LL_NOTICE, "A listening fake replica.");
+    }
 
     if(c->argc==3)
     {
@@ -39,6 +42,7 @@ void repltestCommand(client* c)
         getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
         server.p2p_count = (int) size;
         server.p2p_id = (int) id;
+        serverLog(LL_NOTICE, "An instructing fake replica.");
     }
     addReply(c, shared.ok);
 }

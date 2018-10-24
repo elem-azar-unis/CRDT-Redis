@@ -1,0 +1,7 @@
+rzadd s a 0 0,0,0|0
+rzadd s a 1 0,0,0|1
+rzincrby s a 1 0,0,0|0
+rzincrby s a -2 0,0,0|1
+rzrem s a 1,0,0|0
+rzrem s a 0,0,1|2
+rzadd s a 2 1,0,1|2

@@ -25,6 +25,22 @@ typedef struct unready_command
     vc *t;
 } ucmd;
 
+int rzeSize(rze *e)
+{
+    int vcsize = sizeof(vc) + e->current->size * sizeof(int);
+    int size = sizeof(rze) + vcsize + sizeof(list)
+               + listLength(e->ops) * (sizeof(listNode) + sizeof(ucmd) + 2 * sizeof(robj) + vcsize);
+    listNode *ln;
+    listIter li;
+    listRewind(e->ops, &li);
+    while ((ln = listNext(&li)))
+    {
+        ucmd *cmd = ln->value;
+        size += sdslen(cmd->tname->ptr) + sdslen(cmd->element->ptr);
+    }
+    return size;
+}
+
 sds ucmdToSds(ucmd *cmd)
 {
     char *tp[] = {"RZADD", "RZINCBY"};
@@ -371,29 +387,29 @@ void rzmaxCommand(client *c)
 void rzestatusCommand(client *c)
 {
     rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
-    if(e==NULL)
+    if (e == NULL)
     {
         addReply(c, shared.emptymultibulk);
         return;
     }
 
-    unsigned long len=6+listLength(e->ops);
-    addReplyMultiBulkLen(c,len);
+    unsigned long len = 6 + listLength(e->ops);
+    addReplyMultiBulkLen(c, len);
 
-    addReplyBulkSds(c,sdscatprintf(sdsempty(),"innate:%f",e->innate));
-    addReplyBulkSds(c,sdscatprintf(sdsempty(),"acquired:%f",e->acquired));
-    addReplyBulkSds(c,sdscatprintf(sdsempty(),"add id:%d",e->aid));
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "innate:%f", e->innate));
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "acquired:%f", e->acquired));
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "add id:%d", e->aid));
 
-    addReplyBulkSds(c,sdsnew("current:"));
-    addReplyBulkSds(c,VCToSds(e->current));
+    addReplyBulkSds(c, sdsnew("current:"));
+    addReplyBulkSds(c, VCToSds(e->current));
 
-    addReplyBulkSds(c,sdsnew("unready commands:"));
+    addReplyBulkSds(c, sdsnew("unready commands:"));
     listNode *ln;
     listIter li;
     listRewind(e->ops, &li);
     while ((ln = listNext(&li)))
     {
         ucmd *cmd = ln->value;
-        addReplyBulkSds(c,ucmdToSds(cmd));
+        addReplyBulkSds(c, ucmdToSds(cmd));
     }
 }
