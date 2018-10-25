@@ -525,3 +525,84 @@ void ozestatusCommand(client *c)
         addReplyBulkSds(c, ctToSds(a));
     }
 }
+
+/* Actually the hash set used here to store oze structures is not necessary.
+ * We can store oze in the zset, for it's whether ziplist or dict+skiplist.
+ * We use the hash set here for fast implementing our CRDT Algorithms.
+ * We may optimize our implementation by not using the hash set and using
+ * zset's own dict instead in the future.
+ * As for metadata overhead calculation, we here do it as if we have done
+ * such optimization. The commented area is the overhead if we take the
+ * hash set into account.
+ *
+ * optimized:
+ * zset:
+ * key -> score(double)
+ * --->
+ * key -> pointer that point to metadata (oze*)
+ *
+ * the metadata contains score information
+ * overall the metadata overhead is size used by oze
+ * */
+void ozoverheadCommand(client *c)
+{
+    robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(c->argv[1]->ptr), ORI_RPQ_TABLE_SUFFIX));
+    robj *ht = lookupKeyRead(c->db, htname);
+    long long size = 0;
+
+    /*
+     * The overhead for database to store the hash set information.
+     * sds temp = sdsdup(htname->ptr);
+     * size += sizeof(dictEntry) + sizeof(robj) + sdsAllocSize(temp);
+     * sdsfree(temp);
+     */
+
+    decrRefCount(htname);
+    if (ht == NULL)
+    {
+        addReplyLongLong(c, 0);
+        return;
+    }
+
+    hashTypeIterator *hi = hashTypeInitIterator(ht);
+    while (hashTypeNext(hi) != C_ERR)
+    {
+        sds value = hashTypeCurrentObjectNewSds(hi, OBJ_HASH_VALUE);
+        oze *e = *(oze **) value;
+        size += OZESIZE(e);
+        sdsfree(value);
+    }
+    hashTypeReleaseIterator(hi);
+    addReplyLongLong(c, size);
+    /*
+    if (ht->encoding == OBJ_ENCODING_ZIPLIST)
+    {
+        // Not implemented. We show the overhead calculation method:
+        // size += (size of the ziplist structure itself) + (size of keys and values);
+        // Iterate the ziplist to get each oze* e;
+        // size += OZESIZE(e);
+    }
+    else if (ht->encoding == OBJ_ENCODING_HT)
+    {
+        dict *d = ht->ptr;
+        size += sizeof(dict) + sizeof(dictType) + (d->ht[0].size + d->ht[1].size) * sizeof(dictEntry *)
+                + (d->ht[0].used + d->ht[1].used) * sizeof(dictEntry);
+
+        dictIterator *di = dictGetIterator(d);
+        dictEntry *de;
+        while ((de = dictNext(di)) != NULL)
+        {
+            sds key = dictGetKey(de);
+            sds value = dictGetVal(de);
+            size += sdsAllocSize(key) + sdsAllocSize(value);
+            oze *e = *(oze **) value;
+            size += OZESIZE(e);
+        }
+        dictReleaseIterator(di);
+    }
+    else
+    {
+        serverPanic("Unknown hash encoding");
+    }
+    */
+}

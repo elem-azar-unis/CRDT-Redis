@@ -1,7 +1,0 @@
-ozadd s a 0 0,0
-ozadd s a 1 0,1
-ozadd s a 2 0,2
-ozincrby s a 1 0,0 0,1
-ozincrby s a -1 0,0 0,1 0,2
-ozincrby s a 1 0,1 0,2
-ozrem s a 0,0 0,1

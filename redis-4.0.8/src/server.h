@@ -2043,6 +2043,7 @@ void ozremCommand(client *c);
 void ozscoreCommand(client *c);
 void ozmaxCommand(client *c);
 void ozestatusCommand(client* c);
+void ozoverheadCommand(client* c);
 
 void rzaddCommand(client *c);
 void rzincrbyCommand(client *c);
@@ -2050,6 +2051,7 @@ void rzremCommand(client *c);
 void rzscoreCommand(client *c);
 void rzmaxCommand(client *c);
 void rzestatusCommand(client* c);
+void rzoverheadCommand(client* c);
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));
