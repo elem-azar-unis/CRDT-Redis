@@ -6,6 +6,9 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+bench_start
+ozlog
+rzlog
 
 #----------idea----------
 *.iml

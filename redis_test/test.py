@@ -22,7 +22,7 @@ def test(ops, t, order):
                   "\n".join(conn.execute_command(t + "zestatus", "s", "a")),
                   "\n---------------")
         else:
-            print(len(ops[i].split(' ')),ops[i])
+            print(len(ops[i].split(' ')), ops[i])
             conn.execute_command(*ops[i].split(' '))
             print(conn.execute_command(t + "zoverhead", "s"))
 
@@ -60,17 +60,18 @@ def main():
     ]
 
     rops2 = [
-        "rzadd s a 2 0,1,1|2",
+        "rzincrby s a 2 0,1,1|2",
         "rzincrby s a 4 1,1,0|1",
         "rzadd s a 3 1,1,0|0",
-        "rzadd s a 0 0,0,0|2",
+        "rzadd s a 8 1,1,1|2",
         "rzrem s a 1,0,0|0",
         "rzrem s a 1,1,0|2",
-        "rzrem s a 0,0,1|1"
+        "rzrem s a 0,0,1|1",
+        "rzrem s a 1,1,1|1"
     ]
-    rzorder2 = [0, 1, 2, 3, -1, 4, -1, 5, -1, 6, -1]
+    rzorder2 = [0,-1, 1,-1, 2,-1, 3, -1, 4, -1, 5, -1, 6, -1,7,-1]
 
-    test(rops1, "r", rzorders1[1])
+    test(rops2, "r", rzorder2)
 
 
 if __name__ == "__main__":

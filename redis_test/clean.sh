@@ -12,3 +12,5 @@ do
     rm -rf ${port}.rdb ${port}.log
     echo "remove ${port} rdb and log files."
 done
+
+rm -rf ozlog rzlog

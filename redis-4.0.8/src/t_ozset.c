@@ -4,6 +4,18 @@
 
 #include "server.h"
 
+#define RPQ_LOG
+
+#ifdef RPQ_LOG
+FILE *ozLog = NULL;
+#define check(f)\
+    do\
+    {\
+        if((f)==NULL)\
+            (f)=fopen("ozlog","a");\
+    }while(0)
+#endif
+
 #define ORI_RPQ_TABLE_SUFFIX "_ozets_"
 #define LOOKUP(e) (listLength((e)->aset) != 0)
 #define SCORE(e) (((e)->innate == NULL ? 0 : (e)->innate->x)\
@@ -282,6 +294,16 @@ void ozaddCommand(client *c)
                 return;
             }
 
+#ifdef RPQ_LOG
+            check(ozLog);
+            fprintf(ozLog, "%ld,%s,%s %s %s\n", clock(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr,
+                    (char *) c->argv[3]->ptr);
+            fflush(ozLog);
+#endif
+
             PREPARE_RARGC(5);
             COPY_ARG_TO_RARG(0, 0);
             COPY_ARG_TO_RARG(1, 1);
@@ -322,6 +344,16 @@ void ozincrbyCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
+
+#ifdef RPQ_LOG
+            check(ozLog);
+            fprintf(ozLog, "%ld,%s,%s %s %s\n", clock(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr,
+                    (char *) c->argv[3]->ptr);
+            fflush(ozLog);
+#endif
 
             PREPARE_RARGC(4 + listLength(e->aset));
             COPY_ARG_TO_RARG(0, 0);
@@ -372,6 +404,15 @@ void ozremCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
+
+#ifdef RPQ_LOG
+            check(ozLog);
+            fprintf(ozLog, "%ld,%s,%s %s\n", clock(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr);
+            fflush(ozLog);
+#endif
 
             PREPARE_RARGC(3 + listLength(e->aset));
             COPY_ARG_TO_RARG(0, 0);
@@ -444,6 +485,13 @@ void ozmaxCommand(client *c)
     if (zsetLength(zobj) == 0)
     {
         addReply(c, shared.emptymultibulk);
+#ifdef RPQ_LOG
+        check(ozLog);
+        fprintf(ozLog, "%ld,%s,%s,NONE\n", clock(),
+                (char *) c->argv[0]->ptr,
+                (char *) c->argv[1]->ptr);
+        fflush(ozLog);
+#endif
         return;
     }
     addReplyMultiBulkLen(c, 2);
@@ -465,6 +513,28 @@ void ozmaxCommand(client *c)
         else
             addReplyBulkCBuffer(c, vstr, vlen);
         addReplyDouble(c, zzlGetScore(sptr));
+
+#ifdef RPQ_LOG
+        check(ozLog);
+        if (vstr == NULL)
+            fprintf(ozLog, "%ld,%s,%s,%ld %f\n", clock(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (long) vlong, zzlGetScore(sptr));
+        else
+        {
+            char *temp = zmalloc(sizeof(char) * (vlen + 1));
+            for (unsigned int i = 0; i < vlen; ++i)
+                temp[i] = vstr[i];
+            temp[vlen] = '\0';
+            fprintf(ozLog, "%ld,%s,%s,%s %f\n", clock(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    temp, zzlGetScore(sptr));
+            zfree(temp);
+        }
+        fflush(ozLog);
+#endif
     }
     else if (zobj->encoding == OBJ_ENCODING_SKIPLIST)
     {
@@ -475,6 +545,14 @@ void ozmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
+#ifdef RPQ_LOG
+        check(ozLog);
+        fprintf(ozLog, "%ld,%s,%s,%s %f\n", clock(),
+                (char *) c->argv[0]->ptr,
+                (char *) c->argv[1]->ptr,
+                ele, ln->score);
+        fflush(ozLog);
+#endif
     }
     else
     {
