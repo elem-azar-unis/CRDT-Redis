@@ -4,9 +4,10 @@
 
 #include "server.h"
 
-#define RPQ_LOG
+//#define RPQ_LOG
 
 #ifdef RPQ_LOG
+#include <sys/time.h>
 FILE *rzLog = NULL;
 #define check(f)\
     do\
@@ -14,6 +15,12 @@ FILE *rzLog = NULL;
         if((f)==NULL)\
             (f)=fopen("rzlog","a");\
     }while(0)
+static long currentTime()
+{
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return  tv.tv_sec*1000000+tv.tv_usec;
+}
 #endif
 
 #define RW_RPQ_TABLE_SUFFIX "_rzets_"
@@ -116,7 +123,6 @@ int removeCheck(rze *e, vc *t)
 //    int id = t->id;
 //    if (e->current->vector[id] < t->vector[id])return 1;
 //    return compareVC(t, e->current) != CLOCK_LESS;
-    if (t->id == e->current->id) return 1;
     for (int i = 0; i < t->size; ++i)
         if (e->current->vector[i] < t->vector[i])
             return 1;
@@ -228,8 +234,10 @@ void removeFunc(client *c, rze *e, vc *t)
 
 sds now(rze *e)
 {
-    l_increaseVC(e->current);
-    return VCToSds(e->current);
+    e->current->vector[e->current->id]++;
+    sds rtn = VCToSds(e->current);
+    e->current->vector[e->current->id]--;
+    return rtn;
 }
 
 void rzaddCommand(client *c)
@@ -249,7 +257,7 @@ void rzaddCommand(client *c)
 
 #ifdef RPQ_LOG
             check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s %s\n", clock(),
+            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
                     (char *) c->argv[1]->ptr,
                     (char *) c->argv[2]->ptr,
@@ -311,7 +319,7 @@ void rzincrbyCommand(client *c)
 
 #ifdef RPQ_LOG
             check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s %s\n", clock(),
+            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
                     (char *) c->argv[1]->ptr,
                     (char *) c->argv[2]->ptr,
@@ -369,7 +377,7 @@ void rzremCommand(client *c)
 
 #ifdef RPQ_LOG
             check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s\n", clock(),
+            fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
                     (char *) c->argv[1]->ptr,
                     (char *) c->argv[2]->ptr);
@@ -433,7 +441,7 @@ void rzmaxCommand(client *c)
         addReply(c, shared.emptymultibulk);
 #ifdef RPQ_LOG
         check(rzLog);
-        fprintf(rzLog, "%ld,%s,%s,NONE\n", clock(),
+        fprintf(rzLog, "%ld,%s,%s,NONE\n", currentTime(),
                 (char *) c->argv[0]->ptr,
                 (char *) c->argv[1]->ptr);
         fflush(rzLog);
@@ -463,7 +471,7 @@ void rzmaxCommand(client *c)
 #ifdef RPQ_LOG
         check(rzLog);
         if (vstr == NULL)
-            fprintf(rzLog, "%ld,%s,%s,%ld %f\n", clock(),
+            fprintf(rzLog, "%ld,%s,%s,%ld %f\n", currentTime(),
                     (char *) c->argv[0]->ptr,
                     (char *) c->argv[1]->ptr,
                     (long) vlong, zzlGetScore(sptr));
@@ -473,7 +481,7 @@ void rzmaxCommand(client *c)
             for (unsigned int i = 0; i < vlen; ++i)
                 temp[i] = vstr[i];
             temp[vlen] = '\0';
-            fprintf(rzLog, "%ld,%s,%s,%s %f\n", clock(),
+            fprintf(rzLog, "%ld,%s,%s,%s %f\n", currentTime(),
                     (char *) c->argv[0]->ptr,
                     (char *) c->argv[1]->ptr,
                     temp, zzlGetScore(sptr));
@@ -493,7 +501,7 @@ void rzmaxCommand(client *c)
         addReplyDouble(c, ln->score);
 #ifdef RPQ_LOG
         check(rzLog);
-        fprintf(rzLog, "%ld,%s,%s,%s %f\n", clock(),
+        fprintf(rzLog, "%ld,%s,%s,%s %f\n", currentTime(),
                 (char *) c->argv[0]->ptr,
                 (char *) c->argv[1]->ptr,
                 ele, ln->score);
