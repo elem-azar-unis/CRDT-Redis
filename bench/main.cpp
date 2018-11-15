@@ -4,7 +4,8 @@
 #include <random>
 #include <hiredis/hiredis.h>
 
-#define TC 5
+#include "constants.h"
+
 using namespace std;
 
 void time_max()
@@ -24,7 +25,7 @@ void time_max()
     }
     double ti = clock();
     redisReply *reply;
-    thread threads[TC];
+    thread threads[THREAD_PER_SERVER];
     reply = static_cast<redisReply *>(redisCommand(c, "VCNEW s"));
     freeReplyObject(reply);
 
@@ -53,12 +54,18 @@ void time_max()
     printf("%s\n", reply->str);
     freeReplyObject(reply);
     ti = (clock() - ti) / CLOCKS_PER_SEC;
-    printf("%f, %f\n", ti, (2.0 + TC * 10000) / ti);
+    printf("%f, %f\n", ti, (2.0 + THREAD_PER_SERVER * 10000) / ti);
     redisFree(c);
 }
 
 int main(int argc, char *argv[])
 {
-    time_max();
+    //time_max();
+    redisContext *c = redisConnect("127.0.0.1", 6379);
+    auto reply = static_cast<redisReply *>(redisCommand(c, "ozmax s"));
+    auto r=reply->element[1];
+    printf("%d ",r->type);
+    freeReplyObject(reply);
+    redisFree(c);
     return 0;
 }

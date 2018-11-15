@@ -84,7 +84,19 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/user/Redis-RPQ/bench/constants.h">
+			<Option target="bench_start"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/bench/generator.h">
+			<Option target="bench_start"/>
+		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/bench/main.cpp">
+			<Option target="bench_start"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/bench/queueLog.cpp">
+			<Option target="bench_start"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/bench/queueLog.h">
 			<Option target="bench_start"/>
 		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/bench/CMakeLists.txt">

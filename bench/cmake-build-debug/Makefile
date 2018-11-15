@@ -150,6 +150,33 @@ main.cpp.s:
 	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/main.cpp.s
 .PHONY : main.cpp.s
 
+queueLog.o: queueLog.cpp.o
+
+.PHONY : queueLog.o
+
+# target to build an object file
+queueLog.cpp.o:
+	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queueLog.cpp.o
+.PHONY : queueLog.cpp.o
+
+queueLog.i: queueLog.cpp.i
+
+.PHONY : queueLog.i
+
+# target to preprocess a source file
+queueLog.cpp.i:
+	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queueLog.cpp.i
+.PHONY : queueLog.cpp.i
+
+queueLog.s: queueLog.cpp.s
+
+.PHONY : queueLog.s
+
+# target to generate assembly for a file
+queueLog.cpp.s:
+	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queueLog.cpp.s
+.PHONY : queueLog.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,6 +189,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
+	@echo "... queueLog.o"
+	@echo "... queueLog.i"
+	@echo "... queueLog.s"
 .PHONY : help
 
 
