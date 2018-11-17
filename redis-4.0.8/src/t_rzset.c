@@ -4,7 +4,11 @@
 
 #include "server.h"
 
-//#define RPQ_LOG
+#ifdef Z_OVERHEAD
+#define SUF_RZETOTAL "rzetotal"
+static redisDb* cur_db=NULL;
+static sds cur_tname=NULL;
+#endif
 
 #ifdef RPQ_LOG
 #include <sys/time.h>
@@ -158,6 +162,9 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
         if (!create)return NULL;
         e = rzeNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
+#ifdef Z_OVERHEAD
+        inc_ovhd_count(cur_db,cur_tname,SUF_RZETOTAL,1);
+#endif
     }
     else
     {
@@ -242,6 +249,9 @@ sds now(rze *e)
 
 void rzaddCommand(client *c)
 {
+#ifdef Z_OVERHEAD
+    PRE_SET;
+#endif
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 4)) return;
@@ -304,6 +314,9 @@ void rzaddCommand(client *c)
 
 void rzincrbyCommand(client *c)
 {
+#ifdef Z_OVERHEAD
+    PRE_SET;
+#endif
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 4)) return;
@@ -365,6 +378,9 @@ void rzincrbyCommand(client *c)
 
 void rzremCommand(client *c)
 {
+#ifdef Z_OVERHEAD
+    PRE_SET;
+#endif
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 3)) return;
@@ -563,6 +579,14 @@ void rzestatusCommand(client *c)
  * the metadata contains score information
  * overall the metadata overhead is size used by rze
  * */
+#ifdef Z_OVERHEAD
+void rzoverheadCommand(client *c)
+{
+    PRE_SET;
+    long long size = get_ovhd_count(cur_db,cur_tname,SUF_RZETOTAL)*(sizeof(rze) + sizeof(vc) + server.p2p_count * sizeof(int));
+    addReplyLongLong(c, size);
+}
+#else
 void rzoverheadCommand(client *c)
 {
     robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(c->argv[1]->ptr), RW_RPQ_TABLE_SUFFIX));
@@ -626,3 +650,4 @@ void rzoverheadCommand(client *c)
     }
     */
 }
+#endif

@@ -2036,6 +2036,17 @@ void vcincCommand(client *c);
 robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create);
 int checkArgcAndZsetType(client *c, int max);
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
+#define Z_OVERHEAD
+//#define RPQ_LOG
+#ifdef Z_OVERHEAD
+#define PRE_SET \
+do{\
+    cur_db=c->db;cur_tname=c->argv[1]->ptr;\
+}while(0)
+robj* _get_ovhd_count(redisDb* db,sds tname,const char* suf);
+void inc_ovhd_count(redisDb* db,sds tname,const char* suf,long i);
+long get_ovhd_count(redisDb* db,sds tname,const char* suf);
+#endif
 
 void ozaddCommand(client *c);
 void ozincrbyCommand(client *c);

@@ -4,7 +4,13 @@
 
 #include "server.h"
 
-//#define RPQ_LOG
+#ifdef Z_OVERHEAD
+#define SUF_OZETOTAL "ozetotal"
+#define SUF_ASET "ozaset"
+#define SUF_RSET "ozrset"
+static redisDb* cur_db=NULL;
+static sds cur_tname=NULL;
+#endif
 
 #ifdef RPQ_LOG
 #include <sys/time.h>
@@ -105,6 +111,32 @@ oze *ozeNew()
     e->rset = listCreate();
     return e;
 }
+#ifdef Z_OVERHEAD
+robj* _get_ovhd_count(redisDb* db,sds tname,const char* suf)
+{
+    robj *logname = createObject(OBJ_STRING, sdscat(sdsdup(tname), suf));
+    robj* o;
+    if((o=lookupKeyWrite(db,logname) )== NULL)
+    {
+        o=createObject(OBJ_STRING,0);
+        o->encoding = OBJ_ENCODING_INT;
+        dbAdd(db,logname,o);
+    }
+    decrRefCount(logname);
+    return o;
+}
+void inc_ovhd_count(redisDb* db,sds tname,const char* suf,long i)
+{
+    robj* o=_get_ovhd_count(db,tname,suf);
+    o->ptr= (void *) ((long)o->ptr + i);
+}
+long get_ovhd_count(redisDb* db,sds tname,const char* suf)
+{
+    robj* o=_get_ovhd_count(db,tname,suf);
+    return (long) (o->ptr);
+}
+#endif
+
 
 ase *asetGet(oze *e, ct *t, int delete)
 {
@@ -116,7 +148,13 @@ ase *asetGet(oze *e, ct *t, int delete)
         ase *a = ln->value;
         if (ct_cmp(t, a->t) == 0)
         {
-            if (delete) listDelNode(e->aset, ln);
+            if (delete)
+            {
+                listDelNode(e->aset, ln);
+#ifdef Z_OVERHEAD
+                inc_ovhd_count(cur_db,cur_tname,SUF_ASET,-1);
+#endif
+            }
             return a;
         }
     }
@@ -134,6 +172,9 @@ ct *rsetGet(oze *e, ct *t, int delete)
         if (ct_cmp(t, a) == 0)
         {
             if (delete) listDelNode(e->rset, ln);
+#ifdef Z_OVERHEAD
+            inc_ovhd_count(cur_db,cur_tname,SUF_RSET,-1);
+#endif
             return a;
         }
     }
@@ -148,6 +189,9 @@ ase *add_ase(oze *e, ct *t)
     a->inc = 0;
     a->count = 0;
     listAddNodeTail(e->aset, a);
+#ifdef Z_OVERHEAD
+    inc_ovhd_count(cur_db,cur_tname,SUF_ASET,1);
+#endif
     return a;
 }
 
@@ -189,6 +233,9 @@ void remove_tag(oze *e, ct *t)
     if (rsetGet(e, t, 0) != NULL)return;
     ct *nt = ct_dup(t);
     listAddNodeTail(e->rset, nt);
+#ifdef Z_OVERHEAD
+    inc_ovhd_count(cur_db,cur_tname,SUF_RSET,1);
+#endif
     ase *a;
     if ((a = asetGet(e, t, 1)) != NULL)
     {
@@ -242,6 +289,9 @@ oze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
         if (!create)return NULL;
         e = ozeNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(oze *)), HASH_SET_TAKE_VALUE);
+#ifdef Z_OVERHEAD
+        inc_ovhd_count(cur_db,cur_tname,SUF_OZETOTAL,1);
+#endif
     }
     else
     {
@@ -288,6 +338,9 @@ robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
 
 void ozaddCommand(client *c)
 {
+#ifdef Z_OVERHEAD
+    PRE_SET;
+#endif
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 4)) return;
@@ -339,6 +392,9 @@ void ozaddCommand(client *c)
 
 void ozincrbyCommand(client *c)
 {
+#ifdef Z_OVERHEAD
+    PRE_SET;
+#endif
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 4)) return;
@@ -402,6 +458,9 @@ void ozincrbyCommand(client *c)
 
 void ozremCommand(client *c)
 {
+#ifdef Z_OVERHEAD
+    PRE_SET;
+#endif
     CRDT_BEGIN
         CRDT_ATSOURCE
             if (checkArgcAndZsetType(c, 3)) return;
@@ -629,6 +688,16 @@ void ozestatusCommand(client *c)
  * the metadata contains score information
  * overall the metadata overhead is size used by oze
  * */
+#ifdef Z_OVERHEAD
+void ozoverheadCommand(client *c)
+{
+    PRE_SET;
+    long long size = get_ovhd_count(cur_db,cur_tname,SUF_OZETOTAL)*(sizeof(oze) + 2 * sizeof(list) )
+                    + get_ovhd_count(cur_db,cur_tname,SUF_ASET) * (sizeof(ase) + sizeof(ct) + sizeof(listNode))
+                    + get_ovhd_count(cur_db,cur_tname,SUF_RSET) * (sizeof(ct) + sizeof(listNode));
+    addReplyLongLong(c, size);
+}
+#else
 void ozoverheadCommand(client *c)
 {
     robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(c->argv[1]->ptr), ORI_RPQ_TABLE_SUFFIX));
@@ -691,3 +760,4 @@ void ozoverheadCommand(client *c)
     }
     */
 }
+#endif
