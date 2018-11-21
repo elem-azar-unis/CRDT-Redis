@@ -93,10 +93,10 @@
 		<Unit filename="/home/user/Redis-RPQ/bench/main.cpp">
 			<Option target="bench_start"/>
 		</Unit>
-		<Unit filename="/home/user/Redis-RPQ/bench/queueLog.cpp">
+		<Unit filename="/home/user/Redis-RPQ/bench/queue_log.cpp">
 			<Option target="bench_start"/>
 		</Unit>
-		<Unit filename="/home/user/Redis-RPQ/bench/queueLog.h">
+		<Unit filename="/home/user/Redis-RPQ/bench/queue_log.h">
 			<Option target="bench_start"/>
 		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/bench/CMakeLists.txt">

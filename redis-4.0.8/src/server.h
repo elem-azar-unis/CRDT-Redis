@@ -2036,8 +2036,19 @@ void vcincCommand(client *c);
 robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create);
 int checkArgcAndZsetType(client *c, int max);
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
-#define Z_OVERHEAD
+
 //#define RPQ_LOG
+#ifdef RPQ_LOG
+#include <sys/time.h>
+long currentTime()
+{
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    return  tv.tv_sec*1000000+tv.tv_usec;
+}
+#endif
+
+#define Z_OVERHEAD
 #ifdef Z_OVERHEAD
 #define PRE_SET \
 do{\

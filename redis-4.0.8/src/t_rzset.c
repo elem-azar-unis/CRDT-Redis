@@ -6,25 +6,18 @@
 
 #ifdef Z_OVERHEAD
 #define SUF_RZETOTAL "rzetotal"
-static redisDb* cur_db=NULL;
-static sds cur_tname=NULL;
+static redisDb *cur_db = NULL;
+static sds cur_tname = NULL;
 #endif
 
 #ifdef RPQ_LOG
-#include <sys/time.h>
-FILE *rzLog = NULL;
+static FILE *rzLog = NULL;
 #define check(f)\
     do\
     {\
         if((f)==NULL)\
             (f)=fopen("rzlog","a");\
     }while(0)
-static long currentTime()
-{
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return  tv.tv_sec*1000000+tv.tv_usec;
-}
 #endif
 
 #define RW_RPQ_TABLE_SUFFIX "_rzets_"
@@ -163,7 +156,7 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
         e = rzeNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
 #ifdef Z_OVERHEAD
-        inc_ovhd_count(cur_db,cur_tname,SUF_RZETOTAL,1);
+        inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
 #endif
     }
     else
@@ -266,13 +259,13 @@ void rzaddCommand(client *c)
             }
 
 #ifdef RPQ_LOG
-            check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr,
-                    (char *) c->argv[3]->ptr);
-            fflush(rzLog);
+                check(rzLog);
+                fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
+                        (char *) c->argv[0]->ptr,
+                        (char *) c->argv[1]->ptr,
+                        (char *) c->argv[2]->ptr,
+                        (char *) c->argv[3]->ptr);
+                fflush(rzLog);
 #endif
 
             PREPARE_RARGC(5);
@@ -331,13 +324,13 @@ void rzincrbyCommand(client *c)
             }
 
 #ifdef RPQ_LOG
-            check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr,
-                    (char *) c->argv[3]->ptr);
-            fflush(rzLog);
+                check(rzLog);
+                fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
+                        (char *) c->argv[0]->ptr,
+                        (char *) c->argv[1]->ptr,
+                        (char *) c->argv[2]->ptr,
+                        (char *) c->argv[3]->ptr);
+                fflush(rzLog);
 #endif
 
             PREPARE_RARGC(5);
@@ -392,12 +385,12 @@ void rzremCommand(client *c)
             }
 
 #ifdef RPQ_LOG
-            check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr);
-            fflush(rzLog);
+                check(rzLog);
+                fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
+                        (char *) c->argv[0]->ptr,
+                        (char *) c->argv[1]->ptr,
+                        (char *) c->argv[2]->ptr);
+                fflush(rzLog);
 #endif
 
             PREPARE_RARGC(4);
@@ -580,12 +573,15 @@ void rzestatusCommand(client *c)
  * overall the metadata overhead is size used by rze
  * */
 #ifdef Z_OVERHEAD
+
 void rzoverheadCommand(client *c)
 {
     PRE_SET;
-    long long size = get_ovhd_count(cur_db,cur_tname,SUF_RZETOTAL)*(sizeof(rze) + sizeof(vc) + server.p2p_count * sizeof(int));
+    long long size = get_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL) *
+                     (sizeof(rze) + sizeof(vc) + server.p2p_count * sizeof(int));
     addReplyLongLong(c, size);
 }
+
 #else
 void rzoverheadCommand(client *c)
 {

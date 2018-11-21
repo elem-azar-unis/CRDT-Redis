@@ -9,6 +9,8 @@ CTestTestfile.cmake
 bench_start
 ozlog
 rzlog
+*.max
+*.ovhd
 
 #----------idea----------
 *.iml

@@ -12,15 +12,16 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
-#include "queueLog.h"
+#include "queue_log.h"
 #include "constants.h"
 
 
 using namespace std;
 
+
 enum Type
 {
-    zadd = 0, zincrby = 1, zrem = 2, zmax = 3
+    zadd = 0, zincrby = 1, zrem = 2, zmax = 3, zoverhead = 4
 };
 
 class cmd
@@ -29,23 +30,38 @@ private:
     Type t;
     int e;
     double d;
-    queueLog &ele;
-    static const char *ozcmd[4] = {"ozadd", "ozincrby", "ozrem", "ozmax"};
-    static const char *rzcmd[4] = {"rzadd", "rzincrby", "rzrem", "rzmax"};
-    static const char **zcmd[2] = {ozcmd, rzcmd};
+    queue_log &ele;
+    static constexpr char zcmd[2] = {'o', 'r'};
     enum z_type
     {
         o = 0, r = 1
     };
 public:
-    cmd(Type t, int e, double d, queueLog &em) : t(t), e(e), d(d), ele(em) {}
+    cmd(Type t, int e, double d, queue_log &em) : t(t), e(e), d(d), ele(em) {}
 
     cmd(const cmd &c) = default;
 
     void exec(redisContext *c)
     {
         char tmp[256];
-        sprintf(tmp, "%s s %d %f", zcmd[Z_TYPE][t], e, d);
+        switch (t)
+        {
+            case zadd:
+                sprintf(tmp, "%czadd s %d %f", zcmd[Z_TYPE], e, d);
+                break;
+            case zincrby:
+                sprintf(tmp, "%czincrby s %d %f", zcmd[Z_TYPE], e, d);
+                break;
+            case zrem:
+                sprintf(tmp, "%czrem s %d", zcmd[Z_TYPE], e);
+                break;
+            case zmax:
+                sprintf(tmp, "%czmax s", zcmd[Z_TYPE]);
+                break;
+            case zoverhead:
+                sprintf(tmp, "%czoverhead s", zcmd[Z_TYPE]);
+                break;
+        }
         auto r = static_cast<redisReply *>(redisCommand(c, tmp));
         switch (t)
         {
@@ -59,6 +75,7 @@ public:
                 ele.rem(e);
                 break;
             case zmax:
+            {
                 int k = -1;
                 double v = -1;
                 if (r->elements == 2)
@@ -68,7 +85,12 @@ public:
                 }
                 ele.max(k, v);
                 break;
+            }
+            case zoverhead:
+                ele.overhead(static_cast<int>(r->integer));
+                break;
         }
+        freeReplyObject(r);
     }
 };
 
@@ -82,7 +104,7 @@ private:
         vector<int> a;
         mutex mtx;
     public:
-        inline void add(int name)
+        void add(int name)
         {
             mtx.lock();
             if (h.find(name) == h.end())
@@ -93,7 +115,7 @@ private:
             mtx.unlock();
         }
 
-        inline int get()
+        int get()
         {
             int r;
             mtx.lock();
@@ -105,7 +127,7 @@ private:
             return r;
         }
 
-        inline void rem(int name)
+        void rem(int name)
         {
             mtx.lock();
             auto f = h.find(name);
@@ -130,12 +152,9 @@ private:
         int cur = 0;
         unordered_set<int> h;
         mutex mtx;
-        const unsigned int max_time;
-
     public:
-        inline int micro_seconds() { return max_time * 1000 / SPLIT_NUM; }
 
-        inline void add(int name)
+        void add(int name)
         {
             mtx.lock();
             if (h.find(name) == h.end())
@@ -146,7 +165,7 @@ private:
             mtx.unlock();
         }
 
-        inline int get()
+        int get()
         {
             int r;
             mtx.lock();
@@ -163,7 +182,7 @@ private:
             return r;
         }
 
-        inline void inc_rem()
+        void inc_rem()
         {
             mtx.lock();
             cur = (cur + 1) % SPLIT_NUM;
@@ -173,13 +192,30 @@ private:
             mtx.unlock();
         }
 
-        explicit c_inf(unsigned int mt) : max_time(mt) {}
     };
 
     c_inf add, rem;
-    queueLog &ele;
+    thread maintainer;
+    bool flag=true;
+    queue_log &ele;
 
-    inline int get()
+    static int intRand(const int max)
+    {
+        static thread_local mt19937 *rand_gen = nullptr;
+        if (!rand_gen) rand_gen = new mt19937(clock() + hash<thread::id>()(this_thread::get_id()));
+        uniform_int_distribution<int> distribution(0, max - 1);
+        return distribution(*rand_gen);
+    }
+
+    static double decide()
+    {
+        static thread_local mt19937 *rand_gen = nullptr;
+        if (!rand_gen) rand_gen = new mt19937(clock() + hash<thread::id>()(this_thread::get_id()));
+        uniform_real_distribution<double> distribution(0.0, 1.0);
+        return distribution(*rand_gen);
+    }
+
+    int get()
     {
         int r = -1;
         ele.mtx.lock();
@@ -189,30 +225,119 @@ private:
         return r;
     }
 
-    static thread_local mt19937 rand_gen;
-
-    static inline int intRand(const int max)
+    int gen_element()
     {
-        uniform_int_distribution<int> distribution(0, max - 1);
-        return distribution(rand_gen);
+        return intRand(MAX_ELE);
     }
 
+    double gen_initial()
+    {
+        return intRand(MAX_INIT);
+    }
+
+    double gen_increament()
+    {
+        return intRand(MAX_INCR);
+    }
 
 public:
-    explicit generator(queueLog &e, unsigned int mt) : ele(e), add(mt), rem(mt)
+    explicit generator(queue_log &e) : ele(e)
     {
-        thread([this] {
+        maintainer = thread([this] {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
-            while (true)
+            while (flag)
             {
-                this_thread::sleep_for(chrono::microseconds(add.micro_seconds()));
+                this_thread::sleep_for(chrono::microseconds(SLP_TIME_MICRO));
                 add.inc_rem();
                 rem.inc_rem();
             }
 #pragma clang diagnostic pop
         });
     }
+
+    void gen_exec(redisContext *c)
+    {
+        Type t;
+        int e;
+        double d;
+        double rand = decide();
+        if (rand <= PA)
+        {
+            t = zadd;
+            d = gen_initial();
+            double conf = decide();
+            if (conf < PAA)
+            {
+                e = add.get();
+                if (e == -1)
+                {
+                    e = gen_element();
+                    add.add(e);
+                }
+            }
+            else if (conf < PAR)
+            {
+                e = rem.get();
+                if (e == -1)
+                    e = gen_element();
+                add.add(e);
+            }
+            else
+            {
+                e = gen_element();
+                add.add(e);
+            }
+        }
+        else if (rand <= PI)
+        {
+            t = zincrby;
+            e = get();
+            if (e == -1)return;
+            d = gen_increament();
+        }
+        else
+        {
+            t = zrem;
+            d = -1;
+            double conf = decide();
+            if (conf < PRA)
+            {
+                e = add.get();
+                if (e == -1)
+                {
+                    e = get();
+                    if (e == -1)return;
+                }
+                rem.add(e);
+            }
+            else if (conf < PRR)
+            {
+                e = rem.get();
+                if (e == -1)
+                {
+                    e = get();
+                    if (e == -1)return;
+                    rem.add(e);
+                }
+            }
+            else
+            {
+                e = get();
+                if (e == -1)return;
+                rem.add(e);
+            }
+        }
+        cmd(t, e, d, ele).exec(c);
+    }
+
+    void join()
+    {
+        flag=false;
+        maintainer.join();
+    }
+
 };
+
 
 #endif //BENCH_GENERATOR_H

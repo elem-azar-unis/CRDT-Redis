@@ -150,32 +150,32 @@ main.cpp.s:
 	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/main.cpp.s
 .PHONY : main.cpp.s
 
-queueLog.o: queueLog.cpp.o
+queue_log.o: queue_log.cpp.o
 
-.PHONY : queueLog.o
+.PHONY : queue_log.o
 
 # target to build an object file
-queueLog.cpp.o:
-	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queueLog.cpp.o
-.PHONY : queueLog.cpp.o
+queue_log.cpp.o:
+	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queue_log.cpp.o
+.PHONY : queue_log.cpp.o
 
-queueLog.i: queueLog.cpp.i
+queue_log.i: queue_log.cpp.i
 
-.PHONY : queueLog.i
+.PHONY : queue_log.i
 
 # target to preprocess a source file
-queueLog.cpp.i:
-	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queueLog.cpp.i
-.PHONY : queueLog.cpp.i
+queue_log.cpp.i:
+	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queue_log.cpp.i
+.PHONY : queue_log.cpp.i
 
-queueLog.s: queueLog.cpp.s
+queue_log.s: queue_log.cpp.s
 
-.PHONY : queueLog.s
+.PHONY : queue_log.s
 
 # target to generate assembly for a file
-queueLog.cpp.s:
-	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queueLog.cpp.s
-.PHONY : queueLog.cpp.s
+queue_log.cpp.s:
+	$(MAKE) -f CMakeFiles/bench_start.dir/build.make CMakeFiles/bench_start.dir/queue_log.cpp.s
+.PHONY : queue_log.cpp.s
 
 # Help Target
 help:
@@ -189,9 +189,9 @@ help:
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
-	@echo "... queueLog.o"
-	@echo "... queueLog.i"
-	@echo "... queueLog.s"
+	@echo "... queue_log.o"
+	@echo "... queue_log.i"
+	@echo "... queue_log.s"
 .PHONY : help
 
 

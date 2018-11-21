@@ -1,10 +1,10 @@
 //
 // Created by user on 18-11-15.
 //
-#include "queueLog.h"
+#include "queue_log.h"
 
 
-void queueLog::shift_up(int s)
+void queue_log::shift_up(int s)
 {
     int j = s, i = (j - 1) / 2;
     auto temp = heap[j];
@@ -23,7 +23,7 @@ void queueLog::shift_up(int s)
     heap[j] = temp;
 }
 
-void queueLog::shift_down(int s)
+void queue_log::shift_down(int s)
 {
     int i = s, j = 2 * i + 1, tail = static_cast<int>(heap.size() - 1);
     auto temp = heap[i];
@@ -43,7 +43,7 @@ void queueLog::shift_down(int s)
     heap[i] = temp;
 }
 
-void queueLog::add(int k, double v)
+void queue_log::add(int k, double v)
 {
     mtx.lock();
     if (map.find(k) == map.end())
@@ -56,7 +56,7 @@ void queueLog::add(int k, double v)
     mtx.unlock();
 }
 
-void queueLog::inc(int k, double i)
+void queue_log::inc(int k, double i)
 {
     if (i == 0)return;
     mtx.lock();
@@ -72,7 +72,7 @@ void queueLog::inc(int k, double i)
     mtx.unlock();
 }
 
-void queueLog::rem(int k)
+void queue_log::rem(int k)
 {
     mtx.lock();
     if (map.find(k) != map.end())
@@ -87,7 +87,7 @@ void queueLog::rem(int k)
     mtx.unlock();
 }
 
-void queueLog::max(int k, double v)
+void queue_log::max(int k, double v)
 {
     int ak;
     double av;
@@ -108,4 +108,34 @@ void queueLog::max(int k, double v)
     max_mtx.lock();
     max_log.emplace_back(k, v, ak, av);
     max_mtx.unlock();
+}
+
+void queue_log::overhead(int o)
+{
+    ovhd_mtx.lock();
+    overhead_log.emplace_back(heap.size(), o);
+    ovhd_mtx.unlock();
+}
+
+void queue_log::write_file(const char *s)
+{
+    char n[128];
+
+    sprintf(n, "%s.ovhd", s);
+    FILE *ovhd = fopen(n, "w");
+    for (auto o:overhead_log)
+    {
+        fprintf(ovhd, "%d %d\n", o.num, o.ovhd);
+    }
+    fflush(ovhd);
+    fclose(ovhd);
+
+    sprintf(n, "%s.max", s);
+    FILE *max = fopen(n, "w");
+    for (auto o:max_log)
+    {
+        fprintf(ovhd, "%d %f %d %f\n", o.kread, o.vread, o.kactural, o.vactural);
+    }
+    fflush(max);
+    fclose(max);
 }
