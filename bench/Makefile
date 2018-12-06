@@ -1,7 +1,12 @@
-CXXFLAGS = -std=c++14
+CXXFLAGS = -std=c++14 -pthread -lhiredis
 
-bench: main.o
-	g++ -o bench_start main.o -pthread -lhiredis
+bench: main.o queue_log.o constants.h generator.h queue_log.h
+	g++ -o bench_start main.o queue_log.o -pthread -lhiredis
 	
 clean:
-	rm bench_start main.o
+	rm -rf bench_start *.o
+	
+run:
+	make clean
+	make
+	./bench_start

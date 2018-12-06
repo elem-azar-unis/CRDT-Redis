@@ -2059,6 +2059,12 @@ void inc_ovhd_count(redisDb* db,sds tname,const char* suf,long i);
 long get_ovhd_count(redisDb* db,sds tname,const char* suf);
 #endif
 
+#define COUNT_OPS
+#ifdef COUNT_OPS
+void ozopcountCommand(client *c);
+void rzopcountCommand(client *c);
+#endif
+
 void ozaddCommand(client *c);
 void ozincrbyCommand(client *c);
 void ozremCommand(client *c);

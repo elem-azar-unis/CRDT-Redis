@@ -12,6 +12,10 @@ static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
 #endif
 
+#ifdef COUNT_OPS
+static int ocount=0;
+#endif
+
 #ifdef RPQ_LOG
 static FILE *ozLog = NULL;
 #define check(f)\
@@ -169,10 +173,13 @@ ct *rsetGet(oze *e, ct *t, int delete)
         ct *a = ln->value;
         if (ct_cmp(t, a) == 0)
         {
-            if (delete) listDelNode(e->rset, ln);
+            if (delete)
+            {
+                listDelNode(e->rset, ln);
 #ifdef Z_OVERHEAD
-            inc_ovhd_count(cur_db, cur_tname, SUF_RSET, -1);
+                inc_ovhd_count(cur_db, cur_tname, SUF_RSET, -1);
 #endif
+            }
             return a;
         }
     }
@@ -373,6 +380,9 @@ void ozaddCommand(client *c)
             zfree(t);
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+#ifdef COUNT_OPS
+            ocount++;
+#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             ct *t = sdsToCt(c->rargv[4]->ptr);
@@ -434,6 +444,9 @@ void ozincrbyCommand(client *c)
             }
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+#ifdef COUNT_OPS
+            ocount++;
+#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
@@ -495,6 +508,9 @@ void ozremCommand(client *c)
             }
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+#ifdef COUNT_OPS
+            ocount++;
+#endif
             oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             for (int i = 3; i < c->rargc; i++)
             {
@@ -667,6 +683,13 @@ void ozestatusCommand(client *c)
         addReplyBulkSds(c, ctToSds(a));
     }
 }
+
+#ifdef COUNT_OPS
+void ozopcountCommand(client *c)
+{
+    addReplyLongLong(c, ocount);
+}
+#endif
 
 /* Actually the hash set used here to store oze structures is not necessary.
  * We can store oze in the zset, for it's whether ziplist or dict+skiplist.

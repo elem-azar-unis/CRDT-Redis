@@ -212,6 +212,10 @@ struct redisCommand redisCommandTable[] = {
     {"rzmax",rzmaxCommand,2,"rF",0,NULL,1,1,1,0,0},
     {"rzestatus",rzestatusCommand,3,"rF",0,NULL,1,1,1,0,0},
     {"rzoverhead",rzoverheadCommand,2,"rF",0,NULL,1,1,1,0,0},
+#ifdef COUNT_OPS
+    {"ozopcount",ozopcountCommand,1,"rF",0,NULL,1,1,1,0,0},
+    {"rzopcount",rzopcountCommand,1,"rF",0,NULL,1,1,1,0,0},
+#endif
     {"hset",hsetCommand,-4,"wmF",0,NULL,1,1,1,0,0},
     {"hsetnx",hsetnxCommand,4,"wmF",0,NULL,1,1,1,0,0},
     {"hget",hgetCommand,3,"rF",0,NULL,1,1,1,0,0},

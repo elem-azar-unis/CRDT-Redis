@@ -24,6 +24,13 @@ enum Type
     zadd = 0, zincrby = 1, zrem = 2, zmax = 3, zoverhead = 4
 };
 
+static const char zcmd[2] = {'o', 'r'};
+
+enum z_type
+{
+    o = 0, r = 1
+};
+
 class cmd
 {
 private:
@@ -31,12 +38,9 @@ private:
     int e;
     double d;
     queue_log &ele;
-    static constexpr char zcmd[2] = {'o', 'r'};
-    enum z_type
-    {
-        o = 0, r = 1
-    };
+
 public:
+
     cmd(Type t, int e, double d, queue_log &em) : t(t), e(e), d(d), ele(em) {}
 
     cmd(const cmd &c) = default;
@@ -63,6 +67,11 @@ public:
                 break;
         }
         auto r = static_cast<redisReply *>(redisCommand(c, tmp));
+        if(r== nullptr)
+        {
+            printf("host %s:%d terminated.\nexecuting %s\n",c->tcp.host,c->tcp.port,tmp);
+            exit(-1);
+        }
         switch (t)
         {
             case zadd:
@@ -237,7 +246,10 @@ private:
 
     double gen_increament()
     {
-        return intRand(MAX_INCR);
+        static thread_local mt19937 *rand_gen = nullptr;
+        if (!rand_gen) rand_gen = new mt19937(clock() + hash<thread::id>()(this_thread::get_id()));
+        uniform_int_distribution<int> distribution(-MAX_INCR, MAX_INCR);
+        return distribution(*rand_gen);
     }
 
 public:

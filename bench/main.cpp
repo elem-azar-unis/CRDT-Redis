@@ -9,6 +9,9 @@
 
 using namespace std;
 
+const char *ips[3] = {"192.168.188.135",
+                       "192.168.188.136",
+                       "192.168.188.137"};
 
 void time_max()
 {
@@ -25,7 +28,8 @@ void time_max()
         }
         return;
     }
-    double ti = clock();
+    struct timeval t1{}, t2{};
+    gettimeofday(&t1, nullptr);
     redisReply *reply;
     thread threads[THREAD_PER_SERVER];
     reply = static_cast<redisReply *>(redisCommand(c, "VCNEW s"));
@@ -55,8 +59,9 @@ void time_max()
     reply = static_cast<redisReply *>(redisCommand(c, "VCGET s"));
     printf("%s\n", reply->str);
     freeReplyObject(reply);
-    ti = (clock() - ti) / CLOCKS_PER_SEC;
-    printf("%f, %f\n", ti, (2.0 + THREAD_PER_SERVER * 10000) / ti);
+    gettimeofday(&t2, nullptr);
+    double time_diff_sec = (t2.tv_sec-t1.tv_sec) + (t2.tv_usec-t1.tv_usec)/1000000;
+    printf("%f, %f\n", time_diff_sec, (2.0 + THREAD_PER_SERVER * 10000) / time_diff_sec);
     redisFree(c);
 }
 
@@ -123,11 +128,106 @@ void test_local()
     max.join();
     overhead.join();
     gen.join();
-    qlog.write_file("temp");
+    qlog.write_file(zcmd[Z_TYPE]);
+}
+
+void test_dis(int n)
+{
+    vector<thread *> thds;
+    queue_log qlog;
+    generator gen(qlog);
+
+    timeval t1{}, t2{};
+    gettimeofday(&t1, nullptr);
+    for (auto ip:ips)
+        for (int i = 0; i < n; ++i)
+            conn_one_server(ip, 6379+i, thds, gen);
+
+    bool mb = true, ob = true;
+    thread max([&mb, &qlog] {
+        cmd c(zmax, -1, -1, qlog);
+        redisContext *cl = redisConnect(ips[0], 6379);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfor-loop-analysis"
+        while (mb)
+        {
+            this_thread::sleep_for(chrono::seconds(TIME_MAX));
+            c.exec(cl);
+        }
+#pragma clang diagnostic pop
+        redisFree(cl);
+    });
+    thread overhead([&ob, &qlog] {
+        cmd c(zoverhead, -1, -1, qlog);
+        redisContext *cl = redisConnect(ips[1], 6379);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfor-loop-analysis"
+        while (ob)
+        {
+            this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
+            c.exec(cl);
+        }
+#pragma clang diagnostic pop
+        char temp[10];
+        sprintf(temp,"%czopcount",zcmd[Z_TYPE]);
+        auto r = static_cast<redisReply *>(redisCommand(cl, temp));
+        printf("%lli\n",r->integer);
+        freeReplyObject(r);
+        redisFree(cl);
+    });
+    for (auto t:thds)
+        t->join();
+    gettimeofday(&t2, nullptr);
+    double time_diff_sec = (t2.tv_sec-t1.tv_sec) + (t2.tv_usec-t1.tv_usec)/1000000;
+    printf("%f, %f\n", time_diff_sec, TOTAL_OPS / time_diff_sec);
+    mb = false;
+    ob = false;
+    printf("ending.\n");
+    max.join();
+    overhead.join();
+    gen.join();
+    qlog.write_file(zcmd[Z_TYPE]);
+}
+
+void test_count_dis_one(const char* ip,const int port)
+{
+    thread threads[THREAD_PER_SERVER];
+    queue_log qlog;
+    generator gen(qlog);
+
+    timeval t1{}, t2{};
+    gettimeofday(&t1, nullptr);
+
+    for (thread &t : threads)
+    {
+        t = thread([&ip,&port,&gen] {
+            redisContext *c = redisConnect(ip, port);
+            for (int times = 0; times < 20000; ++times)
+            {
+                gen.gen_exec(c);
+            }
+            redisFree(c);
+        });
+    }
+    for (thread &t : threads)
+    {
+        t.join();
+    }
+
+    gettimeofday(&t2, nullptr);
+    double time_diff_sec = (t2.tv_sec-t1.tv_sec) + (t2.tv_usec-t1.tv_usec)/1000000;
+    printf("%f, %f\n", time_diff_sec, 20000*THREAD_PER_SERVER / time_diff_sec);
+
+    redisContext *cl = redisConnect(ips[1], port);
+    auto r = static_cast<redisReply *>(redisCommand(cl, "ozopcount"));
+    printf("%lli\n",r->integer);
+    freeReplyObject(r);
+    redisFree(cl);
 }
 
 int main(int argc, char *argv[])
 {
     //time_max();
-    test_local();
+    test_dis(TOTAL_SERVERS/3);
+    //test_count_dis_one(ips[0],6379);
 }

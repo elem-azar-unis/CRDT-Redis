@@ -87,7 +87,7 @@ public:
 
     void overhead(int o);
 
-    void write_file(const char *s);
+    void write_file(char type);
 
 };
 

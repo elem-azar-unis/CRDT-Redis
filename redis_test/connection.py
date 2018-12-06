@@ -1,6 +1,7 @@
 import random
 import time
 import paramiko
+import scp
 import redis
 
 
@@ -34,17 +35,40 @@ def ssh_exec(sshs, cmd):
         #     print(bytes.decode(err.strip()))  # 输出错误结果
 
 
-def _set_delay(ssh, lo_delay, delay, ip1, ip2):
+def _reset_redis(sshs):
+    print("scp writing")
+    for ssh in sshs:
+        stdin, stdout, stderr = ssh.exec_command("rm -rf ~/Redis-RPQ")
+        time.sleep(1)
+        s = scp.SCPClient(ssh.get_transport())
+        s.put("../../Redis-RPQ", remote_path="~/", recursive=True)
+        s.close()
+        stdin, stdout, stderr = ssh.exec_command("cd ~/Redis-RPQ/redis-4.0.8/;sudo make install", get_pty=True)
+        stdin.write("user\n")
+        stdin.flush()
+        data = stdout.read()
+        if len(data) > 0:
+            print("d", bytes.decode(data.strip()))  # 打印正确结果
+        err = stderr.read()
+        if len(err) > 0:
+            print(bytes.decode(err.strip()))  # 输出错误结果
+    time.sleep(1)
+    print("reset done.")
+
+
+def _set_delay(ssh, lo_delay, delay, ip1, ip2, limit=100000):
     cmd = (
         "sudo tc qdisc del dev ens33 root",
         "sudo tc qdisc add dev ens33 root handle 1: prio",
-        "sudo tc qdisc add dev ens33 parent 1:1 handle 10: netem delay {delay}".format(delay=delay),
+        "sudo tc qdisc add dev ens33 parent 1:1 handle 10: netem delay {delay} distribution normal limit {limit}".format(
+            delay=delay, limit=limit),
         "sudo tc qdisc add dev ens33 parent 1:2 handle 20: pfifo_fast",
         "sudo tc filter del dev ens33",
         "sudo tc filter add dev ens33 protocol ip parent 1: prio 1 u32 match ip dst {ip1} flowid 1:1".format(ip1=ip1),
         "sudo tc filter add dev ens33 protocol ip parent 1: prio 1 u32 match ip dst {ip2} flowid 1:1".format(ip2=ip2),
         "sudo tc qdisc del dev lo root",
-        "sudo tc qdisc add dev lo root netem delay {lo_delay}".format(lo_delay=lo_delay)
+        "sudo tc qdisc add dev lo root netem delay {lo_delay} distribution normal limit {limit}".format(
+            lo_delay=lo_delay, limit=limit)
     )
     for c in cmd:
         stdin, stdout, stderr = ssh.exec_command(c, get_pty=True)
@@ -60,9 +84,9 @@ def _set_delay(ssh, lo_delay, delay, ip1, ip2):
 
 class Connection:
     localhost = "127.0.0.1"
-    ips = ("192.168.188.128",
-           "192.168.188.129",
-           "192.168.188.130")
+    ips = ("192.168.188.135",
+           "192.168.188.136",
+           "192.168.188.137")
     ports = (6379, 6380, 6381, 6382, 6383)
     sshs = []
     conns = []
@@ -75,8 +99,12 @@ class Connection:
             ssh.connect(ip, 22, "user", "user")
             self.sshs.append(ssh)
 
+    def reset(self):
+        _reset_redis(self.sshs)
+
     def start(self):
         ssh_exec(self.sshs, "./server.sh " + " ".join(str(p) for p in self.ports))
+        time.sleep(1)
         for ip in self.ips:
             for port in self.ports:
                 conn = redis.Redis(host=ip, port=port, decode_responses=True)
@@ -85,10 +113,12 @@ class Connection:
 
     def shutdown(self):
         ssh_exec(self.sshs, "./shutdown.sh " + " ".join(str(p) for p in self.ports))
+        time.sleep(1)
         print("shutdown.")
 
     def clean(self):
         ssh_exec(self.sshs, "./clean.sh " + " ".join(str(p) for p in self.ports))
+        time.sleep(1)
         print("clean.")
 
     def construct_repl(self):
@@ -98,8 +128,8 @@ class Connection:
         # loop = asyncio.get_event_loop()
         for ip in self.ips:
             for port in self.ports:
+                print(" ".join(repl_cmd))
                 redis_exec(self.conns[i], *repl_cmd)
-                # print(" ".join(repl_cmd))
                 # loop.run_until_complete(aredis_exec(self.conns[i], *repl_cmd))
                 i = i + 1
                 repl_cmd[2] = str(i)
@@ -114,6 +144,7 @@ class Connection:
         _set_delay(self.sshs[0], lo_delay, delay, self.ips[1], self.ips[2])
         _set_delay(self.sshs[1], lo_delay, delay, self.ips[2], self.ips[0])
         _set_delay(self.sshs[2], lo_delay, delay, self.ips[0], self.ips[1])
+        time.sleep(1)
         print("delay set.")
 
     def remove_delay(self):
@@ -131,6 +162,7 @@ class Connection:
                 # err = stderr.read()
                 # if len(err) > 0:
                 #     print(bytes.decode(err.strip()))  # 输出错误结果
+        print("delay removed.")
 
     def __del__(self):
         # ssh_exec(self.sshs, "./shutdown.sh " + " ".join(str(p) for p in self.ports))
@@ -141,11 +173,9 @@ class Connection:
 
 def clean():
     c = Connection(5)
+    c.remove_delay()
     c.shutdown()
     c.clean()
-    c.remove_delay()
-    time.sleep(1)
-    print("Clean done.")
 
 
 def th_test(conn):
@@ -208,5 +238,14 @@ def test():
         c.clean()
 
 
-# clean()
-test()
+c = Connection(3)
+
+c.remove_delay()
+c.shutdown()
+c.clean()
+
+# c.reset()
+#
+# c.start()
+# c.construct_repl()
+# c.set_delay("5ms 1ms", "25ms 5ms")

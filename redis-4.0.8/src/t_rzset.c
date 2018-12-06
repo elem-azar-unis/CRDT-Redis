@@ -10,6 +10,10 @@ static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
 #endif
 
+#ifdef COUNT_OPS
+static int rcount=0;
+#endif
+
 #ifdef RPQ_LOG
 static FILE *rzLog = NULL;
 #define check(f)\
@@ -277,6 +281,9 @@ void rzaddCommand(client *c)
             c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->current));
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+#ifdef COUNT_OPS
+            rcount++;
+#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = SdsToVC(c->rargv[4]->ptr);
@@ -342,6 +349,9 @@ void rzincrbyCommand(client *c)
             c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->current));
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+#ifdef COUNT_OPS
+            rcount++;
+#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = SdsToVC(c->rargv[4]->ptr);
@@ -401,6 +411,9 @@ void rzremCommand(client *c)
             c->rargv[3] = createObject(OBJ_STRING, now(e));
             addReply(c, shared.ok);
         CRDT_DOWNSTREAM
+#ifdef COUNT_OPS
+            rcount++;
+#endif
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             vc *t = SdsToVC(c->rargv[3]->ptr);
 //            if (removeCheck(e, t))
@@ -553,6 +566,13 @@ void rzestatusCommand(client *c)
 //        addReplyBulkSds(c, ucmdToSds(cmd));
 //    }
 }
+
+#ifdef COUNT_OPS
+void rzopcountCommand(client *c)
+{
+    addReplyLongLong(c, rcount);
+}
+#endif
 
 /* Actually the hash set used here to store rze structures is not necessary.
  * We can store rze in the zset, for it's whether ziplist or dict+skiplist.
