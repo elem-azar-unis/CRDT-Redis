@@ -165,19 +165,18 @@ private:
 
         void add(int name)
         {
-            mtx.lock();
+            lock_guard<mutex> lk(mtx);
             if (h.find(name) == h.end())
             {
                 h.insert(name);
                 v[cur].push_back(name);
             }
-            mtx.unlock();
         }
 
         int get()
         {
+            lock_guard<mutex> lk(mtx);
             int r;
-            mtx.lock();
             if (h.empty())
                 r = -1;
             else
@@ -187,18 +186,16 @@ private:
                     b = (b + 1) % SPLIT_NUM;
                 r = v[b][intRand(static_cast<const int>(v[b].size()))];
             }
-            mtx.unlock();
             return r;
         }
 
         void inc_rem()
         {
-            mtx.lock();
+            lock_guard<mutex> lk(mtx);
             cur = (cur + 1) % SPLIT_NUM;
             for (auto n:v[cur])
                 h.erase(h.find(n));
             v[cur].clear();
-            mtx.unlock();
         }
 
     };
@@ -226,11 +223,10 @@ private:
 
     int get()
     {
+        lock_guard<mutex> lk(ele.mtx);
         int r = -1;
-        ele.mtx.lock();
         if (!ele.heap.empty())
             r = ele.heap[intRand(static_cast<const int>(ele.heap.size()))]->name;
-        ele.mtx.unlock();
         return r;
     }
 

@@ -61,7 +61,7 @@ void queue_log::add(int k, double v)
 void queue_log::inc(int k, double i)
 {
     if (i == 0)return;
-    mtx.lock();
+    lock_guard<mutex> lk(mtx);
     if (map.find(k) != map.end())
     {
         auto e = map[k];
@@ -71,12 +71,11 @@ void queue_log::inc(int k, double i)
         else
             shift_down(e->index);
     }
-    mtx.unlock();
 }
 
 void queue_log::rem(int k)
 {
-    mtx.lock();
+    lock_guard<mutex> lk(mtx);
     if (map.find(k) != map.end())
     {
         auto e = map[k];
@@ -86,7 +85,6 @@ void queue_log::rem(int k)
         shift_down(e->index);
         delete e;
     }
-    mtx.unlock();
 }
 
 void queue_log::max(int k, double v)
@@ -94,29 +92,30 @@ void queue_log::max(int k, double v)
     int ak;
     double av;
 
-    mtx.lock();
-    if (!heap.empty())
     {
-        ak = heap[0]->name;
-        av = heap[0]->value;
+        lock_guard<mutex> lk(mtx);
+        if (!heap.empty())
+        {
+            ak = heap[0]->name;
+            av = heap[0]->value;
+        }
+        else
+        {
+            ak = -1;
+            av = -1;
+        }
     }
-    else
-    {
-        ak = -1;
-        av = -1;
-    }
-    mtx.unlock();
 
-    max_mtx.lock();
-    max_log.emplace_back(k, v, ak, av);
-    max_mtx.unlock();
+    {
+        lock_guard<mutex> lk(max_mtx);
+        max_log.emplace_back(k, v, ak, av);
+    }
 }
 
 void queue_log::overhead(int o)
 {
-    ovhd_mtx.lock();
+    lock_guard<mutex> lk(ovhd_mtx);
     overhead_log.emplace_back(heap.size(), o);
-    ovhd_mtx.unlock();
 }
 
 void queue_log::write_file(char type)

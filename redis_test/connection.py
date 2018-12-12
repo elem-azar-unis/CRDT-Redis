@@ -246,6 +246,6 @@ c.clean()
 
 # c.reset()
 #
-# c.start()
-# c.construct_repl()
-# c.set_delay("5ms 1ms", "25ms 5ms")
+c.start()
+c.construct_repl()
+c.set_delay("5ms 1ms", "25ms 5ms")

@@ -1,4 +1,4 @@
-CXXFLAGS = -std=c++14 -pthread -lhiredis
+CXXFLAGS = -std=c++14 -pthread -lhiredis -O3
 
 bench: main.o queue_log.o constants.h generator.h queue_log.h
 	g++ -o bench_start main.o queue_log.o -pthread -lhiredis
