@@ -15,7 +15,6 @@ using namespace std;
 class generator;
 
 
-
 class queue_log
 {
 private:
@@ -25,17 +24,17 @@ private:
         double vread;
         int kactural;
         double vactural;
-        m_log(int a,double b,int c,double d)
-                :kread(a), vread(b), kactural(c), vactural(d)
-        {}
+
+        m_log(int a, double b, int c, double d)
+                : kread(a), vread(b), kactural(c), vactural(d) {}
     };
 
     struct ovhd_log
     {
-        int num,ovhd;
+        int num, ovhd;
+
         ovhd_log(int a, int b)
-                :num(a),ovhd(b)
-        {}
+                : num(a), ovhd(b) {}
     };
 
     class element
@@ -74,7 +73,6 @@ private:
     void shift_down(int s);
 
 public:
-
 
 
     void add(int k, double v);

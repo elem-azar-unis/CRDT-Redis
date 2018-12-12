@@ -120,25 +120,21 @@ void queue_log::overhead(int o)
 
 void queue_log::write_file(char type)
 {
-    char n[128],f[256];
-    sprintf(n,"../result/%c:%d,%d,(%d,%d)",type,TOTAL_SERVERS,OP_PER_SEC,DELAY,DELAY_LOW);
-    mkdir(n,S_IRWXU|S_IRGRP|S_IROTH);
+    char n[128], f[256];
+    sprintf(n, "../result/%c:%d,%d,(%d,%d)", type, TOTAL_SERVERS, OP_PER_SEC, DELAY, DELAY_LOW);
+    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
 
     sprintf(f, "%s/s.ovhd", n);
     FILE *ovhd = fopen(f, "w");
     for (auto o:overhead_log)
-    {
         fprintf(ovhd, "%d %d\n", o.num, o.ovhd);
-    }
     fflush(ovhd);
     fclose(ovhd);
 
     sprintf(f, "%s/s.max", n);
     FILE *max = fopen(f, "w");
     for (auto o:max_log)
-    {
-        fprintf(ovhd, "%d %f %d %f\n", o.kread, o.vread, o.kactural, o.vactural);
-    }
+        fprintf(max, "%d %f %d %f\n", o.kread, o.vread, o.kactural, o.vactural);
     fflush(max);
     fclose(max);
 }

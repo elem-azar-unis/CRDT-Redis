@@ -34,6 +34,7 @@ enum z_type
 class cmd
 {
 private:
+    z_type zt;
     Type t;
     int e;
     double d;
@@ -41,7 +42,7 @@ private:
 
 public:
 
-    cmd(Type t, int e, double d, queue_log &em) : t(t), e(e), d(d), ele(em) {}
+    cmd(z_type zt, Type t, int e, double d, queue_log &em) : zt(zt), t(t), e(e), d(d), ele(em) {}
 
     cmd(const cmd &c) = default;
 
@@ -51,25 +52,25 @@ public:
         switch (t)
         {
             case zadd:
-                sprintf(tmp, "%czadd s %d %f", zcmd[Z_TYPE], e, d);
+                sprintf(tmp, "%czadd s %d %f", zcmd[zt], e, d);
                 break;
             case zincrby:
-                sprintf(tmp, "%czincrby s %d %f", zcmd[Z_TYPE], e, d);
+                sprintf(tmp, "%czincrby s %d %f", zcmd[zt], e, d);
                 break;
             case zrem:
-                sprintf(tmp, "%czrem s %d", zcmd[Z_TYPE], e);
+                sprintf(tmp, "%czrem s %d", zcmd[zt], e);
                 break;
             case zmax:
-                sprintf(tmp, "%czmax s", zcmd[Z_TYPE]);
+                sprintf(tmp, "%czmax s", zcmd[zt]);
                 break;
             case zoverhead:
-                sprintf(tmp, "%czoverhead s", zcmd[Z_TYPE]);
+                sprintf(tmp, "%czoverhead s", zcmd[zt]);
                 break;
         }
         auto r = static_cast<redisReply *>(redisCommand(c, tmp));
-        if(r== nullptr)
+        if (r == nullptr)
         {
-            printf("host %s:%d terminated.\nexecuting %s\n",c->tcp.host,c->tcp.port,tmp);
+            printf("host %s:%d terminated.\nexecuting %s\n", c->tcp.host, c->tcp.port, tmp);
             exit(-1);
         }
         switch (t)
@@ -202,8 +203,9 @@ private:
 
     c_inf add, rem;
     thread maintainer;
-    bool flag=true;
+    bool flag = true;
     queue_log &ele;
+    z_type zt;
 
     static int intRand(const int max)
     {
@@ -249,7 +251,7 @@ private:
     }
 
 public:
-    explicit generator(queue_log &e) : ele(e)
+    explicit generator(z_type zt, queue_log &e) : zt(zt), ele(e)
     {
         maintainer = thread([this] {
 #pragma clang diagnostic push
@@ -336,12 +338,12 @@ public:
                 rem.add(e);
             }
         }
-        cmd(t, e, d, ele).exec(c);
+        cmd(zt, t, e, d, ele).exec(c);
     }
 
     void join()
     {
-        flag=false;
+        flag = false;
         maintainer.join();
     }
 

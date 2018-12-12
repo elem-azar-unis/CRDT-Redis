@@ -127,11 +127,11 @@ void conn_one_server_timed(const char *ip, const int port, vector<thread *> &thd
     }
 }
 
-void test_local()
+void test_local(z_type zt)
 {
     vector<thread *> thds;
     queue_log qlog;
-    generator gen(qlog);
+    generator gen(zt, qlog);
 
     for (int i = 0; i < 5; ++i)
     {
@@ -139,8 +139,8 @@ void test_local()
     }
 
     bool mb = true, ob = true;
-    thread max([&mb, &qlog] {
-        cmd c(zmax, -1, -1, qlog);
+    thread max([&mb, &qlog, zt] {
+        cmd c(zt, zmax, -1, -1, qlog);
         redisContext *cl = redisConnect("127.0.0.1", 6379);
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfor-loop-analysis"
@@ -152,8 +152,8 @@ void test_local()
 #pragma clang diagnostic pop
         redisFree(cl);
     });
-    thread overhead([&ob, &qlog] {
-        cmd c(zoverhead, -1, -1, qlog);
+    thread overhead([&ob, &qlog, zt] {
+        cmd c(zt, zoverhead, -1, -1, qlog);
         redisContext *cl = redisConnect("127.0.0.1", 6381);
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfor-loop-analysis"
@@ -173,15 +173,15 @@ void test_local()
     max.join();
     overhead.join();
     gen.join();
-    qlog.write_file(zcmd[Z_TYPE]);
+    qlog.write_file(zcmd[zt]);
 }
 
-void test_dis(int n)
+void test_dis(int n, z_type zt)
 {
     vector<thread *> thds;
     vector<task_queue *> tasks;
     queue_log qlog;
-    generator gen(qlog);
+    generator gen(zt, qlog);
 
     timeval t1{}, t2{};
     gettimeofday(&t1, nullptr);
@@ -208,8 +208,8 @@ void test_dis(int n)
     });
 
     bool mb = true, ob = true;
-    thread max([&mb, &qlog] {
-        cmd c(zmax, -1, -1, qlog);
+    thread max([&mb, &qlog, zt] {
+        cmd c(zt, zmax, -1, -1, qlog);
         redisContext *cl = redisConnect(ips[0], 6379);
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfor-loop-analysis"
@@ -221,8 +221,8 @@ void test_dis(int n)
 #pragma clang diagnostic pop
         redisFree(cl);
     });
-    thread overhead([&ob, &qlog] {
-        cmd c(zoverhead, -1, -1, qlog);
+    thread overhead([&ob, &qlog, zt] {
+        cmd c(zt, zoverhead, -1, -1, qlog);
         redisContext *cl = redisConnect(ips[1], 6379);
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfor-loop-analysis"
@@ -233,7 +233,7 @@ void test_dis(int n)
         }
 #pragma clang diagnostic pop
         char temp[10];
-        sprintf(temp, "%czopcount", zcmd[Z_TYPE]);
+        sprintf(temp, "%czopcount", zcmd[zt]);
         auto r = static_cast<redisReply *>(redisCommand(cl, temp));
         printf("%lli\n", r->integer);
         freeReplyObject(r);
@@ -256,14 +256,19 @@ void test_dis(int n)
     overhead.join();
     gen.join();
 
-    //qlog.write_file(zcmd[Z_TYPE]);
+    qlog.write_file(zcmd[zt]);
+
+    for (auto t :thds)
+        delete t;
+    for (auto t :tasks)
+        delete t;
 }
 
-void test_count_dis_one(const char *ip, const int port)
+void test_count_dis_one(const char *ip, const int port, z_type zt)
 {
     thread threads[THREAD_PER_SERVER];
     queue_log qlog;
-    generator gen(qlog);
+    generator gen(zt, qlog);
 
     timeval t1{}, t2{};
     gettimeofday(&t1, nullptr);
@@ -299,6 +304,9 @@ void test_count_dis_one(const char *ip, const int port)
 int main(int argc, char *argv[])
 {
     //time_max();
-    test_dis(TOTAL_SERVERS / 3);
     //test_count_dis_one(ips[0],6379);
+    test_dis(TOTAL_SERVERS / 3, r);
+    test_dis(TOTAL_SERVERS / 3, o);
+
+
 }
