@@ -2,15 +2,14 @@
 
 if [ $# == 0 ]
 then
-    ports=(6379 6380 6381 6382 6383)
+    rm -rf *.rdb *.log
 else
     ports=($*)
+    for port in ${ports[*]}
+    do
+        rm -rf ${port}.rdb ${port}.log
+        echo "remove ${port} rdb and log files."
+    done
 fi
-
-for port in ${ports[*]}
-do
-    rm -rf ${port}.rdb ${port}.log
-    echo "remove ${port} rdb and log files."
-done
 
 rm -rf ozlog rzlog

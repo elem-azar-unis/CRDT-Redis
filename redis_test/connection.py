@@ -1,4 +1,5 @@
 import random
+import sys
 import time
 import paramiko
 import scp
@@ -104,7 +105,7 @@ class Connection:
 
     def start(self):
         ssh_exec(self.sshs, "./server.sh " + " ".join(str(p) for p in self.ports))
-        time.sleep(1)
+        time.sleep(3)
         for ip in self.ips:
             for port in self.ports:
                 conn = redis.Redis(host=ip, port=port, decode_responses=True)
@@ -112,13 +113,13 @@ class Connection:
         print("start & connect.")
 
     def shutdown(self):
-        ssh_exec(self.sshs, "./shutdown.sh " + " ".join(str(p) for p in self.ports))
-        time.sleep(1)
+        ssh_exec(self.sshs, "./shutdown.sh")
+        time.sleep(8)
         print("shutdown.")
 
     def clean(self):
-        ssh_exec(self.sshs, "./clean.sh " + " ".join(str(p) for p in self.ports))
-        time.sleep(1)
+        ssh_exec(self.sshs, "./clean.sh")
+        time.sleep(2)
         print("clean.")
 
     def construct_repl(self):
@@ -137,14 +138,14 @@ class Connection:
                 repl_cmd.append(str(port))
             for k in range(n):
                 repl_cmd[-2 * (k + 1)] = ip
-        time.sleep(1)
+        time.sleep(2)
         print("Replication construct complete.")
 
     def set_delay(self, lo_delay, delay):
         _set_delay(self.sshs[0], lo_delay, delay, self.ips[1], self.ips[2])
         _set_delay(self.sshs[1], lo_delay, delay, self.ips[2], self.ips[0])
         _set_delay(self.sshs[2], lo_delay, delay, self.ips[0], self.ips[1])
-        time.sleep(1)
+        time.sleep(2)
         print("delay set.")
 
     def remove_delay(self):
@@ -162,6 +163,7 @@ class Connection:
                 # err = stderr.read()
                 # if len(err) > 0:
                 #     print(bytes.decode(err.strip()))  # 输出错误结果
+        time.sleep(2)
         print("delay removed.")
 
     def __del__(self):
@@ -238,14 +240,33 @@ def test():
         c.clean()
 
 
-c = Connection(3)
+def main(argv):
+    n = 3
+    delay = "25ms 5ms"
+    lo_delay = "5ms 1ms"
 
-c.remove_delay()
-c.shutdown()
-c.clean()
+    if len(argv) == 1:
+        n = int(argv[0])
+    elif len(argv) == 4:
+        delay = "{}ms {}ms".format(argv[0], argv[1])
+        lo_delay = "{}ms {}ms".format(argv[2], argv[3])
 
-# c.reset()
-#
-c.start()
-c.construct_repl()
-c.set_delay("5ms 1ms", "25ms 5ms")
+    print(n, delay, lo_delay)
+
+    c = Connection(n)
+
+    c.remove_delay()
+    c.shutdown()
+    c.clean()
+
+    # c.reset()
+
+    c.start()
+    c.construct_repl()
+    c.set_delay(lo_delay, delay)
+
+    time.sleep(2)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

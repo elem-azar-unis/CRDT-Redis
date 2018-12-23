@@ -48,23 +48,25 @@ public:
 
     void exec(redisContext *c)
     {
+        char name[128];
+        sprintf(name, "%cs%d", zcmd[zt], OP_PER_SEC);
         char tmp[256];
         switch (t)
         {
             case zadd:
-                sprintf(tmp, "%czadd s %d %f", zcmd[zt], e, d);
+                sprintf(tmp, "%czadd %s %d %f", zcmd[zt], name, e, d);
                 break;
             case zincrby:
-                sprintf(tmp, "%czincrby s %d %f", zcmd[zt], e, d);
+                sprintf(tmp, "%czincrby %s %d %f", zcmd[zt], name, e, d);
                 break;
             case zrem:
-                sprintf(tmp, "%czrem s %d", zcmd[zt], e);
+                sprintf(tmp, "%czrem %s %d", zcmd[zt], name, e);
                 break;
             case zmax:
-                sprintf(tmp, "%czmax s", zcmd[zt]);
+                sprintf(tmp, "%czmax %s", zcmd[zt], name);
                 break;
             case zoverhead:
-                sprintf(tmp, "%czoverhead s", zcmd[zt]);
+                sprintf(tmp, "%czoverhead %s", zcmd[zt], name);
                 break;
         }
         auto r = static_cast<redisReply *>(redisCommand(c, tmp));
@@ -203,7 +205,7 @@ private:
 
     c_inf add, rem;
     thread maintainer;
-    bool flag = true;
+    volatile bool flag = true;
     queue_log &ele;
     z_type zt;
 

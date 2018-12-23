@@ -47,7 +47,7 @@ void queue_log::shift_down(int s)
 
 void queue_log::add(int k, double v)
 {
-    mtx.lock();
+    lock_guard<mutex> lk(mtx);
     if (map.find(k) == map.end())
     {
         auto e = new element(k, v);
@@ -55,7 +55,6 @@ void queue_log::add(int k, double v)
         heap.push_back(e);
         shift_up(static_cast<int>(heap.size() - 1));
     }
-    mtx.unlock();
 }
 
 void queue_log::inc(int k, double i)
@@ -118,10 +117,10 @@ void queue_log::overhead(int o)
     overhead_log.emplace_back(heap.size(), o);
 }
 
-void queue_log::write_file(char type)
+void queue_log::write_file(char type, const char *dir)
 {
-    char n[128], f[256];
-    sprintf(n, "../result/%c:%d,%d,(%d,%d)", type, TOTAL_SERVERS, OP_PER_SEC, DELAY, DELAY_LOW);
+    char n[64], f[64];
+    sprintf(n, "%s/%c:%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS, OP_PER_SEC, DELAY, DELAY_LOW);
     mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
 
     sprintf(f, "%s/s.ovhd", n);

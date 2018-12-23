@@ -4,6 +4,7 @@
 #include <condition_variable>
 #include <random>
 #include <hiredis/hiredis.h>
+#include <sys/stat.h>
 
 #include "constants.h"
 #include "generator.h"
@@ -13,6 +14,42 @@ using namespace std;
 const char *ips[3] = {"192.168.188.135",
                       "192.168.188.136",
                       "192.168.188.137"};
+int DELAY = 50;
+int DELAY_LOW = 10;
+int TOTAL_SERVERS = 9;
+int TOTAL_OPS = 20000000;
+int OP_PER_SEC = 10000;
+
+inline void set_default()
+{
+    DELAY = 50;
+    DELAY_LOW = 10;
+    TOTAL_SERVERS = 9;
+    TOTAL_OPS = 20000000;
+    OP_PER_SEC = 10000;
+}
+
+inline void set_speed(int speed)
+{
+    set_default();
+    OP_PER_SEC = speed;
+    TOTAL_OPS = 200000;
+}
+
+inline void set_replica(int replica)
+{
+    set_default();
+    TOTAL_SERVERS = replica * 3;
+    TOTAL_OPS = 20000000;
+}
+
+inline void set_delay(int hd,int ld)
+{
+    set_default();
+    DELAY = hd;
+    DELAY_LOW = ld;
+    TOTAL_OPS= 10000000;
+}
 
 class task_queue
 {
@@ -38,6 +75,7 @@ public:
     }
 };
 
+/*
 void time_max()
 {
     redisContext *c = redisConnect("127.0.0.1", 6379);
@@ -106,6 +144,7 @@ void conn_one_server(const char *ip, const int port, vector<thread *> &thds, gen
         thds.emplace_back(t);
     }
 }
+*/
 
 void conn_one_server_timed(const char *ip, const int port, vector<thread *> &thds, generator &gen,
                            vector<task_queue *> &tasks)
@@ -115,6 +154,18 @@ void conn_one_server_timed(const char *ip, const int port, vector<thread *> &thd
         auto task = new task_queue();
         auto t = new thread([ip, port, &thds, &gen, task] {
             redisContext *c = redisConnect(ip, port);
+            if (c == nullptr || c->err)
+            {
+                if (c)
+                {
+                    printf("Error: %s\n", c->errstr);
+                }
+                else
+                {
+                    printf("Can't allocate redis context\n");
+                }
+                exit(-1);
+            }
             for (int times = 0; times < OP_PER_THREAD; ++times)
             {
                 task->worker();
@@ -127,6 +178,7 @@ void conn_one_server_timed(const char *ip, const int port, vector<thread *> &thd
     }
 }
 
+/*
 void test_local(z_type zt)
 {
     vector<thread *> thds;
@@ -175,8 +227,9 @@ void test_local(z_type zt)
     gen.join();
     qlog.write_file(zcmd[zt]);
 }
+ */
 
-void test_dis(int n, z_type zt)
+void test_dis(z_type zt, const char *dir)
 {
     vector<thread *> thds;
     vector<task_queue *> tasks;
@@ -187,7 +240,7 @@ void test_dis(int n, z_type zt)
     gettimeofday(&t1, nullptr);
 
     for (auto ip:ips)
-        for (int i = 0; i < n; ++i)
+        for (int i = 0; i < TOTAL_SERVERS / 3; ++i)
             conn_one_server_timed(ip, 6379 + i, thds, gen, tasks);
 
     thread timer([&tasks] {
@@ -202,12 +255,13 @@ void test_dis(int n, z_type zt)
             //this_thread::sleep_for(chrono::microseconds((int)SLEEP_TIME));
             gettimeofday(&tn, nullptr);
             auto slp_time =
-                    (td.tv_sec - tn.tv_sec) * 1000000 + td.tv_usec - tn.tv_usec + (long) ((times + 1) * INTERVAL_TIME);
+                    (td.tv_sec - tn.tv_sec) * 1000000 + td.tv_usec - tn.tv_usec +
+                    (long) ((times + 1) * INTERVAL_TIME);
             this_thread::sleep_for(chrono::microseconds(slp_time));
         }
     });
 
-    bool mb = true, ob = true;
+    volatile bool mb = true, ob = true;
     thread max([&mb, &qlog, zt] {
         cmd c(zt, zmax, -1, -1, qlog);
         redisContext *cl = redisConnect(ips[0], 6379);
@@ -256,14 +310,17 @@ void test_dis(int n, z_type zt)
     overhead.join();
     gen.join();
 
-    qlog.write_file(zcmd[zt]);
+    qlog.write_file(zcmd[zt], dir);
 
     for (auto t :thds)
         delete t;
     for (auto t :tasks)
         delete t;
+
+    this_thread::sleep_for(chrono::seconds(5));
 }
 
+/*
 void test_count_dis_one(const char *ip, const int port, z_type zt)
 {
     thread threads[THREAD_PER_SERVER];
@@ -300,13 +357,98 @@ void test_count_dis_one(const char *ip, const int port, z_type zt)
     freeReplyObject(r);
     redisFree(cl);
 }
+*/
+
+void test_delay(int round)
+{
+    mkdir("../result/delay", S_IRWXU | S_IRGRP | S_IROTH);
+    char n[64], cmd[64];
+    sprintf(n, "../result/delay/%d", round);
+    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
+    for (int d=10;d<=190;d+=20)
+    {
+        set_delay(d,d/5);
+        sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %f", d,d/5,d/5,d/25.0);
+        int temp = system(cmd);
+        test_dis(o, n);
+        test_dis(r, n);
+    }
+}
+
+void delay_fix(int delay, int round, z_type type)
+{
+    set_delay(delay,delay/5);
+    char n[64], cmd[64];
+    sprintf(n, "../result/delay/%d", round);
+    sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %d", delay,delay/5,delay/5,delay/25);
+    int temp = system(cmd);
+    test_dis(type, n);
+}
+
+void test_replica(int round)
+{
+    mkdir("../result/replica", S_IRWXU | S_IRGRP | S_IROTH);
+    char n[64], cmd[64];
+    sprintf(n, "../result/replica/%d", round);
+    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
+    for (int replica:{1, 2, 3, 4, 5})
+    {
+        set_replica(replica);
+        sprintf(cmd, "python3 ../redis_test/connection.py %d", replica);
+        int temp = system(cmd);
+        test_dis(o, n);
+        test_dis(r, n);
+    }
+}
+
+void replica_fix(int replica, int round, z_type type)
+{
+    set_replica(replica);
+    char n[64], cmd[64];
+    sprintf(n, "../result/replica/%d", round);
+    sprintf(cmd, "python3 ../redis_test/connection.py %d", replica);
+    int temp = system(cmd);
+    test_dis(type, n);
+}
+
+void test_speed(int round)
+{
+    int temp = system("python3 ../redis_test/connection.py");
+    mkdir("../result/speed", S_IRWXU | S_IRGRP | S_IROTH);
+    char n[64];
+    sprintf(n, "../result/speed/%d", round);
+    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
+    for (int i = 500; i <= 10000; i += 100)
+    {
+        set_speed(i);
+        test_dis(o, n);
+        test_dis(r, n);
+    }
+}
+
+void speed_fix(int speed, int round, z_type type)
+{
+    int temp = system("python3 ../redis_test/connection.py");
+    char n[64];
+    sprintf(n, "../result/speed/%d", round);
+    set_speed(speed);
+    test_dis(type, n);
+}
 
 int main(int argc, char *argv[])
 {
     //time_max();
     //test_count_dis_one(ips[0],6379);
-    test_dis(TOTAL_SERVERS / 3, r);
-    test_dis(TOTAL_SERVERS / 3, o);
 
+    timeval t1{}, t2{};
+    gettimeofday(&t1, nullptr);
 
+    for (int i = 0; i < 10; ++i)
+    {
+        test_delay(i);
+    }
+
+    gettimeofday(&t2, nullptr);
+    double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
+    printf("total time: %f\n", time_diff_sec);
 }
