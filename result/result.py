@@ -1,27 +1,44 @@
 import matplotlib.pyplot as plt
 import re
+import os
+import numba as nb
+
+
+@nb.jit(nopython=True)
+def avg(l):
+    sum = 0.0
+    for a in l:
+        sum += a
+    sum /= len(l)
+    return sum
+
+
+@nb.jit(nopython=True)
+def freq(l):
+    sum = 0.0
+    for a in l:
+        if a != 0:
+            sum += 1
+    sum /= len(l)
+    return sum
 
 
 def read(ztype, server, op, delay, low_delay, directory='.'):
     d = "{dir}/{t}:{s},{o},({d},{ld})".format(dir=directory, t=ztype, s=server, o=op, d=delay, ld=low_delay)
-    of = open(d + "/s.ovhd")
-    mf = open(d + "/s.max")
     ovhd = []
     rmax = []
-    for line in of:
+    for line in open(d + "/s.ovhd"):
         ovhd.append([int(x) for x in line.split(' ')])
-    for line in mf:
-        tmp = [float(x) for x in line.split(' ')]
-        tmp[0] = int(tmp[0])
-        tmp[2] = int(tmp[2])
-        rmax.append(tmp)
+    for line in open(d + "/s.max"):
+        tmp = line.split(' ')
+        rmax.append(abs(float(tmp[1]) - float(tmp[3])))
     return rmax, ovhd
 
 
-def cmp_or(server, op, delay, low_delay):
+def cmp_or(server=9, op=10000, delay=50, low_delay=10):
     xlable = 'time: second'
-    ormax, oovhd = read("o", server, op, delay, low_delay)
-    rrmax, rovhd = read("r", server, op, delay, low_delay)
+    ormax, oovhd = read("o", server, op, delay, low_delay, directory="replica/0")
+    rrmax, rovhd = read("r", server, op, delay, low_delay, directory="replica/0")
     lmax = min(len(ormax), len(rrmax))
     lovhd = min(len(oovhd), len(rovhd))
     x1 = [i for i in range(lovhd)]
@@ -31,29 +48,30 @@ def cmp_or(server, op, delay, low_delay):
     y2o = [abs(a - b) for _, a, _, b in ormax][:lmax]
     y2r = [abs(a - b) for _, a, _, b in rrmax][:lmax]
 
-    plot_line(y1o, y1r, x1, xlable, 'overhead: byte')
-    plt.show()
+    plt.figure(figsize=(11, 4))
 
+    plt.subplot(1, 2, 1)
+    plot_line(y1o, y1r, x1, xlable, 'overhead: byte')
+
+    plt.subplot(1, 2, 2)
     plot_line(y2o, y2r, x2, xlable, 'read max diff')
+
+    plt.tight_layout()
+    plt.savefig("{}.pdf".format("cmp_add_rmv"), format='pdf')
     plt.show()
 
 
 def preliminary_dispose(oms, oos, rms, ros):
-    for i in range(len(oms)):
-        oms[i] = [abs(a - b) for _, a, _, b in oms[i]]
-    for i in range(len(rms)):
-        rms[i] = [abs(a - b) for _, a, _, b in rms[i]]
-
     om_avg = []
     om_count = []
     for m in oms:
-        om_avg.append(sum(m) / len(m))
-        om_count.append((len(m) - m.count(0)) / len(m))
+        om_avg.append(avg(m))
+        om_count.append(freq(m))
     rm_avg = []
     rm_count = []
     for m in rms:
-        rm_avg.append(sum(m) / len(m))
-        rm_count.append((len(m) - m.count(0)) / len(m))
+        rm_avg.append(avg(m))
+        rm_count.append(freq(m))
 
     oo_max = []
     for o in oos:
@@ -89,42 +107,49 @@ def plot_line(o_data, r_data, name, x_lable, y_lable):
     plt.legend(loc='best')
 
 
-def cmp_delay():
-    delays = ["{hd}ms,{ld}ms".format(hd=10+x*20,ld=2+x*4) for x in range(10)]
+def cmp_delay(low=0, high=0):
+    delays = ["{hd}ms,\n{ld}ms".format(hd=20 + x * 40, ld=4 + x * 8) for x in range(10)]
     dirs = ["delay/{}".format(x) for x in range(10)]
-    om_avg = [0] * len(delays)
-    rm_avg = [0] * len(delays)
-    om_count = [0] * len(delays)
-    rm_count = [0] * len(delays)
-    oo_max = [0] * len(delays)
-    ro_max = [0] * len(delays)
+
+    om_avg = [[] for i in range(len(delays))]
+    rm_avg = [[] for i in range(len(delays))]
+    om_count = [[] for i in range(len(delays))]
+    rm_count = [[] for i in range(len(delays))]
+    oo_max = [[] for i in range(len(delays))]
+    ro_max = [[] for i in range(len(delays))]
 
     for d in dirs:
         a, b, c, d, e, f = _cmp_delay(delays, d)
         for i in range(len(delays)):
-            om_avg[i] += a[i]
-            rm_avg[i] += b[i]
-            om_count[i] += c[i]
-            rm_count[i] += d[i]
-            oo_max[i] += e[i]
-            ro_max[i] += f[i]
+            om_avg[i].append(a[i])
+            rm_avg[i].append(b[i])
+            om_count[i].append(c[i])
+            rm_count[i].append(d[i])
+            oo_max[i].append(e[i])
+            ro_max[i].append(f[i])
     for i in range(len(delays)):
-        om_avg[i] /= len(dirs)
-        rm_avg[i] /= len(dirs)
-        om_count[i] /= len(dirs)
-        rm_count[i] /= len(dirs)
-        oo_max[i] /= len(dirs)
-        ro_max[i] /= len(dirs)
-    delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, replicas)
+        om_avg[i].sort()
+        rm_avg[i].sort()
+        om_count[i].sort()
+        rm_count[i].sort()
+        oo_max[i].sort()
+        ro_max[i].sort()
+        om_avg[i] = avg(om_avg[i][low:(len(dirs) - high)])
+        rm_avg[i] = avg(rm_avg[i][low:(len(dirs) - high)])
+        om_count[i] = avg(om_count[i][low:(len(dirs) - high)])
+        rm_count[i] = avg(rm_count[i][low:(len(dirs) - high)])
+        oo_max[i] = avg(oo_max[i][low:(len(dirs) - high)])
+        ro_max[i] = avg(ro_max[i][low:(len(dirs) - high)])
+    delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, delays)
 
 
 def _cmp_delay(delays, directory, plot=False):
     oms = []
     oos = []
     for d in delays:
-        match=re.compile(r"\d+ms,\d+ms").match(d)
-        hd=match.groups()[0]
-        ld=match.groups()[1]
+        match = re.match(r'(\d+)ms,\n(\d+)ms', d)
+        hd = match.group(1)
+        ld = match.group(2)
         m, o = read("o", 9, 10000, hd, ld, directory=directory)
         oms.append(m)
         oos.append(o)
@@ -132,17 +157,17 @@ def _cmp_delay(delays, directory, plot=False):
     rms = []
     ros = []
     for d in delays:
-        match = re.compile(r"\d+ms,\d+ms").match(d)
-        hd = match.groups()[0]
-        ld = match.groups()[1]
-        m, o = read("r", r, 10000, 50, 10, directory=directory)
+        match = re.match(r'(\d+)ms,\n(\d+)ms', d)
+        hd = match.group(1)
+        ld = match.group(2)
+        m, o = read("r", 9, 10000, hd, ld, directory=directory)
         rms.append(m)
         ros.append(o)
 
     om_avg, rm_avg, om_count, rm_count, oo_max, ro_max = preliminary_dispose(oms, oos, rms, ros)
 
     if plot:
-        delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, replicas)
+        delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, delays)
     return om_avg, rm_avg, om_count, rm_count, oo_max, ro_max
 
 
@@ -150,7 +175,7 @@ def delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     xlable = 'latency: between DC, within DC'
     pname = 'delay'
 
-    plt.figure(figsize=(16, 4))
+    plt.figure(figsize=(18, 4))
 
     plt.subplot(1, 3, 1)
     plot_bar(om_avg, rm_avg, name, xlable, 'average read_max diff')
@@ -166,32 +191,38 @@ def delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     plt.show()
 
 
-def cmp_replica():
+def cmp_replica(low=0, high=0):
     replicas = [3, 6, 9, 12, 15]
     dirs = ["replica/{}".format(x) for x in range(10)]
-    om_avg = [0] * len(replicas)
-    rm_avg = [0] * len(replicas)
-    om_count = [0] * len(replicas)
-    rm_count = [0] * len(replicas)
-    oo_max = [0] * len(replicas)
-    ro_max = [0] * len(replicas)
+    om_avg = [[] for i in range(len(replicas))]
+    rm_avg = [[] for i in range(len(replicas))]
+    om_count = [[] for i in range(len(replicas))]
+    rm_count = [[] for i in range(len(replicas))]
+    oo_max = [[] for i in range(len(replicas))]
+    ro_max = [[] for i in range(len(replicas))]
 
     for d in dirs:
         a, b, c, d, e, f = _cmp_replica(replicas, d)
         for i in range(len(replicas)):
-            om_avg[i] += a[i]
-            rm_avg[i] += b[i]
-            om_count[i] += c[i]
-            rm_count[i] += d[i]
-            oo_max[i] += e[i]
-            ro_max[i] += f[i]
+            om_avg[i].append(a[i])
+            rm_avg[i].append(b[i])
+            om_count[i].append(c[i])
+            rm_count[i].append(d[i])
+            oo_max[i].append(e[i])
+            ro_max[i].append(f[i])
     for i in range(len(replicas)):
-        om_avg[i] /= len(dirs)
-        rm_avg[i] /= len(dirs)
-        om_count[i] /= len(dirs)
-        rm_count[i] /= len(dirs)
-        oo_max[i] /= len(dirs)
-        ro_max[i] /= len(dirs)
+        om_avg[i].sort()
+        rm_avg[i].sort()
+        om_count[i].sort()
+        rm_count[i].sort()
+        oo_max[i].sort()
+        ro_max[i].sort()
+        om_avg[i] = avg(om_avg[i][low:(len(dirs) - high)])
+        rm_avg[i] = avg(rm_avg[i][low:(len(dirs) - high)])
+        om_count[i] = avg(om_count[i][low:(len(dirs) - high)])
+        rm_count[i] = avg(rm_count[i][low:(len(dirs) - high)])
+        oo_max[i] = avg(oo_max[i][low:(len(dirs) - high)])
+        ro_max[i] = avg(ro_max[i][low:(len(dirs) - high)])
     replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, replicas)
 
 
@@ -237,33 +268,39 @@ def replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     plt.show()
 
 
-def cmp_speed():
+def cmp_speed(low=0, high=0):
     speeds = [500 + x * 100 for x in range(96)]
-    dirs = ["speed/{}".format(x) for x in range(5)]
+    dirs = ["speed/{}".format(x) for x in range(9)]
 
-    om_avg = [0] * len(speeds)
-    rm_avg = [0] * len(speeds)
-    om_count = [0] * len(speeds)
-    rm_count = [0] * len(speeds)
-    oo_max = [0] * len(speeds)
-    ro_max = [0] * len(speeds)
+    om_avg = [[] for i in range(len(speeds))]
+    rm_avg = [[] for i in range(len(speeds))]
+    om_count = [[] for i in range(len(speeds))]
+    rm_count = [[] for i in range(len(speeds))]
+    oo_max = [[] for i in range(len(speeds))]
+    ro_max = [[] for i in range(len(speeds))]
 
     for d in dirs:
         a, b, c, d, e, f = _cmp_speed(speeds, d)
         for i in range(len(speeds)):
-            om_avg[i] += a[i]
-            rm_avg[i] += b[i]
-            om_count[i] += c[i]
-            rm_count[i] += d[i]
-            oo_max[i] += e[i]
-            ro_max[i] += f[i]
+            om_avg[i].append(a[i])
+            rm_avg[i].append(b[i])
+            om_count[i].append(c[i])
+            rm_count[i].append(d[i])
+            oo_max[i].append(e[i])
+            ro_max[i].append(f[i])
     for i in range(len(speeds)):
-        om_avg[i] /= len(dirs)
-        rm_avg[i] /= len(dirs)
-        om_count[i] /= len(dirs)
-        rm_count[i] /= len(dirs)
-        oo_max[i] /= len(dirs)
-        ro_max[i] /= len(dirs)
+        om_avg[i].sort()
+        rm_avg[i].sort()
+        om_count[i].sort()
+        rm_count[i].sort()
+        oo_max[i].sort()
+        ro_max[i].sort()
+        om_avg[i] = avg(om_avg[i][low:(len(dirs) - high)])
+        rm_avg[i] = avg(rm_avg[i][low:(len(dirs) - high)])
+        om_count[i] = avg(om_count[i][low:(len(dirs) - high)])
+        rm_count[i] = avg(rm_count[i][low:(len(dirs) - high)])
+        oo_max[i] = avg(oo_max[i][low:(len(dirs) - high)])
+        ro_max[i] = avg(ro_max[i][low:(len(dirs) - high)])
     speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, speeds)
 
 
@@ -289,22 +326,6 @@ def _cmp_speed(speeds, directory, plot=False):
     return om_avg, rm_avg, om_count, rm_count, oo_max, ro_max
 
 
-def test_1():
-    name = ["25ms,5ms", "50ms,10ms", "100ms,20ms"]
-    ms = []
-    os = []
-    m, o = read("o", 9, 10000, 25, 5)
-    ms.append(m)
-    os.append(o)
-    m, o = read("o", 9, 10000, 50, 10)
-    ms.append(m)
-    os.append(o)
-    m, o = read("o", 9, 10000, 100, 20)
-    ms.append(m)
-    os.append(o)
-    plot(ms, os, name, 'latency: between DC, within DC')
-
-
 def speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     xlable = 'op/second'
     pname = 'op_speed'
@@ -316,14 +337,15 @@ def speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     plt.figure(figsize=(16, 4))
 
     plt.subplot(1, 3, 1)
-    plot_bar(om_avg, rm_avg, name, xlable, 'average read_max diff')
+    # plot_bar(om_avg, rm_avg, name, xlable, 'average read_max diff', s_name=s_name)
+    plot_line(om_avg, rm_avg, name, xlable, 'average read_max diff')
 
     plt.subplot(1, 3, 2)
     # plot_bar(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
     plot_line(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
 
     plt.subplot(1, 3, 3)
-    plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes', s_name=s_name)
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname), format='pdf')
@@ -344,14 +366,26 @@ def replica_check(r):
         print(a[0], b[0], c[0], d[0])
 
 
-def delay_check(d):
+def delay_check(delay):
+    _delay = "{hd}ms,\n{ld}ms".format(hd=delay, ld=int(delay / 5))
     dirs = ["delay/{}".format(x) for x in range(10)]
     for d in dirs:
-        a, b, c, d, e, f = _cmp_delay([r], d)
+        a, b, c, d, e, f = _cmp_delay([_delay], d)
         print(a[0], b[0], c[0], d[0])
 
 
+# dirs = ["delay/{}".format(x) for x in range(10)]
+# for d in dirs:
+#     cd = os.listdir(d)
+#     for f in cd:
+#         match = re.match(r'(.+)\((\d+),(\d+)\)', f)
+#         os.rename(os.path.join(d, f),
+#                   os.path.join(d, match.group(1) + "({},{})".format(int(match.group(2)) * 2, int(match.group(3)) * 2)))
+
+# cmp_or()
 # speed_check(800)
-# cmp_speed()
+cmp_speed()
 # replica_check(15)
-cmp_replica()
+# cmp_replica()
+# delay_check(220)
+# cmp_delay()

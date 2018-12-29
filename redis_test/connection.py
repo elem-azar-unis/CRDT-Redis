@@ -248,8 +248,8 @@ def main(argv):
     if len(argv) == 1:
         n = int(argv[0])
     elif len(argv) == 4:
-        delay = "{}ms {}ms".format(argv[0], argv[1])
-        lo_delay = "{}ms {}ms".format(argv[2], argv[3])
+        delay = "{}ms {}ms".format(float(argv[0])/2, float(argv[1])/2)
+        lo_delay = "{}ms {}ms".format(float(argv[2])/2, float(argv[3])/2)
 
     print(n, delay, lo_delay)
 
@@ -261,11 +261,11 @@ def main(argv):
 
     # c.reset()
 
-    c.start()
-    c.construct_repl()
-    c.set_delay(lo_delay, delay)
-
-    time.sleep(2)
+    # c.start()
+    # c.construct_repl()
+    # c.set_delay(lo_delay, delay)
+    #
+    # time.sleep(2)
 
 
 if __name__ == "__main__":

@@ -365,7 +365,7 @@ void test_delay(int round)
     char n[64], cmd[64];
     sprintf(n, "../result/delay/%d", round);
     mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
-    for (int d=10;d<=190;d+=20)
+    for (int d=20;d<=380;d+=40)
     {
         set_delay(d,d/5);
         sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %f", d,d/5,d/5,d/25.0);
@@ -443,9 +443,9 @@ int main(int argc, char *argv[])
     timeval t1{}, t2{};
     gettimeofday(&t1, nullptr);
 
-    for (int i = 0; i < 10; ++i)
+    for(int i:{9})
     {
-        test_delay(i);
+        test_speed(i);
     }
 
     gettimeofday(&t2, nullptr);
