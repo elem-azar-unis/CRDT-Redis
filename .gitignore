@@ -12,7 +12,7 @@ ozlog
 rzlog
 *.max
 *.ovhd
-result
+#result
 
 #----------idea----------
 *.iml

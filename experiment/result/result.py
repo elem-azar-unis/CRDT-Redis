@@ -35,30 +35,34 @@ def read(ztype, server, op, delay, low_delay, directory='.'):
     return rmax, ovhd
 
 
-def cmp_or(server=9, op=10000, delay=50, low_delay=10):
+def cmp_or(name, directory, server=9, op=10000, delay=50, low_delay=10):
     xlable = 'time: second'
-    ormax, oovhd = read("o", server, op, delay, low_delay, directory="replica/0")
-    rrmax, rovhd = read("r", server, op, delay, low_delay, directory="replica/0")
+    ormax, oovhd = read("o", server, op, delay, low_delay, directory=directory)
+    rrmax, rovhd = read("r", server, op, delay, low_delay, directory=directory)
     lmax = min(len(ormax), len(rrmax))
     lovhd = min(len(oovhd), len(rovhd))
     x1 = [i for i in range(lovhd)]
     y1o = [b / a for a, b in oovhd][:lovhd]
     y1r = [b / a for a, b in rovhd][:lovhd]
     x2 = [i for i in range(lmax)]
-    y2o = [abs(a - b) for _, a, _, b in ormax][:lmax]
-    y2r = [abs(a - b) for _, a, _, b in rrmax][:lmax]
+    y2o = ormax[:lmax]
+    y2r = rrmax[:lmax]
 
     plt.figure(figsize=(11, 4))
 
     plt.subplot(1, 2, 1)
-    plot_line(y1o, y1r, x1, xlable, 'overhead: byte')
-
-    plt.subplot(1, 2, 2)
     plot_line(y2o, y2r, x2, xlable, 'read max diff')
 
+    plt.subplot(1, 2, 2)
+    plot_line(y1o, y1r, x1, xlable, 'overhead: byte')
+
     plt.tight_layout()
-    plt.savefig("{}.pdf".format("cmp_add_rmv"), format='pdf')
+    plt.savefig("{}.pdf".format(name), format='pdf')
     plt.show()
+
+    print(name)
+    print("add-win",avg(y2o), freq(y2o))
+    print("rmv-win",avg(y2r), freq(y2r))
 
 
 def preliminary_dispose(oms, oos, rms, ros):
@@ -104,12 +108,12 @@ def plot_line(o_data, r_data, name, x_lable, y_lable):
     plt.plot(name, r_data, linestyle="-", label="Rmv-Win")
     plt.xlabel(x_lable)
     plt.ylabel(y_lable)
-    plt.legend(loc='best')
+    plt.legend(loc='upper left')
 
 
-def cmp_delay(low=0, high=0):
+def cmp_delay(rounds, low=0, high=0):
     delays = ["{hd}ms,\n{ld}ms".format(hd=20 + x * 40, ld=4 + x * 8) for x in range(10)]
-    dirs = ["delay/{}".format(x) for x in range(10)]
+    dirs = ["delay/{}".format(x) for x in range(rounds)]
 
     om_avg = [[] for i in range(len(delays))]
     rm_avg = [[] for i in range(len(delays))]
@@ -140,7 +144,7 @@ def cmp_delay(low=0, high=0):
         rm_count[i] = avg(rm_count[i][low:(len(dirs) - high)])
         oo_max[i] = avg(oo_max[i][low:(len(dirs) - high)])
         ro_max[i] = avg(ro_max[i][low:(len(dirs) - high)])
-    delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, delays)
+    return delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, delays)
 
 
 def _cmp_delay(delays, directory, plot=False):
@@ -175,25 +179,31 @@ def delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     xlable = 'latency: between DC, within DC'
     pname = 'delay'
 
-    plt.figure(figsize=(18, 4))
+    # plt.figure(figsize=(18, 4))
+    plt.figure(figsize=(11, 4))
 
-    plt.subplot(1, 3, 1)
+    # plt.subplot(1, 3, 1)
+    plt.subplot(1, 2, 1)
     plot_bar(om_avg, rm_avg, name, xlable, 'average read_max diff')
 
-    plt.subplot(1, 3, 2)
+    # plt.subplot(1, 3, 2)
+    plt.subplot(1, 2, 2)
     plot_bar(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
 
-    plt.subplot(1, 3, 3)
-    plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    # plt.subplot(1, 3, 3)
+    # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname), format='pdf')
     plt.show()
 
+    rtn = (oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    return rtn
 
-def cmp_replica(low=0, high=0):
+
+def cmp_replica(rounds, low=0, high=0):
     replicas = [3, 6, 9, 12, 15]
-    dirs = ["replica/{}".format(x) for x in range(10)]
+    dirs = ["replica/{}".format(x) for x in range(rounds)]
     om_avg = [[] for i in range(len(replicas))]
     rm_avg = [[] for i in range(len(replicas))]
     om_count = [[] for i in range(len(replicas))]
@@ -223,7 +233,7 @@ def cmp_replica(low=0, high=0):
         rm_count[i] = avg(rm_count[i][low:(len(dirs) - high)])
         oo_max[i] = avg(oo_max[i][low:(len(dirs) - high)])
         ro_max[i] = avg(ro_max[i][low:(len(dirs) - high)])
-    replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, replicas)
+    return replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, replicas)
 
 
 def _cmp_replica(replicas, directory, plot=False):
@@ -252,25 +262,31 @@ def replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     xlable = 'num of replicas'
     pname = 'replica'
 
-    plt.figure(figsize=(16, 4))
+    # plt.figure(figsize=(16, 4))
+    plt.figure(figsize=(11, 4))
 
-    plt.subplot(1, 3, 1)
+    # plt.subplot(1, 3, 1)
+    plt.subplot(1, 2, 1)
     plot_bar(om_avg, rm_avg, name, xlable, 'average read_max diff')
 
-    plt.subplot(1, 3, 2)
+    # plt.subplot(1, 3, 2)
+    plt.subplot(1, 2, 2)
     plot_bar(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
 
-    plt.subplot(1, 3, 3)
-    plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    # plt.subplot(1, 3, 3)
+    # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname), format='pdf')
     plt.show()
 
+    rtn = (oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    return rtn
 
-def cmp_speed(low=0, high=0):
+
+def cmp_speed(rounds, low=0, high=0):
     speeds = [500 + x * 100 for x in range(96)]
-    dirs = ["speed/{}".format(x) for x in range(9)]
+    dirs = ["speed/{}".format(x) for x in range(rounds)]
 
     om_avg = [[] for i in range(len(speeds))]
     rm_avg = [[] for i in range(len(speeds))]
@@ -301,7 +317,7 @@ def cmp_speed(low=0, high=0):
         rm_count[i] = avg(rm_count[i][low:(len(dirs) - high)])
         oo_max[i] = avg(oo_max[i][low:(len(dirs) - high)])
         ro_max[i] = avg(ro_max[i][low:(len(dirs) - high)])
-    speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, speeds)
+    return speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, speeds)
 
 
 def _cmp_speed(speeds, directory, plot=False):
@@ -334,44 +350,51 @@ def speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
         if (i - 500) % 10 != 0:
             s_name[i] = ''
 
-    plt.figure(figsize=(16, 4))
+    # plt.figure(figsize=(16, 4))
+    plt.figure(figsize=(11, 4))
 
-    plt.subplot(1, 3, 1)
+    # plt.subplot(1, 3, 1)
+    plt.subplot(1, 2, 1)
     # plot_bar(om_avg, rm_avg, name, xlable, 'average read_max diff', s_name=s_name)
     plot_line(om_avg, rm_avg, name, xlable, 'average read_max diff')
 
-    plt.subplot(1, 3, 2)
+    # plt.subplot(1, 3, 2)
+    plt.subplot(1, 2, 2)
     # plot_bar(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
     plot_line(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
 
-    plt.subplot(1, 3, 3)
-    plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes', s_name=s_name)
+    # plt.subplot(1, 3, 3)
+    # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes', s_name=s_name)
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname), format='pdf')
     plt.show()
 
+    rtn = (oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    return rtn, s_name
 
-def speed_check(sp):
-    dirs = ["speed/{}".format(x) for x in range(5)]
-    for d in dirs:
+
+def speed_check(sp, rounds):
+    dirs = ["speed/{}".format(x) for x in range(rounds)]
+    for i, d in enumerate(dirs):
         a, b, c, d, e, f = _cmp_speed([sp], d)
-        print(a[0], b[0], c[0], d[0])
+        print(i, ": ", a[0], b[0], c[0], d[0])
 
 
-def replica_check(r):
-    dirs = ["replica/{}".format(x) for x in range(10)]
-    for d in dirs:
-        a, b, c, d, e, f = _cmp_replicas([r], d)
-        print(a[0], b[0], c[0], d[0])
+def replica_check(r, rounds):
+    dirs = ["replica/{}".format(x) for x in range(rounds)]
+    for i, d in enumerate(dirs):
+        a, b, c, d, e, f = _cmp_replica([r], d)
+        if d[0]>0.1:
+            print(i, ": ", a[0], b[0], c[0], d[0])
 
 
-def delay_check(delay):
+def delay_check(delay, rounds):
     _delay = "{hd}ms,\n{ld}ms".format(hd=delay, ld=int(delay / 5))
-    dirs = ["delay/{}".format(x) for x in range(10)]
-    for d in dirs:
+    dirs = ["delay/{}".format(x) for x in range(rounds)]
+    for i, d in enumerate(dirs):
         a, b, c, d, e, f = _cmp_delay([_delay], d)
-        print(a[0], b[0], c[0], d[0])
+        print(i, ": ", a[0], b[0], c[0], d[0])
 
 
 # dirs = ["delay/{}".format(x) for x in range(10)]
@@ -382,10 +405,28 @@ def delay_check(delay):
 #         os.rename(os.path.join(d, f),
 #                   os.path.join(d, match.group(1) + "({},{})".format(int(match.group(2)) * 2, int(match.group(3)) * 2)))
 
-# cmp_or()
-# speed_check(800)
-cmp_speed()
-# replica_check(15)
-# cmp_replica()
-# delay_check(220)
-# cmp_delay()
+# cmp_or("inc_d","replica/0")
+# cmp_or("ar_d","ardominant")
+# speed_check(6600, 30)
+sp,sn=cmp_speed(30)
+# replica_check(9, 30)
+rp=cmp_replica(30)
+# delay_check(380, 30)
+dl=cmp_delay(30)
+
+plt.figure(figsize=(11, 4))
+
+plt.subplot(1, 2, 1)
+plot_bar(*sp,s_name=sn)
+
+plt.subplot(1, 2, 2)
+plot_bar(*dl)
+
+plt.tight_layout()
+plt.savefig("ovhd_sd.pdf", format='pdf')
+plt.show()
+
+plt.figure(figsize=(6, 4))
+plot_bar(*rp)
+plt.savefig("ovhd_r.pdf", format='pdf')
+plt.show()

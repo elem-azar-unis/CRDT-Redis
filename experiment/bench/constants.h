@@ -40,9 +40,9 @@ extern int TOTAL_OPS;
 #define MAX_INIT 100
 #define MAX_INCR 50
 
-#define PR_ADD 0.11
-#define PR_INC 0.8
-#define PR_REM 0.09
+#define PR_ADD 0.41
+#define PR_INC 0.2
+#define PR_REM 0.39
 
 #define PR_ADD_CA 0.15
 #define PR_ADD_CR 0.05

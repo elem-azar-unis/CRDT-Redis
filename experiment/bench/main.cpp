@@ -43,12 +43,12 @@ inline void set_replica(int replica)
     TOTAL_OPS = 20000000;
 }
 
-inline void set_delay(int hd,int ld)
+inline void set_delay(int hd, int ld)
 {
     set_default();
     DELAY = hd;
     DELAY_LOW = ld;
-    TOTAL_OPS= 10000000;
+    TOTAL_OPS = 10000000;
 }
 
 class task_queue
@@ -158,7 +158,7 @@ void conn_one_server_timed(const char *ip, const int port, vector<thread *> &thd
             {
                 if (c)
                 {
-                    printf("Error: %s\n", c->errstr);
+                    printf("Error: %s, ip:%s, port:%d\n", c->errstr, ip, port);
                 }
                 else
                 {
@@ -240,7 +240,7 @@ void test_dis(z_type zt, const char *dir)
     gettimeofday(&t1, nullptr);
 
     for (auto ip:ips)
-        for (int i = 0; i < TOTAL_SERVERS / 3; ++i)
+        for (int i = 0; i < (TOTAL_SERVERS / 3); ++i)
             conn_one_server_timed(ip, 6379 + i, thds, gen, tasks);
 
     thread timer([&tasks] {
@@ -365,10 +365,10 @@ void test_delay(int round)
     char n[64], cmd[64];
     sprintf(n, "../result/delay/%d", round);
     mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
-    for (int d=20;d<=380;d+=40)
+    for (int d = 20; d <= 380; d += 40)
     {
-        set_delay(d,d/5);
-        sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %f", d,d/5,d/5,d/25.0);
+        set_delay(d, d / 5);
+        sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %f", d, d / 5, d / 5, d / 25.0);
         int temp = system(cmd);
         test_dis(o, n);
         test_dis(r, n);
@@ -377,10 +377,10 @@ void test_delay(int round)
 
 void delay_fix(int delay, int round, z_type type)
 {
-    set_delay(delay,delay/5);
+    set_delay(delay, delay / 5);
     char n[64], cmd[64];
     sprintf(n, "../result/delay/%d", round);
-    sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %d", delay,delay/5,delay/5,delay/25);
+    sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %d", delay, delay / 5, delay / 5, delay / 25);
     int temp = system(cmd);
     test_dis(type, n);
 }
@@ -443,11 +443,15 @@ int main(int argc, char *argv[])
     timeval t1{}, t2{};
     gettimeofday(&t1, nullptr);
 
-    for(int i:{9})
-    {
-        test_speed(i);
-    }
+    int temp = system("python3 ../redis_test/connection.py");
+    set_default();
+    test_dis(o, "../result/ardominant");
+    test_dis(r, "../result/ardominant");
 
+//    replica_fix(3, 2, r);
+//    replica_fix(3, 5, r);
+//
+//
     gettimeofday(&t2, nullptr);
     double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
     printf("total time: %f\n", time_diff_sec);
