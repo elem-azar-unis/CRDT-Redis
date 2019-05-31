@@ -1,48 +1,72 @@
 # Conflict-Free Rpelicated Priority Queues Based on Redis
 
-[**Add-Win CRPQ**](document/add-win-crpq.pdf) and [**Remove-Win CRPQ**](document/rmv-wim-crpq.bib) implementations based on Redis (4.0.8). 
+[**Add-Win CRPQ**](document/add-win-crpq.pdf) and [**Remove-Win CRPQ**](https://arxiv.org/abs/1905.01403) implementations based on Redis (4.0.8). 
 
 Things we do for such implementation:
 
-* Enable Redis to replicate in P2P mode
-* Implement the CRDT framework
-* Implement Add-Win CRPQ and Remove-Win CRPQ
+* Enable Redis to replicate in P2P mode.
+* Implement the CRDT framework.
+* Implement Add-Win CRPQ and Remove-Win CRPQ.
 
-For more detail of our implementation, please read the *Performance measurements* section of [the article](document/rmv-wim-crpq.bib).
+For more detail of our implementation, please read the *Performance measurements* section of [the technical report](https://arxiv.org/abs/1905.01403).
 
 
-## Build and Test
+## Build
 
 Our modified Redis is in folder redis-4.0.8. Please build it in the default mode:
 
     cd redis-4.0.8
     sudo make install
 
-文件夹 *redis_test* 中包含测试用配置文件和脚本，测试会在本地启动 5 个 Redis 服务器，监听端口号为：6379, 6380, 6381, 6382, 6383，下面脚本参数从这几个端口号中选一个到多个
+## Test
 
-有 5 个脚本文件：
+In the folder *experiment/redis_test* there are configuration files and scripts for testing our modified Redis and CRPQ implementations. By default the test will start 5 Redis server instances on the local machine, listening on port 6379, 6380, 6381, 6382 and 6383. You may choose to start some of these server instances by using parameters when you run the scripts.
 
-* server.sh [+参数] ：启动这五个服务器。有参数则启动参数指定服务器
-* construct_replication.sh [+参数] ：将五个服务器建立 P2P 复制。有参数则为指定服务器建立复制
-* client.sh <端口号> ：启动客户端链接指定端口号服务器
-* shutdown.sh [+参数] ：关闭五个服务器。有参数则关闭指定服务器
-* clean.sh [+参数] ：清除五个服务器的数据库数据文件和日志文件。有参数则清除指定数据库的文件
+Here we focus on 5 scripts:
 
-之后，启动 Redis 服务器并建立 P2P 复制
+* **server.sh [parameters]** Start the 5 Redis instances, or the Redis instances specified by parameters.
+* **construct_replication.sh [parameters]** Construct P2P replication among the 5 Redis instances, or the Redis instances specified by parameters.
+* **client.sh <server_port>** Start a client to connect to the Redis server listening on the specified port.
+* **shutdown.sh [parameters]** Close the 5 Redis instances, or the Redis instances specified by parameters.
+* **clean.sh [parameters]** Remove the database files (.rdb files) and log files (.log files) of the 5 Redis instances, or the Redis instances specified by parameters.
 
+
+Here we show an example to test our implementation using all the 5 Redis server instances.
+
+Firstly goto the *experiment/redis_test*, **start** the Redis server instances and **construct P2P replication** among them.
+
+    cd experiment/redis_test
     ./server.sh
     ./construct_replication.sh
 
-此时可以用 redis 客户端链接服务器
+Now you can start redis clients to connect to Redis servers and do CRPQ read/write operations. Here shows **start a client** to connect one Redis server.
 
-    ./client.sh <端口号>
+    ./client.sh <server_port>
 
-测试完毕后关闭 5 个 Redis 客户端
+When you've finished testing you may **close** the Redis server instances.
 
     ./shutdown.sh
 
-最后，可以清除 Redis 数据库数据文件以及日志文件
+Finally you can **remove** the Redis database files (.rdb files) and log files (.log files).
 
     ./clean.sh
 
 To further redo the experiment of our work our please check [here](experiment/Readme.md).
+
+## CRPQ operations 
+
+There are 5 operations of **Add-Win CRPQ** implemented in our modified Redis:
+
+* **ozadd Q E V** : Add a new element *E* into the priority queue *Q* with initial value *V*.
+* **ozincby Q E I** : Add the increment *I* to the value of element *E* in the priority queue *Q*.
+* **ozrem Q E** : Remove element *E* from the priority queue *Q*.
+* **ozscore Q E** : Read the value of element *E* from the priority queue *Q*.
+* **ozmax Q** : Read the element with largest value in the priority queue *Q*. Returns the element and its value.
+
+There are 5 operations of **Remove-Win CRPQ** implemented in our modified Redis:
+
+* **rzadd Q E V** : Add a new element *E* into the priority queue *Q* with initial value *V*.
+* **rzincby Q E I** : Add the increment *I* to the value of element *E* in the priority queue *Q*.
+* **rzrem Q E** : Remove element *E* from the priority queue *Q*.
+* **rzscore Q E** : Read the value of element *E* from the priority queue *Q*.
+* **rzmax Q** : Read the element with largest value in the priority queue *Q*. Returns the element and its value.
