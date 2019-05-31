@@ -448,10 +448,13 @@ int main(int argc, char *argv[])
     test_dis(o, "../result/ardominant");
     test_dis(r, "../result/ardominant");
 
-//    replica_fix(3, 2, r);
-//    replica_fix(3, 5, r);
-//
-//
+    for (int i = 0; i < 20; i++)
+    {
+        test_delay(i);
+        test_replica(i);
+        test_dis(i);
+    }
+
     gettimeofday(&t2, nullptr);
     double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
     printf("total time: %f\n", time_diff_sec);

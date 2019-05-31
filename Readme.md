@@ -13,7 +13,7 @@ For more detail of our implementation, please read the *Performance measurements
 
 ## Build
 
-Our modified Redis is in folder redis-4.0.8. Please build it in the default mode:
+Our modified Redis is in folder *redis-4.0.8*. Please build it in the default mode:
 
     cd redis-4.0.8
     sudo make install

@@ -1,21 +1,28 @@
-Here we show how to test our 
+# CRPQ Experiments
 
+There are 3 folders here:
 
-本项目基于 Redis (4.0.8) 进行拓展。这里包含四个文件夹：
+* *redis_test* : The testing bash scripts. Also used in the experiment.
+* *bench* : The experiment code. Constructs the experiment, generates and runs operations, get logs and results. 
+* *result* : The results and the data analysis.
 
-* *redis-4.0.8* ：更改后的项目文件夹
-* *redis_test* ：测试用配置文件和脚本，实验环境搭建
-* *记录* ：阶段完成后的总结
-* *bench*：实验命令生成与测试端代码
+![The experiment framework](exp-crop.png)
 
-## 部署与测试
+To redo our CRPQ experiments, setup the experiment as shown above. We use VMware to run 4 virtual machines. VM 1~3 run Ubuntu server 16.04.5 LTS. VM4 runs Ubuntu desktop 16.04.5 LTS. Each of VM 1~3 is deployed with Redis server instances and simulates a data center. VM4 runs all the clients. 
 
-    
-## 阶段性进展
+The ips of VM 1~3 are *192.168.188.135*, *192.168.188.136*, *192.168.188.137*. You need to modify the ip settings in *bench/main.cpp* and *redis_test/connection.py* if you want to use other ips for servers.
 
-|	No.	|	名称		|	概要	|	
-| ------------- | --------------------- | --------------------- |
-| 1		| [P2P 拓展](./p2p.md)		|	完成了对 redis 的 P2P 复制拓展，建立起简单的 P2P 连接		| 
-| 2		| [逻辑时钟实现](./vector_clock.md)	|	实现了逻辑时钟，有简单的操作以及命令，以及其持久化支持	| 
-| 3		| [add-win RPQ 实现](./add-win%20RPQ.md)	|	依照算法设计，实现了 add-win RPQ (ORI RPQ)	| 
-| 4 	| [remove-win RPQ 实现](./remove-win%20RPQ.md)	|	依照算法设计，实现了 remove-win RPQ	|
+Then start the experiment:
+
+    cd bench
+    make run
+
+After it finished you will get the data in the *result* folder. 
+You may then draw figures by (python 3.6 required):
+
+    cd ../result
+    python result.py
+
+Note that there may be some bugged results that are apparently invalid. You may find them by using the according find function in *result/result.py*, and then fix them by use the according fix functions in *bench/main.cpp* accordingly.
+
+For more detail of our implementation, please read the *Performance measurements* section of [the technical report](https://arxiv.org/abs/1905.01403).

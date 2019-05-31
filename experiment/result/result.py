@@ -405,8 +405,8 @@ def delay_check(delay, rounds):
 #         os.rename(os.path.join(d, f),
 #                   os.path.join(d, match.group(1) + "({},{})".format(int(match.group(2)) * 2, int(match.group(3)) * 2)))
 
-# cmp_or("inc_d","replica/0")
-# cmp_or("ar_d","ardominant")
+cmp_or("inc_d","replica/0")
+cmp_or("ar_d","ardominant")
 # speed_check(6600, 30)
 sp,sn=cmp_speed(30)
 # replica_check(9, 30)
