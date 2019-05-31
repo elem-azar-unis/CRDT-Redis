@@ -8,9 +8,9 @@ There are 3 folders here:
 
 ![The experiment framework](exp-crop.png)
 
-To redo our CRPQ experiments, setup the experiment as shown above. We use VMware to run 4 virtual machines. VM 1~3 run Ubuntu server 16.04.5 LTS. VM4 runs Ubuntu desktop 16.04.5 LTS. Each of VM 1~3 is deployed with Redis server instances and simulates a data center. VM4 runs all the clients. 
+To redo our CRPQ experiments, setup the experiment as shown above. We use VMware to run 4 virtual machines. VM 1-3 run Ubuntu server 16.04.5 LTS. VM4 runs Ubuntu desktop 16.04.5 LTS. Each of VM 1-3 is deployed with Redis server instances and simulates a data center. VM4 runs all the clients. 
 
-The ips of VM 1~3 are *192.168.188.135*, *192.168.188.136*, *192.168.188.137*. You need to modify the ip settings in *bench/main.cpp* and *redis_test/connection.py* if you want to use other ips for servers.
+The ips of VM 1-3 are *192.168.188.135*, *192.168.188.136*, *192.168.188.137*. You need to modify the ip settings in *bench/main.cpp* and *redis_test/connection.py* if you want to use other ips for servers.
 
 Then start the experiment:
 
