@@ -26,9 +26,9 @@ The ips of VM 1-3 are *192.168.188.135*, *192.168.188.136*, *192.168.188.137*. Y
 
 The entry of the experiment is *bench/main.cpp*. It will do 30 rounds of experiment for each experiment settings. Each round it will call *redis_test/connection.py* to start new Redis server instances in all the server VMs and set the networking delays. The results will be written in the *results* folder in different subfolders according to different experiment settings and rounds.
 
-## Redo the Experiment
+## Perform the Experiment
 
-To redo our CRPQ experiments, setup the experiment as shown above. You need to modify the ip settings at the start of *bench/main.cpp* and *redis_test/connection.py* if you want to use other ips for servers. Then start the experiment:
+To perform our CRPQ experiments, setup the experiment as shown above. You need to modify the ip settings at the start of *bench/main.cpp* and *redis_test/connection.py* if you want to use other ips for servers. Then start the experiment:
 
     cd bench
     make run
