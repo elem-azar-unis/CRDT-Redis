@@ -1580,8 +1580,8 @@ typedef struct {
 
 #define REPLICATION_MODE listLength(server.replicas) || server.p2p_count
 #define CRDT_BEGIN if(REPLICATION_MODE){
-#define CRDT_ATSOURCE if(!(c->flags & CLIENT_REPLICA)){
-#define CRDT_DOWNSTREAM }{
+#define CRDT_PREPARE if(!(c->flags & CLIENT_REPLICA)){
+#define CRDT_EFFECT }{
 #define CRDT_END }if(c->flags & CLIENT_REPLICA_MESSAGE){addReply(c, shared.ok);}return;}
 
 zskiplist *zslCreate(void);
@@ -2033,7 +2033,6 @@ void vcnewCommand(client *c);
 void vcgetCommand(client *c);
 void vcincCommand(client *c);
 
-robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create);
 int checkArgcAndZsetType(client *c, int max);
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
 
@@ -2048,8 +2047,8 @@ long currentTime()
 }
 #endif
 
-#define Z_OVERHEAD
-#ifdef Z_OVERHEAD
+//#define RW_OVERHEAD
+#ifdef RW_OVERHEAD
 #define PRE_SET \
 do{\
     cur_db=c->db;cur_tname=c->argv[1]->ptr;\
@@ -2059,7 +2058,7 @@ void inc_ovhd_count(redisDb* db,sds tname,const char* suf,long i);
 long get_ovhd_count(redisDb* db,sds tname,const char* suf);
 #endif
 
-#define COUNT_OPS
+//#define COUNT_OPS
 #ifdef COUNT_OPS
 void ozopcountCommand(client *c);
 void rzopcountCommand(client *c);

@@ -3,15 +3,16 @@
 //
 
 #include "server.h"
+#include "RWFramework.h"
 
-#ifdef Z_OVERHEAD
+#ifdef RW_OVERHEAD
 #define SUF_RZETOTAL "rzetotal"
 static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
 #endif
 
 #ifdef COUNT_OPS
-static int rcount=0;
+static int rcount = 0;
 #endif
 
 #ifdef RPQ_LOG
@@ -25,14 +26,13 @@ static FILE *rzLog = NULL;
 #endif
 
 #define RW_RPQ_TABLE_SUFFIX "_rzets_"
-#define RZESIZE(e) (sizeof(rze) + sizeof(vc) + (e)->current->size * sizeof(int))
+#define RZESIZE(e) (sizeof(rze) + sizeof(vc) + CURRENT(e)->size * sizeof(int))
 
 typedef struct RW_RPQ_element
 {
+    reh header;
     double innate;
     double acquired;
-    int aid;
-    vc *current;
     //list *ops;
 } rze;
 
@@ -75,78 +75,54 @@ typedef struct RW_RPQ_element
 //    return s;
 //}
 
-rze *rzeNew()
+reh *rzeNew()
 {
     rze *e = zmalloc(sizeof(rze));
-    e->current = l_newVC;
+    REH_INIT(e);
     e->innate = 0;
     e->acquired = 0;
-    e->aid = -1;
     //e->ops = listCreate();
-    return e;
+    return (reh *) e;
 }
 
-//// 获得 t 所有权
-//ucmd *ucmdNew(int type, robj *tname, robj *element, double value, vc *t)
-//{
-//    ucmd *cmd = zmalloc(sizeof(ucmd));
-//    cmd->type = type;
-//    cmd->tname = tname;
-//    incrRefCount(tname);
-//    cmd->element = element;
-//    incrRefCount(element);
-//    cmd->value = value;
-//    cmd->t = t;
-//    return cmd;
-//}
-
-//void ucmdDelete(ucmd *cmd)
-//{
-//    decrRefCount(cmd->tname);
-//    decrRefCount(cmd->element);
-//    deleteVC(cmd->t);
-//    zfree(cmd);
-//}
-
-int insertCheck(rze *e, vc *t)
-{
-    if (equalVC(t, e->current) == 0)return 0;
-    return e->aid < t->id;
-}
-
-int increaseCheck(rze *e, vc *t)
-{
-    return equalVC(t, e->current);
-}
-
-int removeCheck(rze *e, vc *t)
-{
-//    int id = t->id;
-//    if (e->current->vector[id] < t->vector[id])return 1;
-//    return compareVC(t, e->current) != CLOCK_LESS;
-    for (int i = 0; i < t->size; ++i)
-        if (e->current->vector[i] < t->vector[i])
-            return 1;
-    return 0;
-}
-
-//int readyCheck(rze *e, vc *t)
-//{
-//    int *current = e->current->vector;
-//    int *next = t->vector;
-//    int equal = 1;
-//    for (int i = 0; i < t->size; ++i)
-//    {
-//        if (current[i] > next[i])
-//            return 1;
-//        if (current[i] < next[i])
-//            equal = 0;
-//    }
-//    return equal;
-//}
-
-#define LOOKUP(e) ((e)->aid >= 0)
 #define SCORE(e) ((e)->innate+(e)->acquired)
+/*
+// 获得 t 所有权
+ucmd *ucmdNew(int type, robj *tname, robj *element, double value, vc *t)
+{
+    ucmd *cmd = zmalloc(sizeof(ucmd));
+    cmd->type = type;
+    cmd->tname = tname;
+    incrRefCount(tname);
+    cmd->element = element;
+    incrRefCount(element);
+    cmd->value = value;
+    cmd->t = t;
+    return cmd;
+}
+
+void ucmdDelete(ucmd *cmd)
+{
+    decrRefCount(cmd->tname);
+    decrRefCount(cmd->element);
+    deleteVC(cmd->t);
+    zfree(cmd);
+}
+
+int readyCheck(rze *e, vc *t)
+{
+    int *current = e->current->vector;
+    int *next = t->vector;
+    int equal = 1;
+    for (int i = 0; i < t->size; ++i)
+    {
+        if (current[i] > next[i])
+            return 1;
+        if (current[i] < next[i])
+            equal = 0;
+    }
+    return equal;
+}
 
 rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
 {
@@ -157,9 +133,9 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
     if (value == NULL)
     {
         if (!create)return NULL;
-        e = rzeNew();
+        e = (rze *) rzeNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
-#ifdef Z_OVERHEAD
+#ifdef RW_OVERHEAD
         inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
 #endif
     }
@@ -170,36 +146,45 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
     }
     return e;
 }
-
+*/
+inline rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
+{
+    return (rze *) rehHTGet(db, tname, RW_RPQ_TABLE_SUFFIX, key, create, rzeNew
+#ifdef RW_OVERHEAD
+            ,cur_db, cur_tname, SUF_RZETOTAL
+#endif
+    );
+}
+/*
 // 下面两个不进行内存释放
-//void insertFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
-//{
-//    if (!insertCheck(e, t))return;
-//    e->aid = t->id;
-//    e->innate = value;
-//    robj *zset = getZsetOrCreate(db, tname, element);
-//    int flags = ZADD_NONE;
-//    zsetAdd(zset, SCORE(e), element->ptr, &flags, NULL);
-//    server.dirty++;
-//}
-//
-//void increaseFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
-//{
-//    if (!increaseCheck(e, t))return;
-//    e->acquired += value;
-//    robj *zset = getZsetOrCreate(db, tname, element);
-//    int flags = ZADD_NONE;
-//    zsetAdd(zset, SCORE(e), element->ptr, &flags, NULL);
-//    server.dirty++;
-//}
+void insertFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
+{
+    if (!insertCheck(e, t))return;
+    e->aid = t->id;
+    e->innate = value;
+    robj *zset = getZsetOrCreate(db, tname, element);
+    int flags = ZADD_NONE;
+    zsetAdd(zset, SCORE(e), element->ptr, &flags, NULL);
+    server.dirty++;
+}
 
-// 不进行内存释放
+void increaseFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
+{
+    if (!increaseCheck(e, t))return;
+    e->acquired += value;
+    robj *zset = getZsetOrCreate(db, tname, element);
+    int flags = ZADD_NONE;
+    zsetAdd(zset, SCORE(e), element->ptr, &flags, NULL);
+    server.dirty++;
+}
+*/
+
+// This doesn't free t.
 void removeFunc(client *c, rze *e, vc *t)
 {
-    if (removeCheck(e, t))
+    if (removeCheck((reh *) e, t))
     {
-        updateVC(e->current, t);
-        e->aid = -1;
+        REH_RMV_FUNC(e,t);
         e->acquired = 0;
         e->innate = 0;
         robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
@@ -208,55 +193,50 @@ void removeFunc(client *c, rze *e, vc *t)
         //notifyLoop(e, c->db);
     }
 }
-
-//void notifyLoop(rze *e, redisDb *db)
-//{
-//    listNode *ln;
-//    listIter li;
-//    listRewind(e->ops, &li);
-//    while ((ln = listNext(&li)))
-//    {
-//        ucmd *cmd = ln->value;
-//        if (readyCheck(e, cmd->t))
-//        {
-//            switch (cmd->type)
-//            {
-//                case RZADD:
-//                    insertFunc(e, db, cmd->tname, cmd->element, cmd->value, cmd->t);
-//                    break;
-//                case RZINCBY:
-//                    increaseFunc(e, db, cmd->tname, cmd->element, cmd->value, cmd->t);
-//                    break;
-//                default:
-//                    serverPanic("unknown rzset cmd type.");
-//            }
-//            listDelNode(e->ops, ln);
-//            ucmdDelete(cmd);
-//        }
-//    }
-//}
-
-sds now(rze *e)
+/*
+void notifyLoop(rze *e, redisDb *db)
 {
-    e->current->vector[e->current->id]++;
-    sds rtn = VCToSds(e->current);
-    e->current->vector[e->current->id]--;
-    return rtn;
-}
+    listNode *ln;
+    listIter li;
+    listRewind(e->ops, &li);
+    while ((ln = listNext(&li)))
+    {
+        ucmd *cmd = ln->value;
+        if (readyCheck(e, cmd->t))
+        {
+            switch (cmd->type)
+            {
+                case RZADD:
+                    insertFunc(e, db, cmd->tname, cmd->element, cmd->value, cmd->t);
+                    break;
+                case RZINCBY:
+                    increaseFunc(e, db, cmd->tname, cmd->element, cmd->value, cmd->t);
+                    break;
+                default:
+                    serverPanic("unknown rzset cmd type.");
+            }
+            listDelNode(e->ops, ln);
+            ucmdDelete(cmd);
+        }
+    }
+
+*/
+
+
 
 void rzaddCommand(client *c)
 {
-#ifdef Z_OVERHEAD
+#ifdef RW_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
-        CRDT_ATSOURCE
+        CRDT_PREPARE
             if (checkArgcAndZsetType(c, 4)) return;
             double v;
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
             rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 1);
-            if (LOOKUP(e))
+            if (EXISTS(e))
             {
                 addReply(c, shared.ele_exist);
                 return;
@@ -272,36 +252,41 @@ void rzaddCommand(client *c)
                 fflush(rzLog);
 #endif
 
+            /*
             PREPARE_RARGC(5);
             COPY_ARG_TO_RARG(0, 0);
             COPY_ARG_TO_RARG(1, 1);
             COPY_ARG_TO_RARG(2, 2);
             COPY_ARG_TO_RARG(3, 3);
+            c->rargv[4] = createObject(OBJ_STRING, VCToSds(CURRENT(e)));
+            */
 
-            c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->current));
+            RWF_RARG_PREPARE(CR_NON_RMV(e));
             addReply(c, shared.ok);
-        CRDT_DOWNSTREAM
+        CRDT_EFFECT
 #ifdef COUNT_OPS
             rcount++;
 #endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            vc *t = SdsToVC(c->rargv[4]->ptr);
+            vc *t = CR_GET;
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-//            if (readyCheck(e, t))
-//            {
-//                insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-//                deleteVC(t);
-//            }
-//            else
-//            {
-//                ucmd *cmd = ucmdNew(RZADD, c->rargv[1], c->rargv[2], v, t);
-//                listAddNodeTail(e->ops, cmd);
-//            }
-            removeFunc(c, e, t);
-            if (insertCheck(e, t))
+            /*
+            if (readyCheck(e, t))
             {
-                e->aid = t->id;
+                insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
+                deleteVC(t);
+            }
+            else
+            {
+                ucmd *cmd = ucmdNew(RZADD, c->rargv[1], c->rargv[2], v, t);
+                listAddNodeTail(e->ops, cmd);
+            }
+             */
+            removeFunc(c, e, t);
+            if (insertCheck((reh *) e, t))
+            {
+                PID(e) = t->id;
                 e->innate = v;
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
                 int flags = ZADD_NONE;
@@ -314,17 +299,17 @@ void rzaddCommand(client *c)
 
 void rzincrbyCommand(client *c)
 {
-#ifdef Z_OVERHEAD
+#ifdef RW_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
-        CRDT_ATSOURCE
+        CRDT_PREPARE
             if (checkArgcAndZsetType(c, 4)) return;
             double v;
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
             rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
-            if (e == NULL || !LOOKUP(e))
+            if (e == NULL || !EXISTS(e))
             {
                 addReply(c, shared.ele_nexist);
                 return;
@@ -339,35 +324,39 @@ void rzincrbyCommand(client *c)
                         (char *) c->argv[3]->ptr);
                 fflush(rzLog);
 #endif
-
+            /*
             PREPARE_RARGC(5);
             COPY_ARG_TO_RARG(0, 0);
             COPY_ARG_TO_RARG(1, 1);
             COPY_ARG_TO_RARG(2, 2);
             COPY_ARG_TO_RARG(3, 3);
+            c->rargv[4] = createObject(OBJ_STRING, VCToSds(CURRENT(e)));
+            */
 
-            c->rargv[4] = createObject(OBJ_STRING, VCToSds(e->current));
+            RWF_RARG_PREPARE(CR_NON_RMV(e));
             addReply(c, shared.ok);
-        CRDT_DOWNSTREAM
+        CRDT_EFFECT
 #ifdef COUNT_OPS
             rcount++;
 #endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            vc *t = SdsToVC(c->rargv[4]->ptr);
+            vc *t = CR_GET;
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-//            if (readyCheck(e, t))
-//            {
-//                increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-//                deleteVC(t);
-//            }
-//            else
-//            {
-//                ucmd *cmd = ucmdNew(RZINCBY, c->rargv[1], c->rargv[2], v, t);
-//                listAddNodeTail(e->ops, cmd);
-//            }
+            /*
+            if (readyCheck(e, t))
+            {
+                increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
+                deleteVC(t);
+            }
+            else
+            {
+                ucmd *cmd = ucmdNew(RZINCBY, c->rargv[1], c->rargv[2], v, t);
+                listAddNodeTail(e->ops, cmd);
+            }
+            */
             removeFunc(c, e, t);
-            if (increaseCheck(e, t))
+            if (updateCheck((reh *) e, t))
             {
                 e->acquired += v;
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
@@ -381,14 +370,14 @@ void rzincrbyCommand(client *c)
 
 void rzremCommand(client *c)
 {
-#ifdef Z_OVERHEAD
+#ifdef RW_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
-        CRDT_ATSOURCE
+        CRDT_PREPARE
             if (checkArgcAndZsetType(c, 3)) return;
             rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
-            if (e == NULL || !LOOKUP(e))
+            if (e == NULL || !EXISTS(e))
             {
                 addReply(c, shared.ele_nexist);
                 return;
@@ -402,31 +391,34 @@ void rzremCommand(client *c)
                         (char *) c->argv[2]->ptr);
                 fflush(rzLog);
 #endif
-
+            /*
             PREPARE_RARGC(4);
             COPY_ARG_TO_RARG(0, 0);
             COPY_ARG_TO_RARG(1, 1);
             COPY_ARG_TO_RARG(2, 2);
-
-            c->rargv[3] = createObject(OBJ_STRING, now(e));
+            c->rargv[3] = createObject(OBJ_STRING, now((reh *) e));
+            */
+            RWF_RARG_PREPARE(CR_RMV(e));
             addReply(c, shared.ok);
-        CRDT_DOWNSTREAM
+        CRDT_EFFECT
 #ifdef COUNT_OPS
             rcount++;
 #endif
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-            vc *t = SdsToVC(c->rargv[3]->ptr);
-//            if (removeCheck(e, t))
-//            {
-//                updateVC(e->current, t);
-//                e->aid = -1;
-//                e->acquired = 0;
-//                e->innate = 0;
-//                robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
-//                zsetDel(zset, c->rargv[2]->ptr);
-//                server.dirty++;
-//                notifyLoop(e, c->db);
-//            }
+            vc *t = CR_GET;
+            /*
+            if (removeCheck(e, t))
+            {
+                updateVC(e->current, t);
+                e->aid = -1;
+                e->acquired = 0;
+                e->innate = 0;
+                robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
+                zsetDel(zset, c->rargv[2]->ptr);
+                server.dirty++;
+                notifyLoop(e, c->db);
+            }
+            */
             removeFunc(c, e, t);
             deleteVC(t);
     CRDT_END
@@ -551,27 +543,31 @@ void rzestatusCommand(client *c)
 
     addReplyBulkSds(c, sdscatprintf(sdsempty(), "innate:%f", e->innate));
     addReplyBulkSds(c, sdscatprintf(sdsempty(), "acquired:%f", e->acquired));
-    addReplyBulkSds(c, sdscatprintf(sdsempty(), "add id:%d", e->aid));
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "add id:%d", PID(e)));
 
     addReplyBulkSds(c, sdsnew("current:"));
-    addReplyBulkSds(c, VCToSds(e->current));
+    addReplyBulkSds(c, VCToSds(CURRENT(e)));
 
-//    addReplyBulkSds(c, sdsnew("unready commands:"));
-//    listNode *ln;
-//    listIter li;
-//    listRewind(e->ops, &li);
-//    while ((ln = listNext(&li)))
-//    {
-//        ucmd *cmd = ln->value;
-//        addReplyBulkSds(c, ucmdToSds(cmd));
-//    }
+    /*
+    addReplyBulkSds(c, sdsnew("unready commands:"));
+    listNode *ln;
+    listIter li;
+    listRewind(e->ops, &li);
+    while ((ln = listNext(&li)))
+    {
+        ucmd *cmd = ln->value;
+        addReplyBulkSds(c, ucmdToSds(cmd));
+    }
+     */
 }
 
 #ifdef COUNT_OPS
+
 void rzopcountCommand(client *c)
 {
     addReplyLongLong(c, rcount);
 }
+
 #endif
 
 /* Actually the hash set used here to store rze structures is not necessary.
@@ -592,7 +588,7 @@ void rzopcountCommand(client *c)
  * the metadata contains score information
  * overall the metadata overhead is size used by rze
  * */
-#ifdef Z_OVERHEAD
+#ifdef RW_OVERHEAD
 
 void rzoverheadCommand(client *c)
 {

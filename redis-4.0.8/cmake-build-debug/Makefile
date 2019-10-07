@@ -123,6 +123,33 @@ redis_4_0_8/fast:
 	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/build
 .PHONY : redis_4_0_8/fast
 
+src/RWFramework.o: src/RWFramework.c.o
+
+.PHONY : src/RWFramework.o
+
+# target to build an object file
+src/RWFramework.c.o:
+	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/src/RWFramework.c.o
+.PHONY : src/RWFramework.c.o
+
+src/RWFramework.i: src/RWFramework.c.i
+
+.PHONY : src/RWFramework.i
+
+# target to preprocess a source file
+src/RWFramework.c.i:
+	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/src/RWFramework.c.i
+.PHONY : src/RWFramework.c.i
+
+src/RWFramework.s: src/RWFramework.c.s
+
+.PHONY : src/RWFramework.s
+
+# target to generate assembly for a file
+src/RWFramework.c.s:
+	$(MAKE) -f CMakeFiles/redis_4_0_8.dir/build.make CMakeFiles/redis_4_0_8.dir/src/RWFramework.c.s
+.PHONY : src/RWFramework.c.s
+
 src/adlist.o: src/adlist.c.o
 
 .PHONY : src/adlist.o
@@ -2265,6 +2292,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... redis_4_0_8"
+	@echo "... src/RWFramework.o"
+	@echo "... src/RWFramework.i"
+	@echo "... src/RWFramework.s"
 	@echo "... src/adlist.o"
 	@echo "... src/adlist.i"
 	@echo "... src/adlist.s"

@@ -144,7 +144,7 @@ vc *SdsToVC(sds s)
 void vcnewCommand(client *c)
 {
     CRDT_BEGIN
-        CRDT_ATSOURCE
+        CRDT_PREPARE
             if (c->argc > 2)
             {
                 addReply(c, shared.syntaxerr);
@@ -164,7 +164,7 @@ void vcnewCommand(client *c)
             c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
             deleteVC(vc);
             addReply(c, shared.ok);
-        CRDT_DOWNSTREAM
+        CRDT_EFFECT
             vc *vc = SdsToVC(c->rargv[2]->ptr);
             dbAdd(c->db, c->rargv[1], createObject(OBJ_VECTOR_CLOCK, vc));
             server.dirty += 1;
@@ -186,7 +186,7 @@ void vcgetCommand(client *c)
 void vcincCommand(client *c)
 {
     CRDT_BEGIN
-        CRDT_ATSOURCE
+        CRDT_PREPARE
             if (c->argc > 2)
             {
                 addReply(c, shared.syntaxerr);
@@ -208,7 +208,7 @@ void vcincCommand(client *c)
             c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
             deleteVC(vc);
             addReply(c, shared.ok);
-        CRDT_DOWNSTREAM
+        CRDT_EFFECT
             robj *o = lookupKeyWrite(c->db, c->rargv[1]);
             vc *tmp, *vc = SdsToVC(c->rargv[2]->ptr);
             if (compareVC(o->ptr, vc) < 0)

@@ -90,6 +90,12 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/RWFramework.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/RWFramework.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/adlist.c">
 			<Option target="redis_4_0_8"/>
 		</Unit>
