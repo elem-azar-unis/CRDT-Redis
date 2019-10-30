@@ -251,18 +251,7 @@ void rzaddCommand(client *c)
                         (char *) c->argv[3]->ptr);
                 fflush(rzLog);
 #endif
-
-            /*
-            PREPARE_RARGC(5);
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
-            COPY_ARG_TO_RARG(2, 2);
-            COPY_ARG_TO_RARG(3, 3);
-            c->rargv[4] = createObject(OBJ_STRING, VCToSds(CURRENT(e)));
-            */
-
-            RWF_RARG_PREPARE(CR_NON_RMV(e));
-            addReply(c, shared.ok);
+            ADD_CR_NON_RMV(e);
         CRDT_EFFECT
 #ifdef COUNT_OPS
             rcount++;
@@ -324,17 +313,8 @@ void rzincrbyCommand(client *c)
                         (char *) c->argv[3]->ptr);
                 fflush(rzLog);
 #endif
-            /*
-            PREPARE_RARGC(5);
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
-            COPY_ARG_TO_RARG(2, 2);
-            COPY_ARG_TO_RARG(3, 3);
-            c->rargv[4] = createObject(OBJ_STRING, VCToSds(CURRENT(e)));
-            */
 
-            RWF_RARG_PREPARE(CR_NON_RMV(e));
-            addReply(c, shared.ok);
+            ADD_CR_NON_RMV(e);
         CRDT_EFFECT
 #ifdef COUNT_OPS
             rcount++;
@@ -391,15 +371,7 @@ void rzremCommand(client *c)
                         (char *) c->argv[2]->ptr);
                 fflush(rzLog);
 #endif
-            /*
-            PREPARE_RARGC(4);
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
-            COPY_ARG_TO_RARG(2, 2);
-            c->rargv[3] = createObject(OBJ_STRING, now((reh *) e));
-            */
-            RWF_RARG_PREPARE(CR_RMV(e));
-            addReply(c, shared.ok);
+            ADD_CR_RMV(e);
         CRDT_EFFECT
 #ifdef COUNT_OPS
             rcount++;

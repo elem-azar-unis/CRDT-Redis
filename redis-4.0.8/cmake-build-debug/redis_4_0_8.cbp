@@ -90,6 +90,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/CRDT.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/RWFramework.c">
 			<Option target="redis_4_0_8"/>
 		</Unit>
@@ -232,6 +235,9 @@
 			<Option target="redis_4_0_8"/>
 		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/intset.h">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/lamport_clock.h">
 			<Option target="redis_4_0_8"/>
 		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/latency.c">

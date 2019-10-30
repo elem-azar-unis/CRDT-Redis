@@ -32,15 +32,9 @@ static FILE *ozLog = NULL;
 #define SCORE(e) (((e)->innate == NULL ? 0 : (e)->innate->x)\
                   + ((e)->acquired == NULL ? 0 : (e)->acquired->inc))
 
-typedef struct clock_tag
-{
-    int x;
-    int id;
-} ct;
-
 typedef struct aset_element
 {
-    ct *t;
+    lc *t;
     double x;
     double inc;
     double count;
@@ -56,47 +50,12 @@ typedef struct ORI_RPQ_element
 } oze;
 
 #define OZESIZE(e) (sizeof(oze) + 2 * sizeof(list) \
-                    + listLength((e)->aset) * (sizeof(ase) + sizeof(ct) + sizeof(listNode)) \
-                    + listLength((e)->rset) * (sizeof(ct) + sizeof(listNode)));
+                    + listLength((e)->aset) * (sizeof(ase) + sizeof(lc) + sizeof(listNode)) \
+                    + listLength((e)->rset) * (sizeof(lc) + sizeof(listNode)));
 
 sds aseToSds(ase *a)
 {
     return sdscatprintf(sdsempty(), "(%d,%d),%f,%f,%f", a->t->x, a->t->id, a->x, a->inc, a->count);
-}
-
-int ct_cmp(ct *t1, ct *t2)
-{
-    if (t1->id != t2->id)return t1->id - t2->id;
-    return t1->x - t2->x;
-}
-
-ct *ct_new(oze *e)
-{
-    ct *t = zmalloc(sizeof(ct));
-    t->id = CURRENT_PID;
-    t->x = e->current;
-    e->current++;
-    return t;
-}
-
-ct *ct_dup(ct *t)
-{
-    ct *n = zmalloc(sizeof(ct));
-    n->x = t->x;
-    n->id = t->id;
-    return n;
-}
-
-sds ctToSds(const ct *t)
-{
-    return sdscatprintf(sdsempty(), "%d,%d", t->x, t->id);
-}
-
-ct *sdsToCt(sds s)
-{
-    ct *t = zmalloc(sizeof(ct));
-    sscanf(s, "%d,%d", &t->x, &t->id);
-    return t;
 }
 
 oze *ozeNew()
@@ -141,7 +100,7 @@ long get_ovhd_count(redisDb *db, sds tname, const char *suf)
 #endif
 
 
-ase *asetGet(oze *e, ct *t, int delete)
+ase *asetGet(oze *e, lc *t, int delete)
 {
     listNode *ln;
     listIter li;
@@ -149,7 +108,7 @@ ase *asetGet(oze *e, ct *t, int delete)
     while ((ln = listNext(&li)))
     {
         ase *a = ln->value;
-        if (ct_cmp(t, a->t) == 0)
+        if (lc_cmp_as_tag(t, a->t) == 0)
         {
             if (delete)
             {
@@ -164,15 +123,15 @@ ase *asetGet(oze *e, ct *t, int delete)
     return NULL;
 }
 
-ct *rsetGet(oze *e, ct *t, int delete)
+lc *rsetGet(oze *e, lc *t, int delete)
 {
     listNode *ln;
     listIter li;
     listRewind(e->rset, &li);
     while ((ln = listNext(&li)))
     {
-        ct *a = ln->value;
-        if (ct_cmp(t, a) == 0)
+        lc *a = ln->value;
+        if (lc_cmp_as_tag(t, a) == 0)
         {
             if (delete)
             {
@@ -188,10 +147,10 @@ ct *rsetGet(oze *e, ct *t, int delete)
 }
 
 // 下面函数对自己参数 t 没有所有权
-ase *add_ase(oze *e, ct *t)
+ase *add_ase(oze *e, lc *t)
 {
     ase *a = zmalloc(sizeof(ase));
-    a->t = ct_dup(t);
+    a->t = lc_dup(t);
     a->inc = 0;
     a->count = 0;
     listAddNodeTail(e->aset, a);
@@ -201,13 +160,13 @@ ase *add_ase(oze *e, ct *t)
     return a;
 }
 
-int update_innate_value(oze *e, ct *t, double v)
+int update_innate_value(oze *e, lc *t, double v)
 {
     if (rsetGet(e, t, 0) != NULL)return 0;
     ase *a = asetGet(e, t, 0);
     if (a == NULL) a = add_ase(e, t);
     a->x = v;
-    if (e->innate == NULL || ct_cmp(e->innate->t, a->t) < 0)
+    if (e->innate == NULL || lc_cmp_as_tag(e->innate->t, a->t) < 0)
     {
         e->innate = a;
         return 1;
@@ -215,7 +174,7 @@ int update_innate_value(oze *e, ct *t, double v)
     return 0;
 }
 
-int update_acquired_value(oze *e, ct *t, double v)
+int update_acquired_value(oze *e, lc *t, double v)
 {
     if (rsetGet(e, t, 0) != NULL)return 0;
     ase *a = asetGet(e, t, 0);
@@ -225,7 +184,7 @@ int update_acquired_value(oze *e, ct *t, double v)
     if (e->acquired == a)
         return 1;
     if (e->acquired == NULL || e->acquired->count < a->count ||
-        (e->acquired->count == a->count && ct_cmp(e->acquired->t, a->t) < 0))
+        (e->acquired->count == a->count && lc_cmp_as_tag(e->acquired->t, a->t) < 0))
     {
         e->acquired = a;
         return 1;
@@ -234,10 +193,10 @@ int update_acquired_value(oze *e, ct *t, double v)
 }
 
 // 没有整理
-void remove_tag(oze *e, ct *t)
+void remove_tag(oze *e, lc *t)
 {
     if (rsetGet(e, t, 0) != NULL)return;
-    ct *nt = ct_dup(t);
+    lc *nt = lc_dup(t);
     listAddNodeTail(e->rset, nt);
 #ifdef RW_OVERHEAD
     inc_ovhd_count(cur_db, cur_tname, SUF_RSET, 1);
@@ -263,10 +222,10 @@ void resort(oze *e)
     while ((ln = listNext(&li)))
     {
         ase *a = ln->value;
-        if (e->innate == NULL || ct_cmp(e->innate->t, a->t) < 0)
+        if (e->innate == NULL || lc_cmp_as_tag(e->innate->t, a->t) < 0)
             e->innate = a;
         if (e->acquired == NULL || e->acquired->count < a->count ||
-            (e->acquired->count == a->count && ct_cmp(e->acquired->t, a->t) < 0))
+            (e->acquired->count == a->count && lc_cmp_as_tag(e->acquired->t, a->t) < 0))
             e->acquired = a;
     }
 }
@@ -357,23 +316,18 @@ void ozaddCommand(client *c)
                 fflush(ozLog);
 #endif
 
-            PREPARE_RARGC(5);
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
-            COPY_ARG_TO_RARG(2, 2);
-            COPY_ARG_TO_RARG(3, 3);
-
-            ct *t = ct_new(e);
-            c->rargv[4] = createObject(OBJ_STRING, ctToSds(t));
+            lc *t = LC_NEW(e->current);
+            e->current++;
+            RARGV_ADD_SDS(lcToSds(t));
             zfree(t);
-            addReply(c, shared.ok);
+
         CRDT_EFFECT
 #ifdef COUNT_OPS
             ocount++;
 #endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            ct *t = sdsToCt(c->rargv[4]->ptr);
+            lc *t = sdsToLc(c->rargv[4]->ptr);
             oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             if (update_innate_value(e, t, v))
             {
@@ -414,12 +368,6 @@ void ozincrbyCommand(client *c)
                 fflush(ozLog);
 #endif
 
-            PREPARE_RARGC(4 + listLength(e->aset));
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
-            COPY_ARG_TO_RARG(2, 2);
-            COPY_ARG_TO_RARG(3, 3);
-
             int i = 4;
             listNode *ln;
             listIter li;
@@ -427,10 +375,9 @@ void ozincrbyCommand(client *c)
             while ((ln = listNext(&li)))
             {
                 ase *a = ln->value;
-                c->rargv[i] = createObject(OBJ_STRING, ctToSds(a->t));
+                RARGV_ADD_SDS(lcToSds(a->t));
                 i++;
             }
-            addReply(c, shared.ok);
         CRDT_EFFECT
 #ifdef COUNT_OPS
             ocount++;
@@ -441,7 +388,7 @@ void ozincrbyCommand(client *c)
             int changed = 0;
             for (int i = 4; i < c->rargc; i++)
             {
-                ct *t = sdsToCt(c->rargv[i]->ptr);
+                lc *t = sdsToLc(c->rargv[i]->ptr);
                 changed += update_acquired_value(e, t, v);
                 zfree(t);
             }
@@ -479,11 +426,6 @@ void ozremCommand(client *c)
                 fflush(ozLog);
 #endif
 
-            PREPARE_RARGC(3 + listLength(e->aset));
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
-            COPY_ARG_TO_RARG(2, 2);
-
             int i = 3;
             listNode *ln;
             listIter li;
@@ -491,10 +433,9 @@ void ozremCommand(client *c)
             while ((ln = listNext(&li)))
             {
                 ase *a = ln->value;
-                c->rargv[i] = createObject(OBJ_STRING, ctToSds(a->t));
+                RARGV_ADD_SDS(lcToSds(a->t));
                 i++;
             }
-            addReply(c, shared.ok);
         CRDT_EFFECT
 #ifdef COUNT_OPS
             ocount++;
@@ -502,7 +443,7 @@ void ozremCommand(client *c)
             oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             for (int i = 3; i < c->rargc; i++)
             {
-                ct *t = sdsToCt(c->rargv[i]->ptr);
+                lc *t = sdsToLc(c->rargv[i]->ptr);
                 remove_tag(e, t);
                 zfree(t);
             }
@@ -667,8 +608,8 @@ void ozestatusCommand(client *c)
     listRewind(e->rset, &li);
     while ((ln = listNext(&li)))
     {
-        ct *a = ln->value;
-        addReplyBulkSds(c, ctToSds(a));
+        lc *a = ln->value;
+        addReplyBulkSds(c, lcToSds(a));
     }
 }
 
@@ -705,8 +646,8 @@ void ozoverheadCommand(client *c)
 {
     PRE_SET;
     long long size = get_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL) * (sizeof(oze) + 2 * sizeof(list))
-                     + get_ovhd_count(cur_db, cur_tname, SUF_ASET) * (sizeof(ase) + sizeof(ct) + sizeof(listNode))
-                     + get_ovhd_count(cur_db, cur_tname, SUF_RSET) * (sizeof(ct) + sizeof(listNode));
+                     + get_ovhd_count(cur_db, cur_tname, SUF_ASET) * (sizeof(ase) + sizeof(lc) + sizeof(listNode))
+                     + get_ovhd_count(cur_db, cur_tname, SUF_RSET) * (sizeof(lc) + sizeof(listNode));
     addReplyLongLong(c, size);
 }
 

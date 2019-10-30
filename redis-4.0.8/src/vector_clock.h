@@ -3,7 +3,7 @@
 //
 
 #ifndef REDIS_4_0_8_VECTOR_CLOCK_H
-
+#define REDIS_4_0_8_VECTOR_CLOCK_H
 #include "sds.h"
 
 typedef struct vector_clock
@@ -26,8 +26,6 @@ typedef struct vector_clock
 #define l_increaseVC(c) increaseVC((c), CURRENT_PID)
 
 vc *newVC(int size, int id);
-void deleteVC(vc *c);
-vc *increaseVC(vc *c, int id);
 vc *duplicateVC(const vc *c);
 int compareVC(const vc *c1, const vc *c2);
 vc *updateVC(vc *tar, const vc *m);
@@ -35,7 +33,26 @@ sds VCToSds(const vc *c);
 vc *SdsToVC(sds s);
 int equalVC(const vc *c1, const vc *c2);
 int causally_ready(const vc *current, const vc *next);
+inline void deleteVC(vc *c)
+{
+    zfree(c->vector);
+    zfree(c);
+}
 
-#define REDIS_4_0_8_VECTOR_CLOCK_H
+inline vc *increaseVC(vc *c, int id)
+{
+    c->id = id;
+    c->vector[id]++;
+    return c;
+}
+
+// get the next vc in sds format, doesn't change the current vc
+inline sds nowVC(vc *c)
+{
+    c->vector[c->id]++;
+    sds rtn = VCToSds(c);
+    c->vector[c->id]--;
+    return rtn;
+}
 
 #endif //REDIS_4_0_8_VECTOR_CLOCK_H

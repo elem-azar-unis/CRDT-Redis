@@ -17,19 +17,6 @@ vc *newVC(int size, int id)
     return clock;
 }
 
-void deleteVC(vc *c)
-{
-    zfree(c->vector);
-    zfree(c);
-}
-
-vc *increaseVC(vc *c, int id)
-{
-    c->id = id;
-    c->vector[id]++;
-    return c;
-}
-
 vc *duplicateVC(const vc *c)
 {
     vc *clock = zmalloc(sizeof(vc));
@@ -161,9 +148,8 @@ void vcnewCommand(client *c)
             COPY_ARG_TO_RARG(0, 0);
             COPY_ARG_TO_RARG(1, 1);
             vc *vc = l_newVC;
-            c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
+            RARGV_ADD_SDS(VCToSds(vc));
             deleteVC(vc);
-            addReply(c, shared.ok);
         CRDT_EFFECT
             vc *vc = SdsToVC(c->rargv[2]->ptr);
             dbAdd(c->db, c->rargv[1], createObject(OBJ_VECTOR_CLOCK, vc));
@@ -200,14 +186,10 @@ void vcincCommand(client *c)
                 return;
             }
 
-            PREPARE_RARGC(3);
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
             vc *vc = duplicateVC(o->ptr);
             l_increaseVC(vc);
-            c->rargv[2] = createObject(OBJ_STRING, VCToSds(vc));
+            RARGV_ADD_SDS(VCToSds(vc));
             deleteVC(vc);
-            addReply(c, shared.ok);
         CRDT_EFFECT
             robj *o = lookupKeyWrite(c->db, c->rargv[1]);
             vc *tmp, *vc = SdsToVC(c->rargv[2]->ptr);

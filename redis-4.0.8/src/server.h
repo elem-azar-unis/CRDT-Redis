@@ -66,7 +66,9 @@ typedef long long mstime_t; /* millisecond time type. */
 #include "quicklist.h"  /* Lists are encoded as linked lists of
                            N-elements flat arrays */
 #include "rax.h"     /* Radix tree */
-#include "vector_clock.h" /*vector clock*/
+#include "vector_clock.h" /* vector clock */
+#include "lamport_clock.h" /* lamport clock, can also be used as unique tag */
+#include "CRDT.h" /* CRDT framework */
 
 /* Following includes allow test functions to be called from Redis main() */
 #include "zipmap.h"
@@ -1578,11 +1580,6 @@ typedef struct {
     int minex, maxex; /* are min or max exclusive? */
 } zlexrangespec;
 
-#define REPLICATION_MODE listLength(server.replicas) || server.p2p_count
-#define CRDT_BEGIN if(REPLICATION_MODE){
-#define CRDT_PREPARE if(!(c->flags & CLIENT_REPLICA)){
-#define CRDT_EFFECT }{
-#define CRDT_END }if(c->flags & CLIENT_REPLICA_MESSAGE){addReply(c, shared.ok);}return;}
 
 zskiplist *zslCreate(void);
 void zslFree(zskiplist *zsl);
@@ -2014,17 +2011,6 @@ void latencyCommand(client *c);
 void moduleCommand(client *c);
 void securityWarningCommand(client *c);
 
-#define PREPARE_RARGC(n) \
-do{\
-    c->rargc = (n);\
-    c->rargv = zmalloc(sizeof(robj *) * (n));\
-}while(0)
-
-#define COPY_ARG_TO_RARG(a,r) \
-do{\
-    c->rargv[(r)] = c->argv[(a)];\
-    incrRefCount(c->rargv[(r)]);\
-}while(0)
 
 void replicateCommand(client *c);
 void repltestCommand(client* c);

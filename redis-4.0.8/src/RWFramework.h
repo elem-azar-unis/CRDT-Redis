@@ -82,31 +82,23 @@ do\
 
 inline int insertCheck(reh *h, vc *t)
 {
-    if (equalVC(t, h->current) == 0)return 0;
-    return h->pid < t->id;
+    if (equalVC(t, CURRENT(h)) == 0)return 0;
+    return PID(h) < t->id;
 }
 
 inline int updateCheck(reh *h, vc *t)
 {
-    return equalVC(t, h->current);
+    return equalVC(t, CURRENT(h));
 }
 
 inline int removeCheck(reh *h, vc *t)
 {
     for (int i = 0; i < t->size; ++i)
-        if (h->current->vector[i] < t->vector[i])
+        if (CURRENT(h)->vector[i] < t->vector[i])
             return 1;
     return 0;
 }
 
-// Get the current timestamp for the element in sds format.
-inline sds now(reh *h)
-{
-    CURRENT(h)->vector[CURRENT(h)->id]++;
-    sds rtn = VCToSds(CURRENT(h));
-    CURRENT(h)->vector[CURRENT(h)->id]--;
-    return rtn;
-}
 
 /* Get the hash table -- the top layer of the container metadata.
  *
@@ -136,25 +128,13 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
 );
 
 /*
- * Prepare rargc and rargv for RW-CRDCs.
- * - copy the current argv to rargv
- * - add the current timestamp cr to the end of rargv
- *
- * cr : the timestamp. Suppose the target element you get from the CRDC (or may be newly created) is e, then cr is:
- * - non-remove operations: CR_NON_RMV(e)
- * - remove operation: CR_RMV(e)
+ * Add the remove history into rargv. Use the macro at the end of the prepare phase.
+ * Suppose the target element you get from the CRDC (or may be newly created) is e, then choose the macro:
+ * - non-remove operations: ADD_CR_NON_RMV(e)
+ * - remove operation: ADD_CR_RMV(e)
  * */
-#define RWF_RARG_PREPARE(cr) \
-do\
-{\
-    PREPARE_RARGC(c->argc + 1);\
-    for(int _i_=0; _i_ < c->argc; _i_++)\
-        COPY_ARG_TO_RARG(_i_, _i_);\
-    c->rargv[c->argc] = createObject(OBJ_STRING, cr);\
-}while(0);
-
-#define CR_NON_RMV(e) VCToSds(CURRENT(e))
-#define CR_RMV(e) now((reh *) (e))
+#define ADD_CR_NON_RMV(e) RARGV_ADD_SDS(VCToSds(CURRENT(e)))
+#define ADD_CR_RMV(e) RARGV_ADD_SDS(nowVC(CURRENT((reh *) (e))))
 
 // Get the timestamp from rargv. Remember to free it when it's no longer needed.
 #define CR_GET SdsToVC(c->rargv[c->rargc-1]->ptr)
