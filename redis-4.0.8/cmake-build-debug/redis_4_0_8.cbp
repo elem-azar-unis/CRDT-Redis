@@ -17,16 +17,6 @@
 					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
-			<Target title="edit_cache">
-				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
-				<Option type="4"/>
-				<MakeCommands>
-					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-				</MakeCommands>
-			</Target>
 			<Target title="rebuild_cache">
 				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
 				<Option type="4"/>
@@ -84,6 +74,16 @@
 				</Compiler>
 				<MakeCommands>
 					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 redis_4_0_8/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
 					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
 					<Clean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 					<DistClean command="/usr/bin/make -j4 -f &quot;/home/user/Redis-RPQ/redis-4.0.8/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
@@ -424,6 +424,9 @@
 			<Option target="redis_4_0_8"/>
 		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_ozset.c">
+			<Option target="redis_4_0_8"/>
+		</Unit>
+		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_rwflist.c">
 			<Option target="redis_4_0_8"/>
 		</Unit>
 		<Unit filename="/home/user/Redis-RPQ/redis-4.0.8/src/t_rzset.c">

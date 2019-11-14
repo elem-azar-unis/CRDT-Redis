@@ -33,7 +33,7 @@ inline int lc_cmp_as_tag(lc *t1, lc *t2)
 
 // lamport clock compare. require update lc every time a new lc arrives.
 // hence prioritize x, preserves causality
-inline int lc_cmp(lc *t1, lc *t2)
+inline int lc_cmp(const lc *t1, const lc *t2)
 {
     if (t1->x != t2->x)return t1->x - t2->x;
     return t1->id - t2->id;
@@ -62,6 +62,22 @@ inline lc *sdsToLc(sds s)
 inline lc *lc_update(lc *tar, const lc *m)
 {
     tar->x = (tar->x > m->x) ? tar->x : m->x;
+}
+#define LC_COPY(tar,m)\
+do\
+{\
+    if((tar)==NULL)\
+        (tar)=lc_dup(m);\
+    else\
+    {\
+        (tar)->x = (m)->x;\
+        (tar)->id = (m)->id;\
+    }\
+}while(0)
+inline void *lc_copy(lc *tar, const lc *m)
+{
+    tar->x = m->x;
+    tar->id = m->id;
 }
 
 // get the next lc in sds format, doesn't change the current lc

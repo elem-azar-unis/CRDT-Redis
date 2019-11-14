@@ -5,7 +5,11 @@
 
 robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create)
 {
-    robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(tname), suffix));
+    robj *htname;
+    if(suffix != NULL)
+        htname = createObject(OBJ_STRING, sdscat(sdsdup(tname), suffix));
+    else
+        htname = createObject(OBJ_STRING, sdsdup(tname));
     robj *ht = lookupKeyRead(db, htname);
     if (create && ht == NULL)
     {
