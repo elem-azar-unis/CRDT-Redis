@@ -2019,7 +2019,6 @@ void vcnewCommand(client *c);
 void vcgetCommand(client *c);
 void vcincCommand(client *c);
 
-int checkArgcAndZsetType(client *c, int max);
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
 
 //#define RPQ_LOG

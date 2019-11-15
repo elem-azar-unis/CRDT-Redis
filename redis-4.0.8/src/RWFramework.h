@@ -107,7 +107,7 @@ inline int removeCheck(reh *h, vc *t)
  * const char *suffix : the suffix of the container, can be null string
  * int create : 1 (or 0) if you want to create the container if it doesn't exist (or not)
  * */
-robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create);
+robj *getInnerHT(redisDb *db, robj* tname, const char *suffix, int create);
 
 /* Get the element metadata type from the container, in the format of the header struct. You may cast it
  * to your actual element struct.

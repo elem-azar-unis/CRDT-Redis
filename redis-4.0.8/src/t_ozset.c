@@ -232,7 +232,7 @@ void resort(oze *e)
 
 oze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
 {
-    robj *ht = getInnerHT(db, tname->ptr, ORI_RPQ_TABLE_SUFFIX, create);
+    robj *ht = getInnerHT(db, tname, ORI_RPQ_TABLE_SUFFIX, create);
     if (ht == NULL)return NULL;
     robj *value = hashTypeGetValueObject(ht, key->ptr);
     oze *e;
@@ -251,22 +251,6 @@ oze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
         decrRefCount(value);
     }
     return e;
-}
-
-int checkArgcAndZsetType(client *c, int max)
-{
-    if (c->argc > max)
-    {
-        addReply(c, shared.syntaxerr);
-        return 1;
-    }
-    robj *zset = lookupKeyRead(c->db, c->argv[1]);
-    if (zset != NULL && zset->type != OBJ_ZSET)
-    {
-        addReply(c, shared.wrongtypeerr);
-        return 1;
-    }
-    return 0;
 }
 
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
@@ -295,7 +279,7 @@ void ozaddCommand(client *c)
 #endif
     CRDT_BEGIN
         CRDT_PREPARE
-            if (checkArgcAndZsetType(c, 4)) return;
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             double v;
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
@@ -307,13 +291,13 @@ void ozaddCommand(client *c)
             }
 
 #ifdef RPQ_LOG
-                check(ozLog);
-                fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
-                        (char *) c->argv[0]->ptr,
-                        (char *) c->argv[1]->ptr,
-                        (char *) c->argv[2]->ptr,
-                        (char *) c->argv[3]->ptr);
-                fflush(ozLog);
+            check(ozLog);
+            fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr,
+                    (char *) c->argv[3]->ptr);
+            fflush(ozLog);
 #endif
 
             lc *t = LC_NEW(e->current);
@@ -347,7 +331,7 @@ void ozincrbyCommand(client *c)
 #endif
     CRDT_BEGIN
         CRDT_PREPARE
-            if (checkArgcAndZsetType(c, 4)) return;
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             double v;
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
@@ -359,13 +343,13 @@ void ozincrbyCommand(client *c)
             }
 
 #ifdef RPQ_LOG
-                check(ozLog);
-                fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
-                        (char *) c->argv[0]->ptr,
-                        (char *) c->argv[1]->ptr,
-                        (char *) c->argv[2]->ptr,
-                        (char *) c->argv[3]->ptr);
-                fflush(ozLog);
+            check(ozLog);
+            fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr,
+                    (char *) c->argv[3]->ptr);
+            fflush(ozLog);
 #endif
 
             int i = 4;
@@ -409,7 +393,7 @@ void ozremCommand(client *c)
 #endif
     CRDT_BEGIN
         CRDT_PREPARE
-            if (checkArgcAndZsetType(c, 3)) return;
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
             oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
@@ -418,12 +402,12 @@ void ozremCommand(client *c)
             }
 
 #ifdef RPQ_LOG
-                check(ozLog);
-                fprintf(ozLog, "%ld,%s,%s %s\n", currentTime(),
-                        (char *) c->argv[0]->ptr,
-                        (char *) c->argv[1]->ptr,
-                        (char *) c->argv[2]->ptr);
-                fflush(ozLog);
+            check(ozLog);
+            fprintf(ozLog, "%ld,%s,%s %s\n", currentTime(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr);
+            fflush(ozLog);
 #endif
 
             int i = 3;
@@ -652,6 +636,7 @@ void ozoverheadCommand(client *c)
 }
 
 #else
+
 void ozoverheadCommand(client *c)
 {
     robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(c->argv[1]->ptr), ORI_RPQ_TABLE_SUFFIX));
@@ -714,4 +699,5 @@ void ozoverheadCommand(client *c)
     }
     */
 }
+
 #endif

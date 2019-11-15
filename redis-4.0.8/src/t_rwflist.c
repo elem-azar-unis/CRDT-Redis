@@ -314,6 +314,7 @@ void removeFunc(client *c, rle *e, vc *t)
         RMV_LC(e->bold_t);
         RMV_LC(e->italic_t);
         RMV_LC(e->underline_t);
+        incrbyLen(GET_RL_HT(rargv, 0), -1);
         server.dirty++;
     }
 }
@@ -326,20 +327,20 @@ void rlremCommand(client *c);
 
 void rllenCommand(client *c)
 {
-    robj *o = lookupKeyReadOrReply(c,c->argv[1],shared.czero);
-    if (o == NULL || checkType(c,o,OBJ_HASH)) return;
-    addReplyLongLong(c,getLen(o));
+    robj *o = lookupKeyReadOrReply(c, c->argv[1], shared.czero);
+    if (o == NULL || checkType(c, o, OBJ_HASH)) return;
+    addReplyLongLong(c, getLen(o));
 }
 
 void rllistCommand(client *c)
 {
-    robj *o = lookupKeyReadOrReply(c,c->argv[1],shared.emptymultibulk);
-    if (o == NULL || checkType(c,o,OBJ_HASH)) return;
+    robj *o = lookupKeyReadOrReply(c, c->argv[1], shared.emptymultibulk);
+    if (o == NULL || checkType(c, o, OBJ_HASH)) return;
     addReplyMultiBulkLen(c, getLen(o));
-    rle* e=getHead(o);
-    while(e!=NULL)
+    rle *e = getHead(o);
+    while (e != NULL)
     {
-        if(EXISTS(e))
+        if (EXISTS(e))
         {
             addReplyMultiBulkLen(c, 6);
             addReplyBulkCBuffer(c, e->oid, sdslen(e->oid));
@@ -349,6 +350,6 @@ void rllistCommand(client *c)
             addReplyBulkLongLong(c, e->color);
             addReplyBulkLongLong(c, e->property);
         }
-        e=e->next;
+        e = e->next;
     }
 }

@@ -3,13 +3,13 @@
 //
 #include "RWFramework.h"
 
-robj *getInnerHT(redisDb *db, sds tname, const char *suffix, int create)
+robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create)
 {
     robj *htname;
-    if(suffix != NULL)
-        htname = createObject(OBJ_STRING, sdscat(sdsdup(tname), suffix));
+    if (suffix != NULL)
+        htname = createObject(OBJ_STRING, sdscat(sdsdup(tname->ptr), suffix));
     else
-        htname = createObject(OBJ_STRING, sdsdup(tname));
+        htname = createObject(OBJ_STRING, sdsdup(tname->ptr));
     robj *ht = lookupKeyRead(db, htname);
     if (create && ht == NULL)
     {
@@ -26,7 +26,7 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
 #endif
 )
 {
-    robj *ht = getInnerHT(db, tname->ptr, suffix, create);
+    robj *ht = getInnerHT(db, tname, suffix, create);
     if (ht == NULL)return NULL;
     robj *value = hashTypeGetValueObject(ht, key->ptr);
     reh *e;
@@ -34,7 +34,7 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
     {
         if (!create)return NULL;
         e = (*p)();
-        RWFHT_SET(ht,key->ptr,reh*,e);
+        RWFHT_SET(ht, key->ptr, reh*, e);
 #ifdef RW_OVERHEAD
         inc_ovhd_count(cur_db, cur_tname, ovhd_suf, 1);
 #endif

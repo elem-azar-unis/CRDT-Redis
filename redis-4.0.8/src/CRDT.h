@@ -62,6 +62,22 @@ do{\
     zfree(__rvct__.vector);\
 }while(0)
 
+// check the argc and the container type.
+// you may use this at the start of the prepare phase.
+#define CHECK_ARGC_AND_CONTAINER_TYPE(_type, _max)\
+do{\
+    if (c->argc > _max || c->argc < 2)\
+    {\
+        addReply(c, shared.syntaxerr);\
+        return;\
+    }\
+    robj *o = lookupKeyRead(c->db, c->argv[1]);\
+    if (o != NULL && o->type != _type)\
+    {\
+        addReply(c, shared.wrongtypeerr);\
+        return;\
+    }\
+}while(0)
 
 /*
  * The core macros for the CRDT framework. You may use these macros to write your CRDT operations.
