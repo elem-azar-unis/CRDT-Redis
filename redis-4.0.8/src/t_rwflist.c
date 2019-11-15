@@ -140,7 +140,7 @@ leid *constructLeid(leid *p, leid *q, lc *t)
 typedef struct rwf_list_element
 {
     reh header;
-    //lc* oid;
+    sds oid;
     leid *pos_id;
     lc *current;
     sds content;
@@ -156,6 +156,49 @@ typedef struct rwf_list_element
     struct rwf_list_element *prev;
     struct rwf_list_element *next;
 } rle;
+
+#define GET_RLE(arg_t, create) \
+(rle *) rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, rleNew)
+
+#define GET_RL_HT(arg_t, create) getInnerHT(c->db, c->arg_t[1], NULL, create)
+
+rle *getHead(robj *ht)
+{
+    sds hname = sdsnew("head");
+    robj *value = hashTypeGetValueObject(ht, hname);
+    sdsfree(hname);
+    rle *e = *(rle **) (value->ptr);
+    decrRefCount(value);
+    return e;
+}
+
+void setHead(robj *ht, rle *e)
+{
+    sds hname = sdsnew("head");
+    RWFHT_SET(ht, hname, rle*, e);
+    sdsfree(hname);
+}
+
+int getLen(robj *ht)
+{
+    sds hname = sdsnew("head");
+    robj *value = hashTypeGetValueObject(ht, hname);
+    sdsfree(hname);
+    int len = *(int *) (value->ptr);
+    decrRefCount(value);
+    return len;
+}
+
+void incrbyLen(robj *ht, int inc)
+{
+    sds hname = sdsnew("head");
+    robj *value = hashTypeGetValueObject(ht, hname);
+    int len = *(int *) (value->ptr);
+    decrRefCount(value);
+    len += inc;
+    RWFHT_SET(ht, hname, int, len);
+    sdsfree(hname);
+}
 
 // the flag masks for state_mask
 #define font_m (1<<0)
@@ -272,5 +315,40 @@ void removeFunc(client *c, rle *e, vc *t)
         RMV_LC(e->italic_t);
         RMV_LC(e->underline_t);
         server.dirty++;
+    }
+}
+
+void rlinsertCommand(client *c);
+
+void rlupdateCommand(client *c);
+
+void rlremCommand(client *c);
+
+void rllenCommand(client *c)
+{
+    robj *o = lookupKeyReadOrReply(c,c->argv[1],shared.czero);
+    if (o == NULL || checkType(c,o,OBJ_HASH)) return;
+    addReplyLongLong(c,getLen(o));
+}
+
+void rllistCommand(client *c)
+{
+    robj *o = lookupKeyReadOrReply(c,c->argv[1],shared.emptymultibulk);
+    if (o == NULL || checkType(c,o,OBJ_HASH)) return;
+    addReplyMultiBulkLen(c, getLen(o));
+    rle* e=getHead(o);
+    while(e!=NULL)
+    {
+        if(EXISTS(e))
+        {
+            addReplyMultiBulkLen(c, 6);
+            addReplyBulkCBuffer(c, e->oid, sdslen(e->oid));
+            addReplyBulkCBuffer(c, e->content, sdslen(e->content));
+            addReplyBulkLongLong(c, e->font);
+            addReplyBulkLongLong(c, e->size);
+            addReplyBulkLongLong(c, e->color);
+            addReplyBulkLongLong(c, e->property);
+        }
+        e=e->next;
     }
 }

@@ -34,7 +34,7 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
     {
         if (!create)return NULL;
         e = (*p)();
-        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(reh *)), HASH_SET_TAKE_VALUE);
+        RWFHT_SET(ht,key->ptr,reh*,e);
 #ifdef RW_OVERHEAD
         inc_ovhd_count(cur_db, cur_tname, ovhd_suf, 1);
 #endif

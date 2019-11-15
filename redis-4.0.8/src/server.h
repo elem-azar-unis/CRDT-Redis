@@ -2066,6 +2066,12 @@ void rzmaxCommand(client *c);
 void rzestatusCommand(client* c);
 void rzoverheadCommand(client* c);
 
+void rlinsertCommand(client* c);
+void rlupdateCommand(client* c);
+void rlremCommand(client* c);
+void rllenCommand(client* c);
+void rllistCommand(client* c);
+
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));
 void free(void *ptr) __attribute__ ((deprecated));

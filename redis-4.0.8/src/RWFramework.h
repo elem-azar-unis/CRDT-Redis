@@ -127,6 +127,10 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
 #endif
 );
 
+// set key(sds type) with value(value_t type) in ht(hash table type)
+#define RWFHT_SET(ht, key, value_t, value) \
+hashTypeSet(ht, key, sdsnewlen(&(value), sizeof(value_t)), HASH_SET_TAKE_VALUE)
+
 /*
  * Add the remove history into rargv. Use the macro at the end of the prepare phase.
  * Suppose the target element you get from the CRDC (or may be newly created) is e, then choose the macro:

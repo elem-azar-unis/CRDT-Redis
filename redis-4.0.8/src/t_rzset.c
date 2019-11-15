@@ -147,16 +147,17 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
     return e;
 }
 */
-inline rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
-{
-    return (rze *) rehHTGet(db, tname, RW_RPQ_TABLE_SUFFIX, key, create, rzeNew
-#ifdef RW_OVERHEAD
-            ,cur_db, cur_tname, SUF_RZETOTAL
+
+#ifndef RW_OVERHEAD
+#define GET_RZE(arg_t, create)\
+(rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
+#else
+#define RZE_HT_GET(arg_t,create)\
+(rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew, cur_db, cur_tname, SUF_RZETOTAL)
 #endif
-    );
-}
+
 /*
-// 下面两个不进行内存释放
+// no memory free
 void insertFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
 {
     if (!insertCheck(e, t))return;
@@ -184,7 +185,7 @@ void removeFunc(client *c, rze *e, vc *t)
 {
     if (removeCheck((reh *) e, t))
     {
-        REH_RMV_FUNC(e,t);
+        REH_RMV_FUNC(e, t);
         e->acquired = 0;
         e->innate = 0;
         robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
@@ -193,6 +194,7 @@ void removeFunc(client *c, rze *e, vc *t)
         //notifyLoop(e, c->db);
     }
 }
+
 /*
 void notifyLoop(rze *e, redisDb *db)
 {
@@ -235,7 +237,7 @@ void rzaddCommand(client *c)
             double v;
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
-            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 1);
+            rze *e = GET_RZE(argv, 1);
             if (EXISTS(e))
             {
                 addReply(c, shared.ele_exist);
@@ -259,7 +261,7 @@ void rzaddCommand(client *c)
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = CR_GET;
-            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            rze *e = GET_RZE(rargv, 1);
             /*
             if (readyCheck(e, t))
             {
@@ -297,7 +299,7 @@ void rzincrbyCommand(client *c)
             double v;
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
-            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            rze *e = GET_RZE(argv, 0);
             if (e == NULL || !EXISTS(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -322,7 +324,7 @@ void rzincrbyCommand(client *c)
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = CR_GET;
-            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            rze *e = GET_RZE(rargv, 1);
             /*
             if (readyCheck(e, t))
             {
@@ -356,7 +358,7 @@ void rzremCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             if (checkArgcAndZsetType(c, 3)) return;
-            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            rze *e = GET_RZE(argv, 0);
             if (e == NULL || !EXISTS(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -376,7 +378,7 @@ void rzremCommand(client *c)
 #ifdef COUNT_OPS
             rcount++;
 #endif
-            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            rze *e = GET_RZE(rargv, 1);
             vc *t = CR_GET;
             /*
             if (removeCheck(e, t))
@@ -502,7 +504,7 @@ void rzmaxCommand(client *c)
 
 void rzestatusCommand(client *c)
 {
-    rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+    rze *e = GET_RZE(argv, 0);
     if (e == NULL)
     {
         addReply(c, shared.emptymultibulk);
@@ -571,6 +573,7 @@ void rzoverheadCommand(client *c)
 }
 
 #else
+
 void rzoverheadCommand(client *c)
 {
     robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(c->argv[1]->ptr), RW_RPQ_TABLE_SUFFIX));
@@ -634,4 +637,5 @@ void rzoverheadCommand(client *c)
     }
     */
 }
+
 #endif
