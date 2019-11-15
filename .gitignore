@@ -6,6 +6,7 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+redis-4.0.8/cmake-build-debug/
 
 bench_start
 ozlog

@@ -130,7 +130,7 @@ leid *constructLeid(leid *p, leid *q, lc *t)
     }
     int step = right - left - 2;
     step = step < RDM_STEP ? step : RDM_STEP;
-    rtn->p[index].pos = left + (unsigned int) (random() % step) + 1;
+    rtn->p[index].pos = left + (unsigned int) (rand() % step) + 1;
     rtn->p[index].pid = t->id;
     rtn->p[index].count = t->x;
     t->x++;
