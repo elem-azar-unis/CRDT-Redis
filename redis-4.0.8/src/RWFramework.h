@@ -120,6 +120,18 @@ robj *getInnerHT(redisDb *db, robj* tname, const char *suffix, int create);
  * reh* (*p)() : The pointer to the create function of the element struct
  *
  * If define RW_OVERHEAD, count the memory usage when creating elements.
+ *
+ * Note that you may wrap this function with a macro for the convenience of use. For example,
+ * in remove-win CRPQ, the element type name is rze:
+ *
+ * #ifndef RW_OVERHEAD
+ * #define GET_RZE(arg_t, create)\
+ * (rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
+ * #else
+ * #define RZE_HT_GET(arg_t,create)\
+ * (rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew, cur_db, cur_tname, SUF_RZETOTAL)
+ * #endif
+ *
  * */
 reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, reh *(*p)()
 #ifdef RW_OVERHEAD
