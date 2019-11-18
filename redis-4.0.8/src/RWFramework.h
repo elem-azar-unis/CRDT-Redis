@@ -76,6 +76,31 @@ do\
 #define EXISTS(h) (PID(h) >= 0)
 
 /*
+ * Precondition check for the prepare part.
+ * Add operation and non-add operations.
+ * e is the metadata element.
+ * */
+#define PREPARE_PRECOND_ADD(e) \
+do\
+{\
+    if (EXISTS(e))\
+    {\
+        addReply(c, shared.ele_exist);\
+        return;\
+    }\
+}while(0)
+
+#define PREPARE_PRECOND_NON_ADD(e) \
+do\
+{\
+    if (e == NULL || !EXISTS(e))\
+    {\
+        addReply(c, shared.ele_nexist);\
+        return;\
+    }\
+}while(0)
+
+/*
  * Three functions to check if it is ready for increase/remove/update.
  * Do the corresponding check before you do the actual effect phase.
  * */

@@ -238,11 +238,7 @@ void rzaddCommand(client *c)
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
             rze *e = GET_RZE(argv, 1);
-            if (EXISTS(e))
-            {
-                addReply(c, shared.ele_exist);
-                return;
-            }
+            PREPARE_PRECOND_ADD(e);
 
 #ifdef RPQ_LOG
                 check(rzLog);
@@ -300,11 +296,7 @@ void rzincrbyCommand(client *c)
             if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
                 return;
             rze *e = GET_RZE(argv, 0);
-            if (e == NULL || !EXISTS(e))
-            {
-                addReply(c, shared.ele_nexist);
-                return;
-            }
+            PREPARE_PRECOND_NON_ADD(e);
 
 #ifdef RPQ_LOG
                 check(rzLog);
@@ -359,11 +351,7 @@ void rzremCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
             rze *e = GET_RZE(argv, 0);
-            if (e == NULL || !EXISTS(e))
-            {
-                addReply(c, shared.ele_nexist);
-                return;
-            }
+            PREPARE_PRECOND_NON_ADD(e);
 
 #ifdef RPQ_LOG
                 check(rzLog);

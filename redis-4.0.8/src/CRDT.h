@@ -88,7 +88,8 @@ do{\
  *     CRDT_BEGIN
  *         CRDT_PREPARE
  *             // Do the prepare phase, such as:
- *             // - check correctness of 1. the format of the command from the cliend and 2. the type of the targeted CRDT
+ *             // - check correctness of 1. the format of the command from the cliend and
+ *                  2. the type of the targeted CRDT using CHECK_ARGC_AND_CONTAINER_TYPE macro
  *             // - check the precondition of the prepare phase, read the local state
  *             // - add additional parameters to broadcast using RARGV_ADD or RARGV_ADD_SDS macros
  *             // Will automatically reply an "OK" message to the client if the prepare phase ends successfully.
