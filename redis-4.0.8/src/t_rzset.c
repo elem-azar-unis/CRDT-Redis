@@ -234,9 +234,7 @@ void rzaddCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
-            double v;
-            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
-                return;
+            CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             rze *e = GET_RZE(argv, 1);
             PREPARE_PRECOND_ADD(e);
 
@@ -292,9 +290,7 @@ void rzincrbyCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
-            double v;
-            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
-                return;
+            CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             rze *e = GET_RZE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
 

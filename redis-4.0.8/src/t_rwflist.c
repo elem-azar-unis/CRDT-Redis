@@ -181,7 +181,7 @@ void setHead(robj *ht, rle *e)
 
 int getLen(robj *ht)
 {
-    sds hname = sdsnew("head");
+    sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);
     sdsfree(hname);
     int len = *(int *) (value->ptr);
@@ -191,7 +191,7 @@ int getLen(robj *ht)
 
 void incrbyLen(robj *ht, int inc)
 {
-    sds hname = sdsnew("head");
+    sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);
     int len = *(int *) (value->ptr);
     decrRefCount(value);
@@ -319,7 +319,15 @@ void removeFunc(client *c, rle *e, vc *t)
     }
 }
 
-void rlinsertCommand(client *c);
+void rlinsertCommand(client *c)
+{
+    CRDT_BEGIN
+        CRDT_PREPARE
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 9);
+
+        CRDT_EFFECT
+    CRDT_END
+}
 
 void rlupdateCommand(client *c);
 

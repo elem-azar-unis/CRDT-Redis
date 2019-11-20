@@ -143,10 +143,6 @@ void vcnewCommand(client *c)
                 addReply(c, shared.alreadyexisterr);
                 return;
             }
-
-            PREPARE_RARGC(3);
-            COPY_ARG_TO_RARG(0, 0);
-            COPY_ARG_TO_RARG(1, 1);
             vc *vc = l_newVC;
             RARGV_ADD_SDS(VCToSds(vc));
             deleteVC(vc);

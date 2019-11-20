@@ -79,6 +79,22 @@ do{\
     }\
 }while(0)
 
+// Check the type of the arg, int / double
+
+#define CHECK_ARG_TYPE_INT(_obj)\
+do{\
+    long long __temp__;\
+    if (getLongLongFromObjectOrReply(c, _obj, &__temp__, "value is not an integer") != C_OK)\
+        return;\
+}while(0)
+
+#define CHECK_ARG_TYPE_DOUBLE(_obj)\
+do{\
+    double __temp__;\
+    if (getDoubleFromObjectOrReply(c, _obj, &__temp__, "value is not a valid float") != C_OK)\
+        return;\
+}while(0)
+
 /*
  * The core macros for the CRDT framework. You may use these macros to write your CRDT operations.
  * Here is an example:
