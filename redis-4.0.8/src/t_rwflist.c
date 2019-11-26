@@ -26,6 +26,12 @@ typedef struct list_element_identifier
     position *p;
 } leid;
 
+void leidFree(leid *id)
+{
+    zfree(id->p);
+    zfree(id);
+}
+
 position leid_buf[100];
 
 sds leidToSds(const leid *p)
@@ -159,6 +165,9 @@ typedef struct rwf_list_element
 
 #define GET_RLE(arg_t, create) \
 (rle *) rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, rleNew)
+
+#define GET_RLE_NEW(arg_t) \
+(rle *) rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[3], 1, rleNew)
 
 #define GET_RL_HT(arg_t, create) getInnerHT(c->db, c->arg_t[1], NULL, create)
 
@@ -324,14 +333,49 @@ void rlinsertCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 9);
-
+            for (int i = 5; i < 9; ++i)
+                CHECK_ARG_TYPE_INT(c->argv[i]);
+            rle *pre = GET_RLE(argv, 0);
+            if (pre == NULL)
+            {
+                sdstolower(c->argv[2]->ptr);
+                if (strcmp(c->argv[2]->ptr, "null") != 0)
+                {
+                    sds errs = sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
+                    addReplySds(c, errs);
+                    return;
+                }
+            }
+            // TODO: Initialize the list(hash) with head, len and current if the list doesn't exist.
+            rle *e = GET_RLE_NEW(argv);
+            PREPARE_PRECOND_ADD(e);
+            leid *left = pre == NULL ? NULL : pre->pos_id;
+            leid *right = pre == NULL ? NULL : pre->next == NULL ? NULL : pre->next->pos_id;
+            leid *id = constructLeid(left, right, t);
+            RARGV_ADD_SDS(leidToSds(id));
+            leidFree(id);
+            ADD_CR_NON_RMV(e);
         CRDT_EFFECT
     CRDT_END
 }
 
 void rlupdateCommand(client *c);
 
-void rlremCommand(client *c);
+void rlremCommand(client *c)
+{
+    CRDT_BEGIN
+        CRDT_PREPARE
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 3);
+            rle *e = GET_RLE(argv, 0);
+            PREPARE_PRECOND_NON_ADD(e);
+            ADD_CR_RMV(e);
+        CRDT_EFFECT
+            rle *e = GET_RLE(rargv, 1);
+            vc *t = CR_GET_LAST;
+            removeFunc(c, e, t);
+            deleteVC(t);
+    CRDT_END
+}
 
 void rllenCommand(client *c)
 {

@@ -83,7 +83,7 @@ do\
 #define PREPARE_PRECOND_ADD(e) \
 do\
 {\
-    if (EXISTS(e))\
+    if (e != NULL && EXISTS(e))\
     {\
         addReply(c, shared.ele_exist);\
         return;\
@@ -178,6 +178,7 @@ hashTypeSet(ht, key, sdsnewlen(&(value), sizeof(value_t)), HASH_SET_TAKE_VALUE)
 #define ADD_CR_RMV(e) RARGV_ADD_SDS(nowVC(CURRENT((reh *) (e))))
 
 // Get the timestamp from rargv. Remember to free it when it's no longer needed.
-#define CR_GET SdsToVC(c->rargv[c->rargc-1]->ptr)
+#define CR_GET(n) SdsToVC(c->rargv[n]->ptr)
+#define CR_GET_LAST CR_GET(c->rargc-1)
 
 #endif //RWFRAMEWORK_H

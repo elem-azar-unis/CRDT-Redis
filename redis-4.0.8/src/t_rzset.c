@@ -254,7 +254,7 @@ void rzaddCommand(client *c)
 #endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            vc *t = CR_GET;
+            vc *t = CR_GET_LAST;
             rze *e = GET_RZE(rargv, 1);
             /*
             if (readyCheck(e, t))
@@ -311,7 +311,7 @@ void rzincrbyCommand(client *c)
 #endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            vc *t = CR_GET;
+            vc *t = CR_GET_LAST;
             rze *e = GET_RZE(rargv, 1);
             /*
             if (readyCheck(e, t))
@@ -363,7 +363,7 @@ void rzremCommand(client *c)
             rcount++;
 #endif
             rze *e = GET_RZE(rargv, 1);
-            vc *t = CR_GET;
+            vc *t = CR_GET_LAST;
             /*
             if (removeCheck(e, t))
             {
