@@ -151,8 +151,6 @@ typedef struct rwf_list_element
     lc *current;
     sds content;
 
-    // flags indicate whether these properties are innate or have been applied with some acquired value.
-    int state_mask;
     lc *font_t, *size_t, *color_t, *bold_t, *italic_t, *underline_t;
     int font;
     int size;
@@ -176,6 +174,7 @@ rle *getHead(robj *ht)
     sds hname = sdsnew("head");
     robj *value = hashTypeGetValueObject(ht, hname);
     sdsfree(hname);
+    if (value == NULL)return NULL;
     rle *e = *(rle **) (value->ptr);
     decrRefCount(value);
     return e;
@@ -188,34 +187,56 @@ void setHead(robj *ht, rle *e)
     sdsfree(hname);
 }
 
+lc *getCurrent(robj *ht)
+{
+    lc* e;
+    sds hname = sdsnew("current");
+    robj *value = hashTypeGetValueObject(ht, hname);
+    if(value==NULL)
+    {
+        e = LC_NEW(0);
+        RWFHT_SET(ht, hname, lc*, e);
+    }
+    else
+    {
+        e = *(lc **) (value->ptr);
+        decrRefCount(value);
+    }
+    sdsfree(hname);
+    return e;
+}
+
 int getLen(robj *ht)
 {
     sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);
     sdsfree(hname);
-    int len = *(int *) (value->ptr);
-    decrRefCount(value);
-    return len;
+    if(value==NULL)
+        return 0;
+    else
+    {
+        int len = *(int *) (value->ptr);
+        decrRefCount(value);
+        return len;
+    }
 }
 
 void incrbyLen(robj *ht, int inc)
 {
     sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);
-    int len = *(int *) (value->ptr);
-    decrRefCount(value);
+    int len;
+    if(value ==NULL)
+        len=0;
+    else
+    {
+        len = *(int *) (value->ptr);
+        decrRefCount(value);
+    }
     len += inc;
     RWFHT_SET(ht, hname, int, len);
     sdsfree(hname);
 }
-
-// the flag masks for state_mask
-#define font_m (1<<0)
-#define size_m (1<<1)
-#define color_m (1<<2)
-#define bold_m (1<<3)
-#define italic_m (1<<4)
-#define underline_m (1<<5)
 
 #define __bold (1<<0)
 #define __italic (1<<1)
@@ -223,13 +244,13 @@ void incrbyLen(robj *ht, int inc)
 
 #define IN_UPDATE_NPR(T, value)\
 do{\
-    if(!(e->state_mask & T##_m))\
+    if(e->T##_t==NULL)\
         e->T=value;\
 }while(0)
 
 #define IN_UPDATE_PR(T, value)\
 do{\
-    if(!(e->state_mask & T##_m))\
+    if(e->T##_t==NULL)\
     {\
         if((value)==0)\
             e->property &=~ __##T;\
@@ -246,7 +267,6 @@ do{\
         {\
             LC_COPY(e->T##_t,t);\
             e->T=value;\
-            e->state_mask |= T##_m;\
         }\
         return;\
     }\
@@ -263,7 +283,6 @@ do{\
                 e->property &=~ __##T;\
             else\
                 e->property |= __##T;\
-            e->state_mask |= T##_m;\
         }\
         return;\
     }\
@@ -287,7 +306,6 @@ reh *rleNew()
     e->pos_id = NULL;
     e->current = LC_NEW(0);
     e->content = NULL;
-    e->state_mask = 0;
 
     e->font_t = NULL;
     e->size_t = NULL;
@@ -316,7 +334,6 @@ void removeFunc(client *c, rle *e, vc *t)
     if (removeCheck((reh *) e, t))
     {
         REH_RMV_FUNC(e, t);
-        e->state_mask = 0;
         RMV_LC(e->font_t);
         RMV_LC(e->size_t);
         RMV_LC(e->color_t);
@@ -346,12 +363,11 @@ void rlinsertCommand(client *c)
                     return;
                 }
             }
-            // TODO: Initialize the list(hash) with head, len and current if the list doesn't exist.
             rle *e = GET_RLE_NEW(argv);
             PREPARE_PRECOND_ADD(e);
             leid *left = pre == NULL ? NULL : pre->pos_id;
             leid *right = pre == NULL ? NULL : pre->next == NULL ? NULL : pre->next->pos_id;
-            leid *id = constructLeid(left, right, t);
+            leid *id = constructLeid(left, right, getCurrent(GET_RL_HT(argv, 1)));
             RARGV_ADD_SDS(leidToSds(id));
             leidFree(id);
             ADD_CR_NON_RMV(e);
