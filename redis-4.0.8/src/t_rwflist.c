@@ -189,10 +189,10 @@ void setHead(robj *ht, rle *e)
 
 lc *getCurrent(robj *ht)
 {
-    lc* e;
+    lc *e;
     sds hname = sdsnew("current");
     robj *value = hashTypeGetValueObject(ht, hname);
-    if(value==NULL)
+    if (value == NULL)
     {
         e = LC_NEW(0);
         RWFHT_SET(ht, hname, lc*, e);
@@ -211,7 +211,7 @@ int getLen(robj *ht)
     sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);
     sdsfree(hname);
-    if(value==NULL)
+    if (value == NULL)
         return 0;
     else
     {
@@ -226,8 +226,8 @@ void incrbyLen(robj *ht, int inc)
     sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);
     int len;
-    if(value ==NULL)
-        len=0;
+    if (value == NULL)
+        len = 0;
     else
     {
         len = *(int *) (value->ptr);
@@ -252,7 +252,7 @@ do{\
 do{\
     if(e->T##_t==NULL)\
     {\
-        if((value)==0)\
+        if((value & __##T)==0)\
             e->property &=~ __##T;\
         else\
             e->property |= __##T;\
@@ -267,6 +267,7 @@ do{\
         {\
             LC_COPY(e->T##_t,t);\
             e->T=value;\
+            lc_update(e->current, t);\
         }\
         return;\
     }\
@@ -283,6 +284,7 @@ do{\
                 e->property &=~ __##T;\
             else\
                 e->property |= __##T;\
+            lc_update(e->current, t);\
         }\
         return;\
     }\
@@ -303,6 +305,7 @@ reh *rleNew()
 {
     rle *e = zmalloc(sizeof(rle));
     REH_INIT(e);
+    e->oid = NULL;
     e->pos_id = NULL;
     e->current = LC_NEW(0);
     e->content = NULL;
@@ -333,6 +336,8 @@ void removeFunc(client *c, rle *e, vc *t)
 {
     if (removeCheck((reh *) e, t))
     {
+        robj *ht = GET_RL_HT(rargv, 0);
+        if (EXISTS(e)) incrbyLen(ht, -1);
         REH_RMV_FUNC(e, t);
         RMV_LC(e->font_t);
         RMV_LC(e->size_t);
@@ -340,7 +345,7 @@ void removeFunc(client *c, rle *e, vc *t)
         RMV_LC(e->bold_t);
         RMV_LC(e->italic_t);
         RMV_LC(e->underline_t);
-        incrbyLen(GET_RL_HT(rargv, 0), -1);
+        e->current->x = 0;
         server.dirty++;
     }
 }
@@ -365,17 +370,108 @@ void rlinsertCommand(client *c)
             }
             rle *e = GET_RLE_NEW(argv);
             PREPARE_PRECOND_ADD(e);
-            leid *left = pre == NULL ? NULL : pre->pos_id;
-            leid *right = pre == NULL ? NULL : pre->next == NULL ? NULL : pre->next->pos_id;
-            leid *id = constructLeid(left, right, getCurrent(GET_RL_HT(argv, 1)));
-            RARGV_ADD_SDS(leidToSds(id));
-            leidFree(id);
+            if (e->oid == NULL)
+            {
+                leid *left = pre == NULL ? NULL : pre->pos_id;
+                leid *right = pre == NULL ? NULL : pre->next == NULL ? NULL : pre->next->pos_id;
+                leid *id = constructLeid(left, right, getCurrent(GET_RL_HT(argv, 1)));
+                RARGV_ADD_SDS(leidToSds(id));
+                leidFree(id);
+            }
+            else
+                RARGV_ADD_SDS(leidToSds(e->pos_id));
             ADD_CR_NON_RMV(e);
         CRDT_EFFECT
+            vc *t = CR_GET_LAST;
+            rle *e = GET_RLE_NEW(rargv);
+            removeFunc(c, e, t);
+            if (insertCheck((reh *) e, t))
+            {
+                robj *ht = GET_RL_HT(rargv, 1);
+                if (!EXISTS(e)) incrbyLen(ht, 1);
+                PID(e) = t->id;
+                // The element is newly inserted.
+                if (e->oid == NULL)
+                {
+                    e->oid = sdsdup(c->rargv[3]->ptr);
+                    e->content = sdsdup(c->rargv[4]->ptr);
+                    e->pos_id = sdsToLeid(c->rargv[9]->ptr);
+                    rle *head = getHead(ht);
+                    if (head == NULL)
+                    {
+                        setHead(ht, e);
+                    }
+                    else if (leid_cmp(e->pos_id, head->pos_id) < 0)
+                    {
+                        setHead(ht, e);
+                        e->next = head;
+                        head->prev = e;
+                    }
+                    else
+                    {
+                        rle *pre = GET_RLE(rargv, 0);
+                        rle *p, *q;
+                        if (pre != NULL)
+                            p = pre;
+                        else p = head;
+                        q = p->next;
+                        while (q != NULL && leid_cmp(e->pos_id, q->pos_id) > 0)
+                        {
+                            p = q;
+                            q = q->next;
+                        }
+                        p->next = e;
+                        e->prev = p;
+                        e->next = q;
+                        if (q != NULL)
+                            q->prev = e;
+                    }
+                }
+                long long tmp;
+                getLongLongFromObject(c->rargv[5], &tmp);
+                IN_UPDATE_NPR(font, tmp);
+                getLongLongFromObject(c->rargv[6], &tmp);
+                IN_UPDATE_NPR(size, tmp);
+                getLongLongFromObject(c->rargv[7], &tmp);
+                IN_UPDATE_NPR(color, tmp);
+                getLongLongFromObject(c->rargv[8], &tmp);
+                IN_UPDATE_PR(bold, tmp);
+                IN_UPDATE_PR(italic, tmp);
+                IN_UPDATE_PR(underline, tmp);
+                server.dirty++;
+            }
+            deleteVC(t);
     CRDT_END
 }
 
-void rlupdateCommand(client *c);
+void rlupdateCommand(client *c)
+{
+    CRDT_BEGIN
+        CRDT_PREPARE
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 5);
+            CHECK_ARG_TYPE_INT(c->argv[4]);
+            rle *e = GET_RLE(argv, 0);
+            PREPARE_PRECOND_NON_ADD(e);
+            e->current->x++;
+            RARGV_ADD_SDS(lcToSds(e->current));
+            e->current->x--;
+            ADD_CR_NON_RMV(e);
+        CRDT_EFFECT
+            vc *t = CR_GET_LAST;
+            rle *e = GET_RLE(rargv, 1);
+            lc *lt = sdsToLc(c->rargv[5]->ptr);
+            long long value;
+            getLongLongFromObject(c->rargv[4], &value);
+            removeFunc(c, e, t);
+            if (updateCheck((reh *) e, t))
+            {
+                acquired_update(e, c->rargv[3]->ptr, lt, value);
+                server.dirty++;
+            }
+            deleteVC(t);
+            zfree(lt);
+    CRDT_END
+}
 
 void rlremCommand(client *c)
 {
