@@ -332,7 +332,7 @@ do{\
 }while(0)
 
 // This doesn't free t.
-void removeFunc(client *c, rle *e, vc *t)
+static void removeFunc(client *c, rle *e, vc *t)
 {
     if (removeCheck((reh *) e, t))
     {
@@ -373,7 +373,14 @@ void rlinsertCommand(client *c)
             if (e->oid == NULL)
             {
                 leid *left = pre == NULL ? NULL : pre->pos_id;
-                leid *right = pre == NULL ? NULL : pre->next == NULL ? NULL : pre->next->pos_id;
+                leid *right;
+                if (pre == NULL)
+                {
+                    rle *head = getHead(GET_RL_HT(argv, 1));
+                    right = head == NULL ? NULL : head->pos_id;
+                }
+                else
+                    right = pre->next == NULL ? NULL : pre->next->pos_id;
                 leid *id = constructLeid(left, right, getCurrent(GET_RL_HT(argv, 1)));
                 RARGV_ADD_SDS(leidToSds(id));
                 leidFree(id);

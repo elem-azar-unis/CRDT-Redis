@@ -59,22 +59,21 @@ inline lc *sdsToLc(sds s)
     return t;
 }
 
-inline lc *lc_update(lc *tar, const lc *m)
+inline void lc_update(lc *tar, const lc *m)
 {
     tar->x = (tar->x > m->x) ? tar->x : m->x;
 }
+
 #define LC_COPY(tar,m)\
 do\
 {\
     if((tar)==NULL)\
         (tar)=lc_dup(m);\
     else\
-    {\
-        (tar)->x = (m)->x;\
-        (tar)->id = (m)->id;\
-    }\
+        lc_copy(tar,m);\
 }while(0)
-inline void *lc_copy(lc *tar, const lc *m)
+
+inline void lc_copy(lc *tar, const lc *m)
 {
     tar->x = m->x;
     tar->id = m->id;

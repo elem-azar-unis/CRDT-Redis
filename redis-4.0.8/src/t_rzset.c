@@ -181,7 +181,7 @@ void increaseFunc(rze *e, redisDb *db, robj *tname, robj *element, double value,
 */
 
 // This doesn't free t.
-void removeFunc(client *c, rze *e, vc *t)
+static void removeFunc(client *c, rze *e, vc *t)
 {
     if (removeCheck((reh *) e, t))
     {
