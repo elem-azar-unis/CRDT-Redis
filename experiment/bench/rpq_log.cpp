@@ -1,12 +1,11 @@
 //
 // Created by user on 18-11-15.
 //
-#include <sys/stat.h>
-#include "queue_log.h"
+#include "rpq_log.h"
 #include "constants.h"
 
 
-void queue_log::shift_up(int s)
+void rpq_log::shift_up(int s)
 {
     int j = s, i = (j - 1) / 2;
     auto temp = heap[j];
@@ -25,7 +24,7 @@ void queue_log::shift_up(int s)
     heap[j] = temp;
 }
 
-void queue_log::shift_down(int s)
+void rpq_log::shift_down(int s)
 {
     int i = s, j = 2 * i + 1, tail = static_cast<int>(heap.size() - 1);
     auto temp = heap[i];
@@ -45,7 +44,7 @@ void queue_log::shift_down(int s)
     heap[i] = temp;
 }
 
-void queue_log::add(int k, double v)
+void rpq_log::add(int k, double v)
 {
     lock_guard<mutex> lk(mtx);
     if (map.find(k) == map.end())
@@ -57,7 +56,7 @@ void queue_log::add(int k, double v)
     }
 }
 
-void queue_log::inc(int k, double i)
+void rpq_log::inc(int k, double i)
 {
     if (i == 0)return;
     lock_guard<mutex> lk(mtx);
@@ -72,7 +71,7 @@ void queue_log::inc(int k, double i)
     }
 }
 
-void queue_log::rem(int k)
+void rpq_log::rem(int k)
 {
     lock_guard<mutex> lk(mtx);
     if (map.find(k) != map.end())
@@ -86,7 +85,7 @@ void queue_log::rem(int k)
     }
 }
 
-void queue_log::max(int k, double v)
+void rpq_log::max(int k, double v)
 {
     int ak;
     double av;
@@ -111,17 +110,17 @@ void queue_log::max(int k, double v)
     }
 }
 
-void queue_log::overhead(int o)
+void rpq_log::overhead(int o)
 {
     lock_guard<mutex> lk(ovhd_mtx);
     overhead_log.emplace_back(heap.size(), o);
 }
 
-void queue_log::write_file(char type, const char *dir)
+void rpq_log::write_file()
 {
     char n[64], f[64];
-    sprintf(n, "%s/%c:%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS, OP_PER_SEC, DELAY, DELAY_LOW);
-    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
+    sprintf(n, "%s/%s:%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS, OP_PER_SEC, DELAY, DELAY_LOW);
+    bench_mkdir(n);
 
     sprintf(f, "%s/s.ovhd", n);
     FILE *ovhd = fopen(f, "w");
@@ -136,4 +135,13 @@ void queue_log::write_file(char type, const char *dir)
         fprintf(max, "%d %f %d %f\n", o.kread, o.vread, o.kactural, o.vactural);
     fflush(max);
     fclose(max);
+}
+
+int rpq_log::random_get()
+{
+    lock_guard<mutex> lk(mtx);
+    int r = -1;
+    if (!heap.empty())
+        r = heap[intRand(static_cast<const int>(heap.size()))]->name;
+    return r;
 }

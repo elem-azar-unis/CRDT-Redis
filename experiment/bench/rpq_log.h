@@ -10,14 +10,14 @@
 #include <unordered_map>
 #include <mutex>
 
+#include "util.h"
+
 using namespace std;
 
-class generator;
-
-
-class queue_log
+class rpq_log : public rdt_log
 {
 private:
+
     struct m_log
     {
         int kread;
@@ -66,14 +66,14 @@ private:
 
     mutex mtx, max_mtx, ovhd_mtx;
 
-    friend class generator;
-
     void shift_up(int s);
 
     void shift_down(int s);
 
 public:
+    rpq_log(const char *type, const char *dir) : rdt_log(type, dir) {}
 
+    int random_get();
 
     void add(int k, double v);
 
@@ -85,7 +85,7 @@ public:
 
     void overhead(int o);
 
-    void write_file(char type, const char *dir);
+    void write_file() override;
 
 };
 

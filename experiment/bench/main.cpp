@@ -1,19 +1,15 @@
 #include <cstdio>
 #include <ctime>
-#include <thread>
-#include <condition_variable>
-#include <random>
-#include <hiredis/hiredis.h>
-#include <sys/stat.h>
 
-#include "constants.h"
-#include "generator.h"
+#include "exp_runner.h"
+#include "rpq_generator.h"
 
 using namespace std;
 
 const char *ips[3] = {"192.168.188.135",
                       "192.168.188.136",
                       "192.168.188.137"};
+
 int DELAY = 50;
 int DELAY_LOW = 10;
 int TOTAL_SERVERS = 9;
@@ -50,30 +46,6 @@ inline void set_delay(int hd, int ld)
     DELAY_LOW = ld;
     TOTAL_OPS = 10000000;
 }
-
-class task_queue
-{
-    int n = 0;
-    mutex m;
-    condition_variable cv;
-public:
-    void worker()
-    {
-        unique_lock<mutex> lk(m);
-        while (n == 0)
-            cv.wait(lk);
-        n--;
-    }
-
-    void add()
-    {
-        {
-            lock_guard<mutex> lk(m);
-            n++;
-        }
-        cv.notify_all();
-    }
-};
 
 /*
 void time_max()
@@ -128,7 +100,7 @@ void time_max()
     redisFree(c);
 }
 
-void conn_one_server(const char *ip, const int port, vector<thread *> &thds, generator &gen)
+void conn_one_server(const char *ip, const int port, vector<thread *> &thds, rpq_generator &gen)
 {
     for (int i = 0; i < THREAD_PER_SERVER; ++i)
     {
@@ -136,7 +108,7 @@ void conn_one_server(const char *ip, const int port, vector<thread *> &thds, gen
             redisContext *c = redisConnect(ip, port);
             for (int times = 0; times < OP_PER_THREAD; ++times)
             {
-                gen.gen_exec(c);
+                gen.gen_and_exec(c);
                 this_thread::sleep_for(chrono::microseconds((int) SLEEP_TIME));
             }
             redisFree(c);
@@ -146,44 +118,12 @@ void conn_one_server(const char *ip, const int port, vector<thread *> &thds, gen
 }
 */
 
-void conn_one_server_timed(const char *ip, const int port, vector<thread *> &thds, generator &gen,
-                           vector<task_queue *> &tasks)
-{
-    for (int i = 0; i < THREAD_PER_SERVER; ++i)
-    {
-        auto task = new task_queue();
-        auto t = new thread([ip, port, &thds, &gen, task] {
-            redisContext *c = redisConnect(ip, port);
-            if (c == nullptr || c->err)
-            {
-                if (c)
-                {
-                    printf("Error: %s, ip:%s, port:%d\n", c->errstr, ip, port);
-                }
-                else
-                {
-                    printf("Can't allocate redis context\n");
-                }
-                exit(-1);
-            }
-            for (int times = 0; times < OP_PER_THREAD; ++times)
-            {
-                task->worker();
-                gen.gen_exec(c);
-            }
-            redisFree(c);
-        });
-        thds.emplace_back(t);
-        tasks.emplace_back(task);
-    }
-}
-
 /*
-void test_local(z_type zt)
+void test_local(rpq_type zt)
 {
     vector<thread *> thds;
-    queue_log qlog;
-    generator gen(zt, qlog);
+    rpq_log qlog;
+    rpq_generator gen(zt, qlog);
 
     for (int i = 0; i < 5; ++i)
     {
@@ -192,7 +132,7 @@ void test_local(z_type zt)
 
     bool mb = true, ob = true;
     thread max([&mb, &qlog, zt] {
-        cmd c(zt, zmax, -1, -1, qlog);
+        rpq_cmd c(zt, zmax, -1, -1, qlog);
         redisContext *cl = redisConnect("127.0.0.1", 6379);
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfor-loop-analysis"
@@ -205,7 +145,7 @@ void test_local(z_type zt)
         redisFree(cl);
     });
     thread overhead([&ob, &qlog, zt] {
-        cmd c(zt, zoverhead, -1, -1, qlog);
+        rpq_cmd c(zt, zoverhead, -1, -1, qlog);
         redisContext *cl = redisConnect("127.0.0.1", 6381);
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wfor-loop-analysis"
@@ -225,107 +165,16 @@ void test_local(z_type zt)
     max.join();
     overhead.join();
     gen.join();
-    qlog.write_file(zcmd[zt]);
+    qlog.write_file(rpq_cmd_prefix[zt]);
 }
  */
 
-void test_dis(z_type zt, const char *dir)
-{
-    vector<thread *> thds;
-    vector<task_queue *> tasks;
-    queue_log qlog;
-    generator gen(zt, qlog);
-
-    timeval t1{}, t2{};
-    gettimeofday(&t1, nullptr);
-
-    for (auto ip:ips)
-        for (int i = 0; i < (TOTAL_SERVERS / 3); ++i)
-            conn_one_server_timed(ip, 6379 + i, thds, gen, tasks);
-
-    thread timer([&tasks] {
-        timeval td{}, tn{};
-        gettimeofday(&td, nullptr);
-        for (int times = 0; times < OP_PER_THREAD; ++times)
-        {
-            for (auto t:tasks)
-            {
-                t->add();
-            }
-            //this_thread::sleep_for(chrono::microseconds((int)SLEEP_TIME));
-            gettimeofday(&tn, nullptr);
-            auto slp_time =
-                    (td.tv_sec - tn.tv_sec) * 1000000 + td.tv_usec - tn.tv_usec +
-                    (long) ((times + 1) * INTERVAL_TIME);
-            this_thread::sleep_for(chrono::microseconds(slp_time));
-        }
-    });
-
-    volatile bool mb = true, ob = true;
-    thread max([&mb, &qlog, zt] {
-        cmd c(zt, zmax, -1, -1, qlog);
-        redisContext *cl = redisConnect(ips[0], 6379);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfor-loop-analysis"
-        while (mb)
-        {
-            this_thread::sleep_for(chrono::seconds(TIME_MAX));
-            c.exec(cl);
-        }
-#pragma clang diagnostic pop
-        redisFree(cl);
-    });
-    thread overhead([&ob, &qlog, zt] {
-        cmd c(zt, zoverhead, -1, -1, qlog);
-        redisContext *cl = redisConnect(ips[1], 6379);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfor-loop-analysis"
-        while (ob)
-        {
-            this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
-            c.exec(cl);
-        }
-#pragma clang diagnostic pop
-        char temp[10];
-        sprintf(temp, "%czopcount", zcmd[zt]);
-        auto r = static_cast<redisReply *>(redisCommand(cl, temp));
-        printf("%lli\n", r->integer);
-        freeReplyObject(r);
-        redisFree(cl);
-    });
-
-    timer.join();
-    for (auto t:thds)
-        t->join();
-
-    gettimeofday(&t2, nullptr);
-    double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
-    printf("%f, %f\n", time_diff_sec, TOTAL_OPS / time_diff_sec);
-
-    mb = false;
-    ob = false;
-    printf("ending.\n");
-
-    max.join();
-    overhead.join();
-    gen.join();
-
-    qlog.write_file(zcmd[zt], dir);
-
-    for (auto t :thds)
-        delete t;
-    for (auto t :tasks)
-        delete t;
-
-    this_thread::sleep_for(chrono::seconds(5));
-}
-
 /*
-void test_count_dis_one(const char *ip, const int port, z_type zt)
+void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 {
     thread threads[THREAD_PER_SERVER];
-    queue_log qlog;
-    generator gen(zt, qlog);
+    rpq_log qlog;
+    rpq_generator gen(zt, qlog);
 
     timeval t1{}, t2{};
     gettimeofday(&t1, nullptr);
@@ -336,7 +185,7 @@ void test_count_dis_one(const char *ip, const int port, z_type zt)
             redisContext *c = redisConnect(ip, port);
             for (int times = 0; times < 20000; ++times)
             {
-                gen.gen_exec(c);
+                gen.gen_and_exec(c);
             }
             redisFree(c);
         });
@@ -359,80 +208,109 @@ void test_count_dis_one(const char *ip, const int port, z_type zt)
 }
 */
 
-void test_delay(int round)
+void rpq_test_dis(rpq_type zt, const char *dir)
 {
-    mkdir("../result/delay", S_IRWXU | S_IRGRP | S_IROTH);
-    char n[64], cmd[64];
-    sprintf(n, "../result/delay/%d", round);
-    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
-    for (int d = 20; d <= 380; d += 40)
-    {
-        set_delay(d, d / 5);
-        sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %f", d, d / 5, d / 5, d / 25.0);
-        int temp = system(cmd);
-        test_dis(o, n);
-        test_dis(r, n);
-    }
+    rpq_log qlog(rpq_cmd_prefix[zt], dir);
+    rpq_generator gen(zt, qlog);
+    rpq_cmd read_max(zt, zmax, -1, -1, qlog);
+    rpq_cmd ovhd(zt, zoverhead, -1, -1, qlog);
+    rpq_cmd opcount(zt, zopcount, -1, -1, qlog);
+
+    exp_runner runner(qlog, gen, read_max, ovhd, opcount);
+    runner.run();
 }
 
-void delay_fix(int delay, int round, z_type type)
+void delay_fix(int delay, int round, rpq_type type)
 {
     set_delay(delay, delay / 5);
     char n[64], cmd[64];
     sprintf(n, "../result/delay/%d", round);
     sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %d", delay, delay / 5, delay / 5, delay / 25);
-    int temp = system(cmd);
-    test_dis(type, n);
+    system(cmd);
+    rpq_test_dis(type, n);
 }
 
-void test_replica(int round)
+
+void test_delay(int round)
 {
-    mkdir("../result/replica", S_IRWXU | S_IRGRP | S_IROTH);
-    char n[64], cmd[64];
-    sprintf(n, "../result/replica/%d", round);
-    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
-    for (int replica:{1, 2, 3, 4, 5})
+    bench_mkdir("../result/delay");
+    char n[64];
+    sprintf(n, "../result/delay/%d", round);
+    bench_mkdir(n);
+    for (int d = 20; d <= 380; d += 40)
     {
-        set_replica(replica);
-        sprintf(cmd, "python3 ../redis_test/connection.py %d", replica);
-        int temp = system(cmd);
-        test_dis(o, n);
-        test_dis(r, n);
+        delay_fix(d, round, o);
+        delay_fix(d, round, r);
     }
 }
 
-void replica_fix(int replica, int round, z_type type)
+void replica_fix(int replica, int round, rpq_type type)
 {
     set_replica(replica);
     char n[64], cmd[64];
     sprintf(n, "../result/replica/%d", round);
     sprintf(cmd, "python3 ../redis_test/connection.py %d", replica);
-    int temp = system(cmd);
-    test_dis(type, n);
+    system(cmd);
+    rpq_test_dis(type, n);
+}
+
+void test_replica(int round)
+{
+    bench_mkdir("../result/replica");
+    char n[64];
+    sprintf(n, "../result/replica/%d", round);
+    bench_mkdir(n);
+    for (int replica:{1, 2, 3, 4, 5})
+    {
+        replica_fix(replica, round, o);
+        replica_fix(replica, round, r);
+    }
+}
+
+void speed_fix(int speed, int round, rpq_type type)
+{
+    system("python3 ../redis_test/connection.py");
+    char n[64];
+    sprintf(n, "../result/speed/%d", round);
+    set_speed(speed);
+    rpq_test_dis(type, n);
 }
 
 void test_speed(int round)
 {
-    int temp = system("python3 ../redis_test/connection.py");
-    mkdir("../result/speed", S_IRWXU | S_IRGRP | S_IROTH);
+    system("python3 ../redis_test/connection.py");
+    bench_mkdir("../result/speed");
     char n[64];
     sprintf(n, "../result/speed/%d", round);
-    mkdir(n, S_IRWXU | S_IRGRP | S_IROTH);
+    bench_mkdir(n);
     for (int i = 500; i <= 10000; i += 100)
     {
-        set_speed(i);
-        test_dis(o, n);
-        test_dis(r, n);
+        speed_fix(i, round, o);
+        speed_fix(i, round, r);
     }
 }
 
-void speed_fix(int speed, int round, z_type type)
+void rpq_experiment()
 {
-    int temp = system("python3 ../redis_test/connection.py");
-    char n[64];
-    sprintf(n, "../result/speed/%d", round);
-    set_speed(speed);
-    test_dis(type, n);
+    timeval t1{}, t2{};
+    gettimeofday(&t1, nullptr);
+
+    set_default();
+    system("python3 ../redis_test/connection.py");
+    rpq_test_dis(o, "../result/ardominant");
+    system("python3 ../redis_test/connection.py");
+    rpq_test_dis(r, "../result/ardominant");
+
+    for (int i = 0; i < 30; i++)
+    {
+        test_delay(i);
+        test_replica(i);
+        test_speed(i);
+    }
+
+    gettimeofday(&t2, nullptr);
+    double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
+    printf("total time: %f\n", time_diff_sec);
 }
 
 int main(int argc, char *argv[])
@@ -440,22 +318,7 @@ int main(int argc, char *argv[])
     //time_max();
     //test_count_dis_one(ips[0],6379);
 
-    timeval t1{}, t2{};
-    gettimeofday(&t1, nullptr);
+    rpq_experiment();
 
-    int temp = system("python3 ../redis_test/connection.py");
-    set_default();
-    test_dis(o, "../result/ardominant");
-    test_dis(r, "../result/ardominant");
-
-    for (int i = 0; i < 30; i++)
-    {
-        test_delay(i);
-        test_replica(i);
-        test_dis(i);
-    }
-
-    gettimeofday(&t2, nullptr);
-    double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
-    printf("total time: %f\n", time_diff_sec);
+    return 0;
 }
