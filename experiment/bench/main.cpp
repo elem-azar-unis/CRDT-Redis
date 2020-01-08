@@ -2,7 +2,7 @@
 #include <ctime>
 
 #include "exp_runner.h"
-#include "rpq_generator.h"
+#include "rpq/rpq_generator.h"
 
 using namespace std;
 

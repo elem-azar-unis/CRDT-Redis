@@ -65,7 +65,7 @@ void rpq_cmd::exec(redisContext *c)
             ele.overhead(static_cast<int>(r->integer));
             break;
         case zopcount:
-            printf("%lli\n", static_cast<int>(r->integer));
+            printf("%lli\n", r->integer);
             break;
     }
     freeReplyObject(r);

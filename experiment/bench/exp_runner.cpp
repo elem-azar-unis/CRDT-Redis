@@ -4,8 +4,6 @@
 
 #include "exp_runner.h"
 
-__null_cmd null_cmd;
-
 void exp_runner::conn_one_server_timed(const char *ip, int port)
 {
     for (int i = 0; i < THREAD_PER_SERVER; ++i)

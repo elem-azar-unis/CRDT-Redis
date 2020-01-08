@@ -7,6 +7,7 @@
 
 #include <unordered_set>
 #include <mutex>
+#include <thread>
 #include <condition_variable>
 #include <random>
 #include <sys/stat.h>
@@ -23,31 +24,13 @@
 
 using namespace std;
 
-int intRand(const int min, const int max)
-{
-    static thread_local mt19937 *rand_gen = nullptr;
-    if (!rand_gen) rand_gen = new mt19937(clock() + hash<thread::id>()(this_thread::get_id()));
-    uniform_int_distribution<int> distribution(min, max);
-    return distribution(*rand_gen);
-}
+int intRand(int min, int max);
 
-int intRand(const int max)
-{
-    return intRand(0, max - 1);
-}
+int intRand(int max);
 
-double doubleRand(const double min, const double max)
-{
-    static thread_local mt19937 *rand_gen = nullptr;
-    if (!rand_gen) rand_gen = new mt19937(clock() + hash<thread::id>()(this_thread::get_id()));
-    uniform_real_distribution<double> distribution(min, max);
-    return distribution(*rand_gen);
-}
+double doubleRand(double min, double max);
 
-double decide()
-{
-    return doubleRand(0.0, 1.0);
-}
+double decide();
 
 inline void bench_mkdir(const char *path)
 {

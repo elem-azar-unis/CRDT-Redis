@@ -8,8 +8,8 @@
 #include <thread>
 #include <chrono>
 
-#include "constants.h"
-#include "util.h"
+#include "../constants.h"
+#include "../util.h"
 #include "rpq_basics.h"
 #include "rpq_cmd.h"
 #include "rpq_log.h"
