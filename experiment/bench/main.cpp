@@ -164,7 +164,7 @@ void test_local(rpq_type zt)
     printf("ending.\n");
     max.join();
     overhead.join();
-    gen.join();
+    gen.stop_and_join();
     qlog.write_file(rpq_cmd_prefix[zt]);
 }
  */
@@ -278,7 +278,6 @@ void speed_fix(int speed, int round, rpq_type type)
 
 void test_speed(int round)
 {
-    system("python3 ../redis_test/connection.py");
     bench_mkdir("../result/speed");
     char n[64];
     sprintf(n, "../result/speed/%d", round);

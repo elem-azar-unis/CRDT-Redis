@@ -118,10 +118,40 @@ public:
 
 class generator
 {
+private:
+    vector<record_for_collision *> records;
+    thread maintainer;
+    bool running = true;
+
+protected:
+    void add_record(record_for_collision &r)
+    {
+        records.push_back(&r);
+    }
+
+    void start_maintaining_records()
+    {
+        maintainer = thread([this] {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+            while (running)
+            {
+                this_thread::sleep_for(chrono::microseconds(SLP_TIME_MICRO));
+                for (auto r:records)
+                    r->inc_rem();
+            }
+#pragma clang diagnostic pop
+        });
+    }
+
 public:
     virtual void gen_and_exec(redisContext *c) = 0;
 
-    virtual void join() = 0;
+    void stop_and_join()
+    {
+        running = false;
+        maintainer.join();
+    }
 };
 
 class rdt_log

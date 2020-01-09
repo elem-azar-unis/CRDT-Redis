@@ -104,7 +104,7 @@ void exp_runner::run()
 
     read.join();
     overhead.join();
-    gen.join();
+    gen.stop_and_join();
 
     log.write_file();
 

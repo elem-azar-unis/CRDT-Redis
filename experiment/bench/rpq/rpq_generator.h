@@ -68,8 +68,6 @@ private:
     */
 
     record_for_collision add, rem;
-    thread maintainer;
-    volatile bool running = true;
     rpq_log &ele;
     rpq_type zt;
 
@@ -91,26 +89,12 @@ private:
 public:
     rpq_generator(rpq_type zt, rpq_log &e) : zt(zt), ele(e)
     {
-        maintainer = thread([this] {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
-            while (running)
-            {
-                this_thread::sleep_for(chrono::microseconds(SLP_TIME_MICRO));
-                add.inc_rem();
-                rem.inc_rem();
-            }
-#pragma clang diagnostic pop
-        });
+        add_record(add);
+        add_record(rem);
+        start_maintaining_records();
     }
 
     void gen_and_exec(redisContext *c) override;
-
-    void join() override
-    {
-        running = false;
-        maintainer.join();
-    }
 
 };
 
