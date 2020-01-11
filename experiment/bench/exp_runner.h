@@ -28,11 +28,9 @@ class exp_runner
 private:
     rdt_log &log;
     generator &gen;
-    cmd &read_cmd = null_cmd;
-
-private:
-    cmd &ovhd_cmd = null_cmd;
-    cmd &opcount_cmd = null_cmd;
+    cmd &read_cmd = null_cmd::Instance();
+    cmd &ovhd_cmd = null_cmd::Instance();
+    cmd &opcount_cmd = null_cmd::Instance();
 
     vector<thread *> thds;
     vector<task_queue *> tasks;
@@ -40,9 +38,6 @@ private:
     void conn_one_server_timed(const char *ip, int port);
 
 public:
-    exp_runner(rdt_log &log, generator &gen, cmd &readCmd, cmd &ovhdCmd, cmd &opcountCmd)
-            : opcount_cmd(opcountCmd), ovhd_cmd(ovhdCmd), read_cmd(readCmd), gen(gen), log(log) {}
-
     exp_runner(rdt_log &log, generator &gen) : gen(gen), log(log) {}
 
     void set_cmd_read(cmd &readCmd)

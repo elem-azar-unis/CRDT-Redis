@@ -5,9 +5,6 @@
 #ifndef BENCH_RPQ_GENERATOR_H
 #define BENCH_RPQ_GENERATOR_H
 
-#include <thread>
-#include <chrono>
-
 #include "../constants.h"
 #include "../util.h"
 #include "rpq_basics.h"

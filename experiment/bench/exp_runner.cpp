@@ -65,7 +65,7 @@ void exp_runner::run()
     volatile bool rb, ob;
     thread *read_thread = nullptr, *ovhd_thread = nullptr;
 
-    if (read_cmd != null_cmd)
+    if (!read_cmd.is_null())
     {
         rb = true;
         thread read([this, &rb] {
@@ -83,7 +83,7 @@ void exp_runner::run()
         read_thread = &read;
     }
 
-    if (ovhd_cmd != null_cmd)
+    if (!ovhd_cmd.is_null())
     {
         ob = true;
         thread overhead([this, &ob] {
@@ -96,7 +96,7 @@ void exp_runner::run()
                 ovhd_cmd.exec(cl);
             }
 #pragma clang diagnostic pop
-            if (opcount_cmd != null_cmd)
+            if (!opcount_cmd.is_null())
                 opcount_cmd.exec(cl);
             redisFree(cl);
         });
@@ -111,14 +111,18 @@ void exp_runner::run()
     double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
     printf("%f, %f\n", time_diff_sec, TOTAL_OPS / time_diff_sec);
 
-    rb = false;
-    ob = false;
     printf("ending.\n");
 
     if (read_thread != nullptr)
+    {
+        rb = false;
         read_thread->join();
+    }
     if (ovhd_thread != nullptr)
+    {
+        ob = false;
         ovhd_thread->join();
+    }
     gen.stop_and_join();
 
     log.write_file();

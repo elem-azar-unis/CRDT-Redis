@@ -4,7 +4,6 @@
 
 #include "util.h"
 
-__null_cmd null_cmd;
 
 int intRand(int min, int max)
 {
