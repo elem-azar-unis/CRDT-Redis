@@ -62,33 +62,46 @@ void exp_runner::run()
         }
     });
 
-    volatile bool rb = true, ob = true;
-    thread read([this, &rb] {
-        redisContext *cl = redisConnect(ips[0], 6379);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfor-loop-analysis"
-        while (rb)
-        {
-            this_thread::sleep_for(chrono::seconds(TIME_MAX));
-            read_cmd.exec(cl);
-        }
-#pragma clang diagnostic pop
-        redisFree(cl);
-    });
-    thread overhead([this, &ob] {
-        redisContext *cl = redisConnect(ips[1], 6379);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfor-loop-analysis"
-        while (ob)
-        {
-            this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
-            ovhd_cmd.exec(cl);
-        }
-#pragma clang diagnostic pop
+    volatile bool rb, ob;
+    thread *read_thread = nullptr, *ovhd_thread = nullptr;
 
-        opcount_cmd.exec(cl);
-        redisFree(cl);
-    });
+    if (read_cmd != null_cmd)
+    {
+        rb = true;
+        thread read([this, &rb] {
+            redisContext *cl = redisConnect(ips[0], 6379);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfor-loop-analysis"
+            while (rb)
+            {
+                this_thread::sleep_for(chrono::seconds(TIME_MAX));
+                read_cmd.exec(cl);
+            }
+#pragma clang diagnostic pop
+            redisFree(cl);
+        });
+        read_thread = &read;
+    }
+
+    if (ovhd_cmd != null_cmd)
+    {
+        ob = true;
+        thread overhead([this, &ob] {
+            redisContext *cl = redisConnect(ips[1], 6379);
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfor-loop-analysis"
+            while (ob)
+            {
+                this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
+                ovhd_cmd.exec(cl);
+            }
+#pragma clang diagnostic pop
+            if (opcount_cmd != null_cmd)
+                opcount_cmd.exec(cl);
+            redisFree(cl);
+        });
+        ovhd_thread = &overhead;
+    }
 
     timer.join();
     for (auto t:thds)
@@ -102,8 +115,10 @@ void exp_runner::run()
     ob = false;
     printf("ending.\n");
 
-    read.join();
-    overhead.join();
+    if (read_thread != nullptr)
+        read_thread->join();
+    if (ovhd_thread != nullptr)
+        ovhd_thread->join();
     gen.stop_and_join();
 
     log.write_file();

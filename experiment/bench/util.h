@@ -113,6 +113,10 @@ public:
 class cmd
 {
 public:
+    bool operator==(const cmd &c) { return this == &c; }
+
+    bool operator!=(const cmd &c) { return this != &c; }
+
     virtual void exec(redisContext *c) = 0;
 };
 
@@ -121,7 +125,7 @@ class generator
 private:
     vector<record_for_collision *> records;
     thread maintainer;
-    bool running = true;
+    volatile bool running = true;
 
 protected:
     void add_record(record_for_collision &r)
