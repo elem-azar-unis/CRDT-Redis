@@ -70,14 +70,11 @@ void exp_runner::run()
         rb = true;
         thread read([this, &rb] {
             redisContext *cl = redisConnect(ips[0], 6379);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfor-loop-analysis"
             while (rb)
             {
                 this_thread::sleep_for(chrono::seconds(TIME_MAX));
                 read_cmd.exec(cl);
             }
-#pragma clang diagnostic pop
             redisFree(cl);
         });
         read_thread = &read;
@@ -88,14 +85,11 @@ void exp_runner::run()
         ob = true;
         thread overhead([this, &ob] {
             redisContext *cl = redisConnect(ips[1], 6379);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wfor-loop-analysis"
             while (ob)
             {
                 this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
                 ovhd_cmd.exec(cl);
             }
-#pragma clang diagnostic pop
             if (!opcount_cmd.is_null())
                 opcount_cmd.exec(cl);
             redisFree(cl);

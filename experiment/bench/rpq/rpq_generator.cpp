@@ -17,7 +17,7 @@ void rpq_generator::gen_and_exec(redisContext *c)
         double conf = decide();
         if (conf < PAA)
         {
-            e = add.get();
+            e = add.get(-1);
             if (e == -1)
             {
                 e = gen_element();
@@ -26,7 +26,7 @@ void rpq_generator::gen_and_exec(redisContext *c)
         }
         else if (conf < PAR)
         {
-            e = rem.get();
+            e = rem.get(-1);
             if (e == -1)
                 e = gen_element();
             add.add(e);
@@ -51,7 +51,7 @@ void rpq_generator::gen_and_exec(redisContext *c)
         double conf = decide();
         if (conf < PRA)
         {
-            e = add.get();
+            e = add.get(-1);
             if (e == -1)
             {
                 e = ele.random_get();
@@ -61,7 +61,7 @@ void rpq_generator::gen_and_exec(redisContext *c)
         }
         else if (conf < PRR)
         {
-            e = rem.get();
+            e = rem.get(-1);
             if (e == -1)
             {
                 e = ele.random_get();

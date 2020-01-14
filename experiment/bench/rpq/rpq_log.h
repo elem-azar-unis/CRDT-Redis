@@ -73,6 +73,12 @@ private:
 public:
     rpq_log(const char *type, const char *dir) : rdt_log(type, dir) {}
 
+    ~rpq_log()
+    {
+        for(auto p:heap)
+            delete p;
+    }
+
     int random_get();
 
     void add(int k, double v);

@@ -65,51 +65,6 @@ public:
     }
 };
 
-class record_for_collision
-{
-    vector<int> v[SPLIT_NUM];
-    int cur = 0;
-    unordered_set<int> h;
-    mutex mtx;
-public:
-
-    void add(int name)
-    {
-        lock_guard<mutex> lk(mtx);
-        if (h.find(name) == h.end())
-        {
-            h.insert(name);
-            v[cur].push_back(name);
-        }
-    }
-
-    int get()
-    {
-        lock_guard<mutex> lk(mtx);
-        int r;
-        if (h.empty())
-            r = -1;
-        else
-        {
-            int b = (cur + intRand(SPLIT_NUM)) % SPLIT_NUM;
-            while (v[b].empty())
-                b = (b + 1) % SPLIT_NUM;
-            r = v[b][intRand(static_cast<const int>(v[b].size()))];
-        }
-        return r;
-    }
-
-    void inc_rem()
-    {
-        lock_guard<mutex> lk(mtx);
-        cur = (cur + 1) % SPLIT_NUM;
-        for (auto n:v[cur])
-            h.erase(h.find(n));
-        v[cur].clear();
-    }
-
-};
-
 class cmd
 {
 public:
@@ -118,8 +73,54 @@ public:
     virtual void exec(redisContext *c) = 0;
 };
 
+template<class T>
 class generator
 {
+protected:
+    class record_for_collision
+    {
+    private:
+        vector<T> v[SPLIT_NUM];
+        int cur = 0;
+        unordered_set<T> h;
+        mutex mtx;
+    public:
+        void add(T name)
+        {
+            lock_guard<mutex> lk(mtx);
+            if (h.find(name) == h.end())
+            {
+                h.insert(name);
+                v[cur].push_back(name);
+            }
+        }
+
+        T get(T fail)
+        {
+            lock_guard<mutex> lk(mtx);
+            T r;
+            if (h.empty())
+                r = fail;
+            else
+            {
+                int b = (cur + intRand(SPLIT_NUM)) % SPLIT_NUM;
+                while (v[b].empty())
+                    b = (b + 1) % SPLIT_NUM;
+                r = v[b][intRand(static_cast<const int>(v[b].size()))];
+            }
+            return r;
+        }
+
+        void inc_rem()
+        {
+            lock_guard<mutex> lk(mtx);
+            cur = (cur + 1) % SPLIT_NUM;
+            for (auto n:v[cur])
+                h.erase(h.find(n));
+            v[cur].clear();
+        }
+
+    };
 private:
     vector<record_for_collision *> records;
     thread maintainer;
@@ -134,15 +135,12 @@ protected:
     void start_maintaining_records()
     {
         maintainer = thread([this] {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wmissing-noreturn"
             while (running)
             {
                 this_thread::sleep_for(chrono::microseconds(SLP_TIME_MICRO));
                 for (auto r:records)
                     r->inc_rem();
             }
-#pragma clang diagnostic pop
         });
     }
 
@@ -161,8 +159,6 @@ class rdt_log
 protected:
     const char *dir;
     const char *type;
-
-    friend class generator;
 
 public:
     rdt_log(const char *type, const char *dir) : type(type), dir(dir) {}

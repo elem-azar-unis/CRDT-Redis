@@ -12,7 +12,7 @@
 #include "rpq_log.h"
 
 
-class rpq_generator : public generator
+class rpq_generator : public generator<int>
 {
 private:
     /*
