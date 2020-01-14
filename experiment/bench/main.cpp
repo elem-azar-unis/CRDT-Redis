@@ -216,7 +216,7 @@ void rpq_test_dis(rpq_type zt, const char *dir)
     rpq_cmd ovhd(zt, zoverhead, -1, -1, qlog);
     rpq_cmd opcount(zt, zopcount, -1, -1, qlog);
 
-    exp_runner runner(qlog, gen);
+    exp_runner<int> runner(qlog, gen);
     runner.set_cmd_opcount(opcount);
     runner.set_cmd_ovhd(ovhd);
     runner.set_cmd_read(read_max);

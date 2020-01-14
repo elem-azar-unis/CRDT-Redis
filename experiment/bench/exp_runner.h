@@ -23,11 +23,12 @@
 using namespace std;
 extern const char *ips[3];
 
+template <class T>
 class exp_runner
 {
 private:
     rdt_log &log;
-    generator &gen;
+    generator<T> &gen;
     cmd &read_cmd = null_cmd::Instance();
     cmd &ovhd_cmd = null_cmd::Instance();
     cmd &opcount_cmd = null_cmd::Instance();
@@ -38,7 +39,7 @@ private:
     void conn_one_server_timed(const char *ip, int port);
 
 public:
-    exp_runner(rdt_log &log, generator &gen) : gen(gen), log(log) {}
+    exp_runner(rdt_log &log, generator<T> &gen) : gen(gen), log(log) {}
 
     void set_cmd_read(cmd &readCmd)
     {
