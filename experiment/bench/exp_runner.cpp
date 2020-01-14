@@ -4,7 +4,8 @@
 
 #include "exp_runner.h"
 
-void exp_runner::conn_one_server_timed(const char *ip, int port)
+template<class T>
+void exp_runner<T>::conn_one_server_timed(const char *ip, int port)
 {
     for (int i = 0; i < THREAD_PER_SERVER; ++i)
     {
@@ -35,7 +36,8 @@ void exp_runner::conn_one_server_timed(const char *ip, int port)
     }
 }
 
-void exp_runner::run()
+template<class T>
+void exp_runner<T>::run()
 {
     timeval t1{}, t2{};
     gettimeofday(&t1, nullptr);
