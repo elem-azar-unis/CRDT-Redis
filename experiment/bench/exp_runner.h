@@ -118,7 +118,7 @@ public:
         if (!read_cmd.is_null())
         {
             rb = true;
-            thread read([this, &rb] {
+            read_thread = new thread([this, &rb] {
                 redisContext *cl = redisConnect(ips[0], 6379);
                 while (rb)
                 {
@@ -127,13 +127,12 @@ public:
                 }
                 redisFree(cl);
             });
-            read_thread = &read;
         }
 
         if (!ovhd_cmd.is_null())
         {
             ob = true;
-            thread overhead([this, &ob] {
+            ovhd_thread = new thread([this, &ob] {
                 redisContext *cl = redisConnect(ips[1], 6379);
                 while (ob)
                 {
@@ -144,7 +143,6 @@ public:
                     opcount_cmd.exec(cl);
                 redisFree(cl);
             });
-            ovhd_thread = &overhead;
         }
 
         timer.join();
@@ -161,11 +159,13 @@ public:
         {
             rb = false;
             read_thread->join();
+            delete read_thread;
         }
         if (ovhd_thread != nullptr)
         {
             ob = false;
             ovhd_thread->join();
+            delete ovhd_thread;
         }
         gen.stop_and_join();
 

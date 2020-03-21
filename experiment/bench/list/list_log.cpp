@@ -21,3 +21,45 @@ double list_log::diff(const list_log::element &e, const redisReply *r)
     return 0;
 }
 
+void list_log::read_list(redisReply r)
+{
+    int len;
+    double distance;
+
+    {
+        lock_guard<mutex> lk(mtx);
+        len = list.size();
+        int r_len = r.elements;
+
+        // Levenshtein distance
+        vector<vector<double> > dp(len + 1, vector<double>(r_len + 1, 0));
+        for (int i = 1; i <= len; i++) dp[i][0] = i;
+        for (int j = 1; j <= r_len; j++) dp[0][j] = j;
+        auto iter = list.begin();
+        for (int i = 1; i <= len; i++)
+        {
+            for (int j = 1; j <= r_len; j++)
+                dp[i][j] = min(dp[i - 1][j - 1] + diff(**iter, r.element[j - 1]),
+                        min(dp[i][j - 1] + 1, dp[i - 1][j] + 1));
+            iter++;
+        }
+        distance = dp[len][r_len];
+    }
+
+    {
+        lock_guard<mutex> lk(dis_mtx);
+        distance_log.emplace_back(len,distance);
+    }
+}
+
+void list_log::overhead(int o)
+{
+    int num;
+    {
+        lock_guard<mutex> lk(mtx);
+        num = list.size();
+    }
+    lock_guard<mutex> lk(ovhd_mtx);
+    overhead_log.emplace_back(num, o);
+}
+

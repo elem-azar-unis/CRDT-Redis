@@ -7,6 +7,7 @@
 
 #include <string>
 #include <list>
+#include <vector>
 #include <unordered_map>
 #include <mutex>
 
@@ -31,6 +32,8 @@ private:
         string content;
         int font,size,  color;
         bool bold, italic, underline;
+        
+        element *prev=nullptr,*next=nullptr;
 
         element(char *name, char *content, int font, int size, int color,
                 bool bold, bool italic, bool underline) :
@@ -39,6 +42,17 @@ private:
     };
 
     static double diff(const element& e, const redisReply * r);
+
+    unordered_map<int, element *> map;
+    list<element *> list;
+    vector<record> distance_log;
+    vector<record> overhead_log;
+
+    mutex mtx, dis_mtx, ovhd_mtx;
+
+public:
+    void read_list(redisReply r);
+    void overhead(int o);
 };
 
 

@@ -25,7 +25,7 @@ def redis_exec(conn, *cm, prt=0):
 
 
 def ssh_exec(sshs, cmd):
-    cmd = "cd ~/Redis-RPQ/redis_test/;" + cmd + " 1>/dev/null 2>&1"
+    cmd = "cd ~/Redis-RPQ/experiment/redis_test/;" + cmd + " 1>/dev/null 2>&1"
     for ssh in sshs:
         stdin, stdout, stderr = ssh.exec_command(cmd)
         # data = stdout.read()

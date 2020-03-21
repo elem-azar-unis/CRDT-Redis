@@ -112,8 +112,13 @@ void rpq_log::max(int k, double v)
 
 void rpq_log::overhead(int o)
 {
+    int num;
+    {
+        lock_guard<mutex> lk(mtx);
+        num = heap.size();
+    }
     lock_guard<mutex> lk(ovhd_mtx);
-    overhead_log.emplace_back(heap.size(), o);
+    overhead_log.emplace_back(num, o);
 }
 
 void rpq_log::write_file()
