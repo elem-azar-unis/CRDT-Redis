@@ -23,15 +23,15 @@
 using namespace std;
 extern const char *ips[3];
 
-template <class T>
+template<class T>
 class exp_runner
 {
 private:
     rdt_log &log;
     generator<T> &gen;
-    cmd &read_cmd = null_cmd::Instance();
-    cmd &ovhd_cmd = null_cmd::Instance();
-    cmd &opcount_cmd = null_cmd::Instance();
+    cmd *read_cmd = nullptr;
+    cmd *ovhd_cmd = nullptr;
+    cmd *opcount_cmd = nullptr;
 
     vector<thread *> thds;
     vector<task_queue *> tasks;
@@ -72,17 +72,17 @@ public:
 
     void set_cmd_read(cmd &readCmd)
     {
-        read_cmd = readCmd;
+        read_cmd = &readCmd;
     }
 
     void set_cmd_ovhd(cmd &ovhdCmd)
     {
-        ovhd_cmd = ovhdCmd;
+        ovhd_cmd = &ovhdCmd;
     }
 
     void set_cmd_opcount(cmd &opcountCmd)
     {
-        opcount_cmd = opcountCmd;
+        opcount_cmd = &opcountCmd;
     }
 
     void run()
@@ -115,7 +115,7 @@ public:
         volatile bool rb, ob;
         thread *read_thread = nullptr, *ovhd_thread = nullptr;
 
-        if (!read_cmd.is_null())
+        if (read_cmd != nullptr)
         {
             rb = true;
             read_thread = new thread([this, &rb] {
@@ -123,13 +123,13 @@ public:
                 while (rb)
                 {
                     this_thread::sleep_for(chrono::seconds(TIME_MAX));
-                    read_cmd.exec(cl);
+                    read_cmd->exec(cl);
                 }
                 redisFree(cl);
             });
         }
 
-        if (!ovhd_cmd.is_null())
+        if (ovhd_cmd != nullptr)
         {
             ob = true;
             ovhd_thread = new thread([this, &ob] {
@@ -137,10 +137,10 @@ public:
                 while (ob)
                 {
                     this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
-                    ovhd_cmd.exec(cl);
+                    ovhd_cmd->exec(cl);
                 }
-                if (!opcount_cmd.is_null())
-                    opcount_cmd.exec(cl);
+                if (opcount_cmd != nullptr)
+                    opcount_cmd->exec(cl);
                 redisFree(cl);
             });
         }

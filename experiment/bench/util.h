@@ -68,8 +68,6 @@ public:
 class cmd
 {
 public:
-    virtual bool is_null() { return false; }
-
     virtual void exec(redisContext *c) = 0;
 };
 
@@ -165,31 +163,5 @@ public:
 
     virtual void write_file() = 0;
 };
-
-class null_cmd : public cmd
-{
-private:
-    null_cmd() = default;
-
-    null_cmd(null_cmd const &c) {}
-
-    null_cmd &operator=(null_cmd const &c)
-    {
-        if (this == &c)
-            ;
-    }
-
-public:
-    static null_cmd &Instance()
-    {
-        static null_cmd _null_cmd;
-        return _null_cmd;
-    }
-
-    bool is_null() override { return true; }
-
-    void exec(redisContext *c) override {}
-};
-
 
 #endif //BENCH_UTIL_H
