@@ -26,66 +26,39 @@ static FILE *rzLog = NULL;
 #endif
 
 #define RW_RPQ_TABLE_SUFFIX "_rzets_"
-#define RZESIZE(e) (sizeof(rze) + sizeof(vc) + CURRENT(e)->size * sizeof(int))
+#define LOOKUP(e) (listLength((e)->aset) != 0 && listLength((e)->rset) == 0)
+#define SCORE(e) ((e)->value->x + (e)->value->inc)
+#define RZESIZE(e) (sizeof(rze) + 2 * sizeof(list) + sizeof(vc) + (e)->current->size * sizeof(int) \
+                    + listLength((e)->aset) * (sizeof(rase) + sizeof(listNode)+ \
+                                               sizeof(vc) + (e)->current->size * sizeof(int) ) \
+                    + listLength((e)->rset) * (sizeof(vc) + (e)->current->size * sizeof(int) + sizeof(listNode)))
+
+typedef struct rzset_aset_element
+{
+    vc *t;
+    double x;
+    double inc;
+} rase;
 
 typedef struct RW_RPQ_element
 {
-    reh header;
-    double innate;
-    double acquired;
-    //list *ops;
+    vc *current;
+    rase *value;
+    list *aset;
+    list *rset;
 } rze;
 
-//#define RZADD 0
-//#define RZINCBY 1
-//typedef struct unready_command
-//{
-//    int type;
-//    robj *tname, *element;
-//    double value;
-//    vc *t;
-//} ucmd;
-
-//int rzeSize(rze *e)
-//{
-//    int vcsize = sizeof(vc) + e->current->size * sizeof(int);
-//    int size = sizeof(rze) + vcsize + sizeof(list)
-//               + listLength(e->ops) * (sizeof(listNode) + sizeof(ucmd) + 2 * sizeof(robj) + vcsize);
-//    listNode *ln;
-//    listIter li;
-//    listRewind(e->ops, &li);
-//    while ((ln = listNext(&li)))
-//    {
-//        ucmd *cmd = ln->value;
-//        size += sdsAllocSize(cmd->tname->ptr) + sdsAllocSize(cmd->element->ptr);
-//    }
-//    return size;
-//}
-
-//sds ucmdToSds(ucmd *cmd)
-//{
-//    char *tp[] = {"RZADD", "RZINCBY"};
-//    sds vc_s = VCToSds(cmd->t);
-//    sds s = sdscatprintf(sdsempty(), "%s %s %s %f %s",
-//                         tp[cmd->type],
-//                         (char *) cmd->tname->ptr,
-//                         (char *) cmd->element->ptr,
-//                         cmd->value, vc_s);
-//    sdsfree(vc_s);
-//    return s;
-//}
-
-reh *rzeNew()
+rze *rzeNew()
 {
     rze *e = zmalloc(sizeof(rze));
-    REH_INIT(e);
-    e->innate = 0;
-    e->acquired = 0;
-    //e->ops = listCreate();
-    return (reh *) e;
+    e->current = l_newVC;
+    e->value = NULL;
+    e->aset = listCreate();
+    e->rset = listCreate();
+    return e;
 }
 
-#define SCORE(e) ((e)->innate+(e)->acquired)
+
 /*
 // 获得 t 所有权
 ucmd *ucmdNew(int type, robj *tname, robj *element, double value, vc *t)
@@ -148,13 +121,28 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
 }
 */
 
-#ifndef RW_OVERHEAD
-#define GET_RZE(arg_t, create)\
-(rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
-#else
-#define RZE_HT_GET(arg_t,create)\
-(rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew, cur_db, cur_tname, SUF_RZETOTAL)
+rze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
+{
+    robj *ht = getInnerHT(db, tname, RW_RPQ_TABLE_SUFFIX, create);
+    if (ht == NULL)return NULL;
+    robj *value = hashTypeGetValueObject(ht, key->ptr);
+    rze *e;
+    if (value == NULL)
+    {
+        if (!create)return NULL;
+        e = rzeNew();
+        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
+#ifdef RW_OVERHEAD
+        inc_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL, 1);
 #endif
+    }
+    else
+    {
+        e = *(rze **) (value->ptr);
+        decrRefCount(value);
+    }
+    return e;
+}
 
 /*
 // no memory free
@@ -239,13 +227,13 @@ void rzaddCommand(client *c)
             PREPARE_PRECOND_ADD(e);
 
 #ifdef RPQ_LOG
-                check(rzLog);
-                fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
-                        (char *) c->argv[0]->ptr,
-                        (char *) c->argv[1]->ptr,
-                        (char *) c->argv[2]->ptr,
-                        (char *) c->argv[3]->ptr);
-                fflush(rzLog);
+            check(rzLog);
+            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr,
+                    (char *) c->argv[3]->ptr);
+            fflush(rzLog);
 #endif
             ADD_CR_NON_RMV(e);
         CRDT_EFFECT
@@ -295,13 +283,13 @@ void rzincrbyCommand(client *c)
             PREPARE_PRECOND_NON_ADD(e);
 
 #ifdef RPQ_LOG
-                check(rzLog);
-                fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
-                        (char *) c->argv[0]->ptr,
-                        (char *) c->argv[1]->ptr,
-                        (char *) c->argv[2]->ptr,
-                        (char *) c->argv[3]->ptr);
-                fflush(rzLog);
+            check(rzLog);
+            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr,
+                    (char *) c->argv[3]->ptr);
+            fflush(rzLog);
 #endif
 
             ADD_CR_NON_RMV(e);
@@ -350,12 +338,12 @@ void rzremCommand(client *c)
             PREPARE_PRECOND_NON_ADD(e);
 
 #ifdef RPQ_LOG
-                check(rzLog);
-                fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
-                        (char *) c->argv[0]->ptr,
-                        (char *) c->argv[1]->ptr,
-                        (char *) c->argv[2]->ptr);
-                fflush(rzLog);
+            check(rzLog);
+            fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
+                    (char *) c->argv[0]->ptr,
+                    (char *) c->argv[1]->ptr,
+                    (char *) c->argv[2]->ptr);
+            fflush(rzLog);
 #endif
             ADD_CR_RMV(e);
         CRDT_EFFECT
