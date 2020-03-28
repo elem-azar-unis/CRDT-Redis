@@ -19,13 +19,13 @@
  *     reh header;
  *     double innate;
  *     double acquired;
- * } rze;
+ * } rwfze;
  *
  * And add the header construct macro to your actual construct function.
  * e.g.
- * rze *rzeNew()
+ * rwfze *rwfzeNew()
  * {
- *     rze *e = zmalloc(sizeof(rze));
+ *     rwfze *e = zmalloc(sizeof(rwfze));
  *     REH_INIT((reh *) e);
  *     e->innate = 0;
  *     e->acquired = 0;
@@ -34,7 +34,7 @@
  *
  * And add the remove macro to your actual element remove effect function.
  * e.g.
- * void removeFunc(client *c, rze *e, vc *t)
+ * void removeFunc(client *c, rwfze *e, vc *t)
  * {
  *     if (removeCheck(e, t))
  *     {
@@ -147,14 +147,14 @@ robj *getInnerHT(redisDb *db, robj* tname, const char *suffix, int create);
  * If define RW_OVERHEAD, count the memory usage when creating elements.
  *
  * Note that you may wrap this function with a macro for the convenience of use. For example,
- * in remove-win CRPQ, the element type name is rze:
+ * in remove-win CRPQ, the element type name is rwfze:
  *
  * #ifndef RW_OVERHEAD
  * #define GET_RZE(arg_t, create)\
- * (rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
+ * (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
  * #else
  * #define RZE_HT_GET(arg_t,create)\
- * (rze *) rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew, cur_db, cur_tname, SUF_RZETOTAL)
+ * (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew, cur_db, cur_tname, SUF_RZETOTAL)
  * #endif
  *
  * */

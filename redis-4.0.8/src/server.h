@@ -2065,6 +2065,14 @@ void rzmaxCommand(client *c);
 void rzestatusCommand(client* c);
 void rzoverheadCommand(client* c);
 
+void rwfzaddCommand(client *c);
+void rwfzincrbyCommand(client *c);
+void rwfzremCommand(client *c);
+void rwfzscoreCommand(client *c);
+void rwfzmaxCommand(client *c);
+void rwfzestatusCommand(client* c);
+void rwfzoverheadCommand(client* c);
+
 void rlinsertCommand(client* c);
 void rlupdateCommand(client* c);
 void rlremCommand(client* c);
