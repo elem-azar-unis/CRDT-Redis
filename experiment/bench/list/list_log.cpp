@@ -28,14 +28,14 @@ void list_log::read_list(redisReply r)
 
     {
         lock_guard<mutex> lk(mtx);
-        len = list.size();
+        len = document.size();
         int r_len = r.elements;
 
         // Levenshtein distance
         vector<vector<double> > dp(len + 1, vector<double>(r_len + 1, 0));
         for (int i = 1; i <= len; i++) dp[i][0] = i;
         for (int j = 1; j <= r_len; j++) dp[0][j] = j;
-        auto iter = list.begin();
+        auto iter = document.begin();
         for (int i = 1; i <= len; i++)
         {
             for (int j = 1; j <= r_len; j++)
@@ -57,7 +57,7 @@ void list_log::overhead(int o)
     int num;
     {
         lock_guard<mutex> lk(mtx);
-        num = list.size();
+        num = document.size();
     }
     lock_guard<mutex> lk(ovhd_mtx);
     overhead_log.emplace_back(num, o);

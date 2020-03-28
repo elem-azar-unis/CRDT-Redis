@@ -44,7 +44,7 @@ private:
     static double diff(const element& e, const redisReply * r);
 
     unordered_map<int, element *> map;
-    list<element *> list;
+    list<element *> document;
     vector<record> distance_log;
     vector<record> overhead_log;
 
