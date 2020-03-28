@@ -6,7 +6,7 @@
 #include "RWFramework.h"
 
 #ifdef RW_OVERHEAD
-#define SUF_RZETOTAL "rwfzetotal"
+#define SUF_RWFZETOTAL "rwfzetotal"
 static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
 #endif
@@ -51,7 +51,7 @@ reh *rwfzeNew()
 (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew)
 #else
 #define RZE_HT_GET(arg_t,create)\
-(rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew, cur_db, cur_tname, SUF_RZETOTAL)
+(rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew, cur_db, cur_tname, SUF_RWFZETOTAL)
 #endif
 
 // This doesn't free t.
@@ -346,7 +346,7 @@ void rwfzopcountCommand(client *c)
 void rwfzoverheadCommand(client *c)
 {
     PRE_SET;
-    long long size = get_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL) *
+    long long size = get_ovhd_count(cur_db, cur_tname, SUF_RWFZETOTAL) *
                      (sizeof(rwfze) + sizeof(vc) + server.p2p_count * sizeof(int));
     addReplyLongLong(c, size);
 }

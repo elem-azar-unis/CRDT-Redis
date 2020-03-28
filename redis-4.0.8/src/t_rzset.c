@@ -58,6 +58,28 @@ rze *rzeNew()
     return e;
 }
 
+rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
+{
+    robj *ht = getInnerHT(db, tname, RW_RPQ_TABLE_SUFFIX, create);
+    if (ht == NULL)return NULL;
+    robj *value = hashTypeGetValueObject(ht, key->ptr);
+    rze *e;
+    if (value == NULL)
+    {
+        if (!create)return NULL;
+        e = rzeNew();
+        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
+#ifdef RW_OVERHEAD
+        inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
+#endif
+    }
+    else
+    {
+        e = *(rze **) (value->ptr);
+        decrRefCount(value);
+    }
+    return e;
+}
 
 /*
 // 获得 t 所有权
@@ -97,54 +119,7 @@ int readyCheck(rze *e, vc *t)
     return equal;
 }
 
-rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
-{
-    robj *ht = getInnerHT(db, tname->ptr, RW_RPQ_TABLE_SUFFIX, create);
-    if (ht == NULL)return NULL;
-    robj *value = hashTypeGetValueObject(ht, key->ptr);
-    rze *e;
-    if (value == NULL)
-    {
-        if (!create)return NULL;
-        e = (rze *) rzeNew();
-        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
-#ifdef RW_OVERHEAD
-        inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
-#endif
-    }
-    else
-    {
-        e = *(rze **) (value->ptr);
-        decrRefCount(value);
-    }
-    return e;
-}
-*/
 
-rze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
-{
-    robj *ht = getInnerHT(db, tname, RW_RPQ_TABLE_SUFFIX, create);
-    if (ht == NULL)return NULL;
-    robj *value = hashTypeGetValueObject(ht, key->ptr);
-    rze *e;
-    if (value == NULL)
-    {
-        if (!create)return NULL;
-        e = rzeNew();
-        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
-#ifdef RW_OVERHEAD
-        inc_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL, 1);
-#endif
-    }
-    else
-    {
-        e = *(rze **) (value->ptr);
-        decrRefCount(value);
-    }
-    return e;
-}
-
-/*
 // no memory free
 void insertFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
 {
@@ -166,24 +141,8 @@ void increaseFunc(rze *e, redisDb *db, robj *tname, robj *element, double value,
     zsetAdd(zset, SCORE(e), element->ptr, &flags, NULL);
     server.dirty++;
 }
-*/
 
-// This doesn't free t.
-static void removeFunc(client *c, rze *e, vc *t)
-{
-    if (removeCheck((reh *) e, t))
-    {
-        REH_RMV_FUNC(e, t);
-        e->acquired = 0;
-        e->innate = 0;
-        robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
-        zsetDel(zset, c->rargv[2]->ptr);
-        server.dirty++;
-        //notifyLoop(e, c->db);
-    }
-}
 
-/*
 void notifyLoop(rze *e, redisDb *db)
 {
     listNode *ln;
@@ -209,6 +168,32 @@ void notifyLoop(rze *e, redisDb *db)
             ucmdDelete(cmd);
         }
     }
+}
+
+
+            // in effect of addCommand function:
+            if (readyCheck(e, t))
+            {
+                insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
+                deleteVC(t);
+            }
+            else
+            {
+                ucmd *cmd = ucmdNew(RZADD, c->rargv[1], c->rargv[2], v, t);
+                listAddNodeTail(e->ops, cmd);
+            }
+
+            // in effect of incCommand function:
+            if (readyCheck(e, t))
+            {
+                increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
+                deleteVC(t);
+            }
+            else
+            {
+                ucmd *cmd = ucmdNew(RZINCBY, c->rargv[1], c->rargv[2], v, t);
+                listAddNodeTail(e->ops, cmd);
+            }
 
 */
 
@@ -244,18 +229,6 @@ void rzaddCommand(client *c)
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = CR_GET_LAST;
             rze *e = GET_RZE(rargv, 1);
-            /*
-            if (readyCheck(e, t))
-            {
-                insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-                deleteVC(t);
-            }
-            else
-            {
-                ucmd *cmd = ucmdNew(RZADD, c->rargv[1], c->rargv[2], v, t);
-                listAddNodeTail(e->ops, cmd);
-            }
-             */
             removeFunc(c, e, t);
             if (insertCheck((reh *) e, t))
             {
@@ -301,18 +274,7 @@ void rzincrbyCommand(client *c)
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = CR_GET_LAST;
             rze *e = GET_RZE(rargv, 1);
-            /*
-            if (readyCheck(e, t))
-            {
-                increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-                deleteVC(t);
-            }
-            else
-            {
-                ucmd *cmd = ucmdNew(RZINCBY, c->rargv[1], c->rargv[2], v, t);
-                listAddNodeTail(e->ops, cmd);
-            }
-            */
+
             removeFunc(c, e, t);
             if (updateCheck((reh *) e, t))
             {
