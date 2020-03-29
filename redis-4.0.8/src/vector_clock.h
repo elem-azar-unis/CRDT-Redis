@@ -21,6 +21,7 @@ typedef struct vector_clock
 
 #define CONCURRENT(x) ((x)==CLOCK_C_LESS || (x)==CLOCK_C_GREATER)
 
+#define VC_SIZE(clock) (sizeof(vc) + (clock)->size * sizeof(int))
 #define CURRENT_PID server.p2p_id
 #define l_newVC newVC(server.p2p_count, CURRENT_PID)
 #define l_increaseVC(c) increaseVC((c), CURRENT_PID)

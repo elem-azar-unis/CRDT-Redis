@@ -53,7 +53,7 @@ typedef struct ORI_RPQ_element
                     + listLength((e)->aset) * (sizeof(oase) + sizeof(lc) + sizeof(listNode)) \
                     + listLength((e)->rset) * (sizeof(lc) + sizeof(listNode)))
 
-sds aseToSds(oase *a)
+sds oaseToSds(oase *a)
 {
     return sdscatprintf(sdsempty(), "(%d,%d),%f,%f,%f", a->t->x, a->t->id, a->x, a->inc, a->count);
 }
@@ -280,9 +280,7 @@ void ozaddCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
-            double v;
-            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
-                return;
+            CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 1);
             if (LOOKUP(e))
             {
@@ -332,9 +330,7 @@ void ozincrbyCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
-            double v;
-            if (getDoubleFromObjectOrReply(c, c->argv[3], &v, NULL) != C_OK)
-                return;
+            CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
@@ -571,11 +567,11 @@ void ozestatusCommand(client *c)
     if (e->innate == NULL)
         addReply(c, shared.emptybulk);
     else
-        addReplyBulkSds(c, aseToSds(e->innate));
+        addReplyBulkSds(c, oaseToSds(e->innate));
     if (e->acquired == NULL)
         addReply(c, shared.emptybulk);
     else
-        addReplyBulkSds(c, aseToSds(e->acquired));
+        addReplyBulkSds(c, oaseToSds(e->acquired));
 
     listNode *ln;
     listIter li;
@@ -585,7 +581,7 @@ void ozestatusCommand(client *c)
     while ((ln = listNext(&li)))
     {
         oase *a = ln->value;
-        addReplyBulkSds(c, aseToSds(a));
+        addReplyBulkSds(c, oaseToSds(a));
     }
 
     addReplyBulkSds(c, sdsnew("Remove Set:"));
