@@ -127,18 +127,105 @@ void ucmdDelete(ucmd *cmd)
     zfree(cmd);
 }
 
-// doesn't free t
+// doesn't free t, doesn't own t
 void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value, vc *t)
-{}
+{
+    rase *a = zmalloc(sizeof(rase));
+    a->t = duplicateVC(t);
+    a->x = value;
+    a->inc = 0;
+    listAddNodeTail(e->aset, a);
+
+    listNode *ln;
+    listIter li;
+    listRewind(e->rset, &li);
+    while ((ln = listNext(&li)))
+    {
+        vc *r = ln->value;
+        if (compareVC(r, t) == CLOCK_LESS)
+        {
+            listDelNode(e->rset, ln);
+            deleteVC(r);
+        }
+    }
+
+    if (e->value == NULL || e->value->t->id < t->id)
+        e->value = a;
+    if (LOOKUP(e))
+    {
+        robj *zset = getZsetOrCreate(db, tname, key);
+        int flags = ZADD_NONE;
+        zsetAdd(zset, SCORE(e), key->ptr, &flags, NULL);
+    }
+    server.dirty++;
+}
+
 void increaseFunc(rze *e, redisDb *db, robj *tname, robj *key, double value, vc *t)
-{}
+{
+    listNode *ln;
+    listIter li;
+    listRewind(e->aset, &li);
+    while ((ln = listNext(&li)))
+    {
+        rase *a = ln->value;
+        if (compareVC(a->t, t) == CLOCK_LESS)
+            a->inc += value;
+    }
+
+    if (LOOKUP(e) && compareVC(e->value->t, t) == CLOCK_LESS)
+    {
+        robj *zset = getZsetOrCreate(db, tname, key);
+        int flags = ZADD_NONE;
+        zsetAdd(zset, SCORE(e), key->ptr, &flags, NULL);
+    }
+    server.dirty++;
+}
+
 void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
-{}
+{
+    vc *r = duplicateVC(t);
+    listAddNodeTail(e->rset, r);
+
+    listNode *ln;
+    listIter li;
+    listRewind(e->aset, &li);
+    while ((ln = listNext(&li)))
+    {
+        rase *a = ln->value;
+        if (compareVC(a->t, t) == CLOCK_LESS)
+        {
+            listDelNode(e->aset, ln);
+            if (e->value == a)
+                e->value = NULL;
+            deleteVC(a->t);
+            zfree(a);
+        }
+    }
+
+    if (e->value == NULL)
+    {
+        listRewind(e->aset, &li);
+        while ((ln = listNext(&li)))
+        {
+            rase *a = ln->value;
+            if (e->value == NULL || e->value->t->id < a->t->id)
+                e->value = a;
+        }
+    }
+
+    if (!LOOKUP(e))
+    {
+        robj *zset = getZsetOrCreate(db, tname, key);
+        zsetDel(zset, key->ptr);
+    }
+    server.dirty++;
+}
 
 void notifyLoop(rze *e, redisDb *db, robj *tname, robj *key)
 {
     int changed = 0;
-    do{
+    do
+    {
         listNode *ln;
         listIter li;
         listRewind(e->ops, &li);
@@ -167,11 +254,11 @@ void notifyLoop(rze *e, redisDb *db, robj *tname, robj *key)
                 break;
             }
         }
-    }while(changed);
+    } while (changed);
 }
 
 /*
- * not full causal delivery. inc wait for any add to be ready
+ * not full causal delivery. add/inc wait all previous rmv to be ready.
 
 
 int readyCheck(rze *e, vc *t)
@@ -316,15 +403,15 @@ void rzaddCommand(client *c)
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = SdsToVC(c->rargv[4]->ptr);
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-            if(causally_ready(e->current, t))
+            if (causally_ready(e->current, t))
             {
                 insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
                 deleteVC(t);
-                notifyLoop(e,c->db, c->rargv[1], c->rargv[2]);
+                notifyLoop(e, c->db, c->rargv[1], c->rargv[2]);
             }
             else
             {
-                ucmd* cmd = ucmdNew(RZADD,v,t);
+                ucmd *cmd = ucmdNew(RZADD, v, t);
                 listAddNodeTail(e->ops, cmd);
             }
     CRDT_END
@@ -363,15 +450,15 @@ void rzincrbyCommand(client *c)
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = SdsToVC(c->rargv[4]->ptr);
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-            if(causally_ready(e->current, t))
+            if (causally_ready(e->current, t))
             {
                 increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
                 deleteVC(t);
-                notifyLoop(e,c->db, c->rargv[1], c->rargv[2]);
+                notifyLoop(e, c->db, c->rargv[1], c->rargv[2]);
             }
             else
             {
-                ucmd* cmd = ucmdNew(RZINCBY,v,t);
+                ucmd *cmd = ucmdNew(RZINCBY, v, t);
                 listAddNodeTail(e->ops, cmd);
             }
     CRDT_END
@@ -406,15 +493,15 @@ void rzremCommand(client *c)
 #endif
             vc *t = SdsToVC(c->rargv[3]->ptr);
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-            if(causally_ready(e->current, t))
+            if (causally_ready(e->current, t))
             {
                 removeFunc(e, c->db, c->rargv[1], c->rargv[2], t);
                 deleteVC(t);
-                notifyLoop(e,c->db, c->rargv[1], c->rargv[2]);
+                notifyLoop(e, c->db, c->rargv[1], c->rargv[2]);
             }
             else
             {
-                ucmd* cmd = ucmdNew(RZREM,0,t);
+                ucmd *cmd = ucmdNew(RZREM, 0, t);
                 listAddNodeTail(e->ops, cmd);
             }
     CRDT_END
@@ -527,20 +614,20 @@ void rzmaxCommand(client *c)
 void rzestatusCommand(client *c)
 {
     rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
-    if(e==NULL)
+    if (e == NULL)
     {
         addReply(c, shared.emptymultibulk);
         return;
     }
 
-    long len=7+listLength(e->aset) + listLength(e->rset)+listLength(e->ops);
-    addReplyMultiBulkLen(c,len);
+    long len = 7 + listLength(e->aset) + listLength(e->rset) + listLength(e->ops);
+    addReplyMultiBulkLen(c, len);
 
-    addReplyBulkSds(c,sdsnew("current:"));
-    addReplyBulkSds(c,VCToSds(e->current));
+    addReplyBulkSds(c, sdsnew("current:"));
+    addReplyBulkSds(c, VCToSds(e->current));
 
-    addReplyBulkSds(c,sdscatprintf(sdsempty(),"value:"));
-    addReplyBulkSds(c,raseToSds(e->value));
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "value:"));
+    addReplyBulkSds(c, raseToSds(e->value));
 
     listNode *ln;
     listIter li;
@@ -561,12 +648,12 @@ void rzestatusCommand(client *c)
         addReplyBulkSds(c, VCToSds(a));
     }
 
-    addReplyBulkSds(c,sdsnew("unready commands:"));
+    addReplyBulkSds(c, sdsnew("unready commands:"));
     listRewind(e->ops, &li);
     while ((ln = listNext(&li)))
     {
         ucmd *cmd = ln->value;
-        addReplyBulkSds(c,ucmdToSds(cmd));
+        addReplyBulkSds(c, ucmdToSds(cmd));
     }
 }
 
