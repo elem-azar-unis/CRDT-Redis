@@ -91,7 +91,7 @@ public:
         gettimeofday(&t1, nullptr);
 
         for (auto ip:ips)
-            for (int i = 0; i < (TOTAL_SERVERS / 3); ++i)
+            for (int i = 0; i < (exp_setting::total_servers / 3); ++i)
                 conn_one_server_timed(ip, 6379 + i);
 
         thread timer([this] {
@@ -151,7 +151,7 @@ public:
 
         gettimeofday(&t2, nullptr);
         double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
-        printf("%f, %f\n", time_diff_sec, TOTAL_OPS / time_diff_sec);
+        printf("%f, %f\n", time_diff_sec, exp_setting::total_ops / time_diff_sec);
 
         printf("ending.\n");
 

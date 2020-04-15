@@ -26,7 +26,7 @@ public:
 
     static enum exp_type
     {
-        e_speed=0, e_replica=1, e_delay=2, e_pattern
+        e_speed = 0, e_replica = 1, e_delay = 2, e_pattern
     } type;
     static const char *type_str[3];
     static const char *pattern_name;

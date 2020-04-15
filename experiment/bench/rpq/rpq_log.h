@@ -71,7 +71,7 @@ private:
     void shift_down(int s);
 
 public:
-    explicit rpq_log(const char *type) : rdt_log("rpq",type) {}
+    explicit rpq_log(const char *type) : rdt_log("rpq", type) {}
 
     ~rpq_log()
     {

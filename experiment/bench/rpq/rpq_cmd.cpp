@@ -9,7 +9,7 @@ const char *rpq_cmd_prefix[2] = {"o", "r"};
 void rpq_cmd::exec(redisContext *c)
 {
     char name[128];
-    sprintf(name, "%ss%d", rpq_cmd_prefix[zt], OP_PER_SEC);
+    sprintf(name, "%srpq", rpq_cmd_prefix[zt]);
     char tmp[256];
     switch (t)
     {

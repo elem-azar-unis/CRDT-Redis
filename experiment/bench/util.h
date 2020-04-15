@@ -172,7 +172,7 @@ public:
             sprintf(dir, "%s/%s", dir, exp_setting::type_str[exp_setting::type]);
         bench_mkdir(dir);
 
-        sprintf(dir,"%s/%d",dir,exp_setting::round_num);
+        sprintf(dir, "%s/%d", dir, exp_setting::round_num);
         bench_mkdir(dir);
 
         sprintf(dir, "%s/%s:%d,%d,(%d,%d)", dir, type, exp_setting::total_servers,
