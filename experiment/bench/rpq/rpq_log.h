@@ -46,17 +46,17 @@ private:
 
         element(int k, double v) : name(k), value(v) {}
 
-        bool operator<(const element &e) { return value < e.value; }
+        bool operator<(const element &e) const { return value < e.value; }
 
-        bool operator<=(const element &e) { return value <= e.value; }
+        bool operator<=(const element &e) const { return value <= e.value; }
 
-        bool operator>(const element &e) { return value > e.value; }
+        bool operator>(const element &e) const { return value > e.value; }
 
-        bool operator>=(const element &e) { return value >= e.value; }
+        bool operator>=(const element &e) const { return value >= e.value; }
 
-        bool operator==(const element &e) { return value == e.value; }
+        bool operator==(const element &e) const { return value == e.value; }
 
-        bool operator!=(const element &e) { return value != e.value; }
+        bool operator!=(const element &e) const { return value != e.value; }
     };
 
     unordered_map<int, element *> map;
@@ -71,7 +71,7 @@ private:
     void shift_down(int s);
 
 public:
-    rpq_log(const char *type, const char *dir) : rdt_log(type, dir) {}
+    explicit rpq_log(const char *type) : rdt_log("rpq",type) {}
 
     ~rpq_log()
     {

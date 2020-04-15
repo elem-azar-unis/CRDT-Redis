@@ -123,18 +123,16 @@ void rpq_log::overhead(int o)
 
 void rpq_log::write_file()
 {
-    char n[64], f[64];
-    sprintf(n, "%s/%s:%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS, OP_PER_SEC, DELAY, DELAY_LOW);
-    bench_mkdir(n);
+    char f[64];
 
-    sprintf(f, "%s/s.ovhd", n);
+    sprintf(f, "%s/s.ovhd", dir);
     FILE *ovhd = fopen(f, "w");
     for (auto o:overhead_log)
         fprintf(ovhd, "%d %d\n", o.num, o.ovhd);
     fflush(ovhd);
     fclose(ovhd);
 
-    sprintf(f, "%s/s.max", n);
+    sprintf(f, "%s/s.max", dir);
     FILE *max = fopen(f, "w");
     for (auto o:max_log)
         fprintf(max, "%d %f %d %f\n", o.kread, o.vread, o.kactural, o.vactural);

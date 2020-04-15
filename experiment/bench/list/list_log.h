@@ -51,6 +51,7 @@ private:
     mutex mtx, dis_mtx, ovhd_mtx;
 
 public:
+    explicit list_log(const char *type) : rdt_log("list",type) {}
     void read_list(redisReply r);
     void overhead(int o);
 };

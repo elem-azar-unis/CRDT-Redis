@@ -10,12 +10,6 @@
 //#define DELAY_LOW 10
 //#define TOTAL_SERVERS 9
 //#define OP_PER_SEC 10000
-extern int DELAY;
-extern int DELAY_LOW;
-extern int TOTAL_SERVERS;
-extern int OP_PER_SEC;
-
-extern int TOTAL_OPS;
 
 #define MAX_TIME_COLISION DELAY
 #define SPLIT_NUM 10

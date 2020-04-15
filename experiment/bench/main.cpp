@@ -1,7 +1,9 @@
 #include <cstdio>
 #include <ctime>
 
+#include "exp_env.h"
 #include "exp_runner.h"
+
 #include "rpq/rpq_generator.h"
 
 using namespace std;
@@ -9,43 +11,6 @@ using namespace std;
 const char *ips[3] = {"192.168.188.135",
                       "192.168.188.136",
                       "192.168.188.137"};
-
-int DELAY = 50;
-int DELAY_LOW = 10;
-int TOTAL_SERVERS = 9;
-int TOTAL_OPS = 20000000;
-int OP_PER_SEC = 10000;
-
-inline void set_default()
-{
-    DELAY = 50;
-    DELAY_LOW = 10;
-    TOTAL_SERVERS = 9;
-    TOTAL_OPS = 20000000;
-    OP_PER_SEC = 10000;
-}
-
-inline void set_speed(int speed)
-{
-    set_default();
-    OP_PER_SEC = speed;
-    TOTAL_OPS = 200000;
-}
-
-inline void set_replica(int replica)
-{
-    set_default();
-    TOTAL_SERVERS = replica * 3;
-    TOTAL_OPS = 20000000;
-}
-
-inline void set_delay(int hd, int ld)
-{
-    set_default();
-    DELAY = hd;
-    DELAY_LOW = ld;
-    TOTAL_OPS = 10000000;
-}
 
 /*
 void time_max()
@@ -116,9 +81,7 @@ void conn_one_server(const char *ip, const int port, vector<thread *> &thds, rpq
         thds.emplace_back(t);
     }
 }
-*/
 
-/*
 void test_local(rpq_type zt)
 {
     vector<thread *> thds;
@@ -167,9 +130,7 @@ void test_local(rpq_type zt)
     gen.stop_and_join();
     qlog.write_file(rpq_cmd_prefix[zt]);
 }
- */
 
-/*
 void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 {
     thread threads[THREAD_PER_SERVER];
@@ -208,9 +169,9 @@ void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 }
 */
 
-void rpq_test_dis(rpq_type zt, const char *dir)
+void rpq_test_dis(rpq_type zt)
 {
-    rpq_log qlog(rpq_cmd_prefix[zt], dir);
+    rpq_log qlog(rpq_cmd_prefix[zt]);
     rpq_generator gen(zt, qlog);
     rpq_cmd read_max(zt, zmax, -1, -1, qlog);
     rpq_cmd ovhd(zt, zoverhead, -1, -1, qlog);
@@ -225,21 +186,16 @@ void rpq_test_dis(rpq_type zt, const char *dir)
 
 void delay_fix(int delay, int round, rpq_type type)
 {
-    set_delay(delay, delay / 5);
-    char n[64], cmd[64];
-    sprintf(n, "../result/delay/%d", round);
+    exp_setting::set_delay(round, delay, delay / 5);
+    char cmd[64];
     sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %d", delay, delay / 5, delay / 5, delay / 25);
     system(cmd);
-    rpq_test_dis(type, n);
+    rpq_test_dis(type);
 }
 
 
 void test_delay(int round)
 {
-    bench_mkdir("../result/delay");
-    char n[64];
-    sprintf(n, "../result/delay/%d", round);
-    bench_mkdir(n);
     for (int d = 20; d <= 380; d += 40)
     {
         delay_fix(d, round, o);
@@ -249,20 +205,15 @@ void test_delay(int round)
 
 void replica_fix(int replica, int round, rpq_type type)
 {
-    set_replica(replica);
-    char n[64], cmd[64];
-    sprintf(n, "../result/replica/%d", round);
+    exp_setting::set_replica(round, replica);
+    char cmd[64];
     sprintf(cmd, "python3 ../redis_test/connection.py %d", replica);
     system(cmd);
-    rpq_test_dis(type, n);
+    rpq_test_dis(type);
 }
 
 void test_replica(int round)
 {
-    bench_mkdir("../result/replica");
-    char n[64];
-    sprintf(n, "../result/replica/%d", round);
-    bench_mkdir(n);
     for (int replica:{1, 2, 3, 4, 5})
     {
         replica_fix(replica, round, o);
@@ -273,18 +224,12 @@ void test_replica(int round)
 void speed_fix(int speed, int round, rpq_type type)
 {
     system("python3 ../redis_test/connection.py");
-    char n[64];
-    sprintf(n, "../result/speed/%d", round);
-    set_speed(speed);
-    rpq_test_dis(type, n);
+    exp_setting::set_speed(round, speed);
+    rpq_test_dis(type);
 }
 
 void test_speed(int round)
 {
-    bench_mkdir("../result/speed");
-    char n[64];
-    sprintf(n, "../result/speed/%d", round);
-    bench_mkdir(n);
     for (int i = 500; i <= 10000; i += 100)
     {
         speed_fix(i, round, o);
@@ -297,11 +242,11 @@ void rpq_experiment()
     timeval t1{}, t2{};
     gettimeofday(&t1, nullptr);
 
-    set_default();
+    exp_setting::set_pattern("ardominant");
     system("python3 ../redis_test/connection.py");
-    rpq_test_dis(o, "../result/ardominant");
+    rpq_test_dis(o);
     system("python3 ../redis_test/connection.py");
-    rpq_test_dis(r, "../result/ardominant");
+    rpq_test_dis(r);
 
     for (int i = 0; i < 30; i++)
     {

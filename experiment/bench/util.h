@@ -12,6 +12,7 @@
 #include <random>
 #include <sys/stat.h>
 #include "constants.h"
+#include "exp_env.h"
 
 #if defined(__linux__)
 #include <hiredis/hiredis.h>
@@ -31,15 +32,6 @@ int intRand(int max);
 double doubleRand(double min, double max);
 
 double decide();
-
-inline void bench_mkdir(const char *path)
-{
-#if defined(_WIN32)
-    _mkdir(path);
-#else
-    mkdir(path, S_IRWXU | S_IRGRP | S_IROTH);
-#endif
-}
 
 class task_queue
 {
@@ -119,6 +111,7 @@ protected:
         }
 
     };
+
 private:
     vector<record_for_collision *> records;
     thread maintainer;
@@ -154,12 +147,38 @@ public:
 
 class rdt_log
 {
+private:
+    static inline void bench_mkdir(const char *path)
+    {
+#if defined(_WIN32)
+        _mkdir(path);
+#else
+        mkdir(path, S_IRWXU | S_IRGRP | S_IROTH);
+#endif
+    }
+
 protected:
-    const char *dir;
-    const char *type;
+    char dir[64]{};
 
 public:
-    rdt_log(const char *type, const char *dir) : type(type), dir(dir) {}
+    rdt_log(const char *CRDT_name, const char *type)
+    {
+        sprintf(dir, "../result/%s", CRDT_name);
+        bench_mkdir(dir);
+
+        if (exp_setting::type == exp_setting::e_pattern)
+            sprintf(dir, "%s/%s", dir, exp_setting::pattern_name);
+        else
+            sprintf(dir, "%s/%s", dir, exp_setting::type_str[exp_setting::type]);
+        bench_mkdir(dir);
+
+        sprintf(dir,"%s/%d",dir,exp_setting::round_num);
+        bench_mkdir(dir);
+
+        sprintf(dir, "%s/%s:%d,%d,(%d,%d)", dir, type, exp_setting::total_servers,
+                exp_setting::op_per_sec, exp_setting::delay, exp_setting::delay_low);
+        bench_mkdir(dir);
+    }
 
     virtual void write_file() = 0;
 };
