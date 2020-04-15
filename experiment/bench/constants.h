@@ -11,7 +11,7 @@
 //#define TOTAL_SERVERS 9
 //#define OP_PER_SEC 10000
 
-#define MAX_TIME_COLISION DELAY
+#define MAX_TIME_COLISION exp_setting::delay
 #define SPLIT_NUM 10
 #define SLP_TIME_MICRO (MAX_TIME_COLISION * 1000 / SPLIT_NUM)
 
