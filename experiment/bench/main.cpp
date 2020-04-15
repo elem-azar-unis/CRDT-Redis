@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <ctime>
 
-#include "exp_env.h"
+#include "exp_setting.h"
 #include "exp_runner.h"
 
 #include "rpq/rpq_generator.h"

@@ -2,7 +2,6 @@
 // Created by user on 18-11-15.
 //
 #include "rpq_log.h"
-#include "../constants.h"
 
 
 void rpq_log::shift_up(int s)

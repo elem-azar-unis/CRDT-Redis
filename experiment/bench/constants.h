@@ -5,6 +5,8 @@
 #ifndef BENCH_CONSTANTS_H
 #define BENCH_CONSTANTS_H
 
+#include "exp_setting.h"
+
 // experiment settings
 //#define DELAY 50
 //#define DELAY_LOW 10
