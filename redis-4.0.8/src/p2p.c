@@ -3,10 +3,12 @@
 //
 #include "server.h"
 
+static int exp_local = 0;
 
 int connectWithReplica(char *ip, int port, int *fd)
 {
-    *fd = anetTcpNonBlockBestEffortBindConnect(NULL, ip, port, NET_FIRST_BIND_ADDR);
+    char *source_addr = exp_local ? ip : NET_FIRST_BIND_ADDR;
+    *fd = anetTcpNonBlockBestEffortBindConnect(NULL, ip, port, source_addr);
     if (*fd == -1)
     {
         serverLog(LL_WARNING, "Unable to connect to REPLICA[%s:%d]: %s",
@@ -17,7 +19,7 @@ int connectWithReplica(char *ip, int port, int *fd)
     return C_OK;
 }
 
-void repltestCommand(client* c)
+void repltestCommand(client *c)
 {
     /* REPLICATE is not allowed in cluster mode. */
     if (server.cluster_enabled)
@@ -29,13 +31,13 @@ void repltestCommand(client* c)
     c->flags |= CLIENT_REPLICA;
     c->flags |= CLIENT_REPLICA_MESSAGE;
     c->authenticated = 1;
-    if(c->argc==1)
+    if (c->argc == 1)
     {
         listAddNodeTail(server.replicas, c);
         serverLog(LL_NOTICE, "A listening fake replica.");
     }
 
-    if(c->argc==3)
+    if (c->argc == 3)
     {
         long id, size;
         getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
@@ -66,13 +68,16 @@ void replicateCommand(client *c)
         return;
     }
 
-    long id,size;
+    long id, size;
     getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
     getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
-    server.p2p_count=(int)size;
-    server.p2p_id=(int)id;
+    server.p2p_count = (int) size;
+    server.p2p_id = (int) id;
 
-    for (int i = 3; i < c->argc; i += 2)
+    if (!strcasecmp(c->argv[3]->ptr, "exp_local"))
+        exp_local = 1;
+
+    for (int i = 3 + exp_local; i < c->argc; i += 2)
     {
         int fd;
         long port;
@@ -113,7 +118,8 @@ void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc)
         if (dictid >= 0 && dictid < PROTO_SHARED_SELECT_CMDS)
         {
             selectcmd = shared.select[dictid];
-        } else
+        }
+        else
         {
             int dictid_len;
 
@@ -160,7 +166,7 @@ void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc)
         for (j = 0; j < argc; j++)
             addReplyBulk(replica, argv[j]);
 
-        if(selected) addReply(replica, shared.exec);
+        if (selected) addReply(replica, shared.exec);
 
         replica->flags &= ~CLIENT_REPLICA_MESSAGE;
     }

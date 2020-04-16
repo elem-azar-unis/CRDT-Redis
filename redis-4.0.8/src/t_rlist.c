@@ -4,6 +4,7 @@
 #include "server.h"
 #include "RWFramework.h"
 
+/*
 #define BASE (1<<24)
 #define RDM_STEP 8
 typedef struct position
@@ -142,3 +143,4 @@ leid *constructLeid(leid *p, leid *q, lc *t)
     t->x++;
     return rtn;
 }
+ */
