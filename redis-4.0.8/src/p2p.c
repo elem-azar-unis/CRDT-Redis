@@ -2,8 +2,17 @@
 // Created by user on 18-4-12.
 //
 #include "server.h"
+#include <arpa/inet.h>
 
 static int exp_local = 0;
+
+void get_peer_ip(int fd, char *ip)
+{
+    socklen_t clilen;
+    struct sockaddr_in cliaddr;
+    getpeername(fd, (struct sockaddr *) &cliaddr, &clilen);
+    inet_ntop(AF_INET, &cliaddr.sin_addr, ip, 32);
+}
 
 int connectWithReplica(char *ip, int port, int *fd)
 {
@@ -64,7 +73,9 @@ void replicateCommand(client *c)
         c->flags |= CLIENT_REPLICA;
         c->authenticated = 1;
         listAddNodeTail(server.replicas, c);
-        serverLog(LL_NOTICE, "Replica handshake received.");
+        char _ip[32];
+        get_peer_ip(c->fd, _ip);
+        serverLog(LL_NOTICE, "Replica handshake received. ip: %s", _ip);
         return;
     }
 
@@ -74,7 +85,7 @@ void replicateCommand(client *c)
     server.p2p_count = (int) size;
     server.p2p_id = (int) id;
 
-    if (!strcasecmp(c->argv[3]->ptr, "exp_local"))
+    if (c->argc > 3 && !strcasecmp(c->argv[3]->ptr, "exp_local"))
         exp_local = 1;
 
     for (int i = 3 + exp_local; i < c->argc; i += 2)
@@ -83,8 +94,11 @@ void replicateCommand(client *c)
         long port;
         getLongFromObjectOrReply(c, c->argv[i + 1], &port, "invalid port number.");
         if (connectWithReplica(c->argv[i]->ptr, (int) port, &fd) == C_OK)
-            serverLog(LL_NOTICE, "Connected to REPLICA %s:%d",
-                      (char *) c->argv[i]->ptr, (int) port);
+        {
+            char _ip[32];
+            get_peer_ip(fd, _ip);
+            serverLog(LL_NOTICE, "Connected to REPLICA %s:%d", _ip, (int) port);
+        }
         else
         {
             addReplySds(c, sdsnew("-Something wrong connecting replicas.\r\n"));
