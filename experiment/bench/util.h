@@ -34,30 +34,6 @@ double doubleRand(double min, double max);
 
 double decide();
 
-class task_queue
-{
-    int n = 0;
-    mutex m;
-    condition_variable cv;
-public:
-    void worker()
-    {
-        unique_lock<mutex> lk(m);
-        while (n == 0)
-            cv.wait(lk);
-        n--;
-    }
-
-    void add()
-    {
-        {
-            lock_guard<mutex> lk(m);
-            n++;
-        }
-        cv.notify_all();
-    }
-};
-
 class cmd
 {
 public:
@@ -176,7 +152,7 @@ public:
         sprintf(dir, "%s/%d", dir, exp_setting::round_num);
         bench_mkdir(dir);
 
-        sprintf(dir, "%s/%s:%d,%d,(%d,%d)", dir, type, exp_setting::total_servers,
+        sprintf(dir, "%s/%s:%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS,
                 exp_setting::op_per_sec, exp_setting::delay, exp_setting::delay_low);
         bench_mkdir(dir);
     }

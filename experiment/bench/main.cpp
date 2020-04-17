@@ -2,17 +2,18 @@
 #include <ctime>
 
 #include "exp_setting.h"
+#include "exp_env.h"
 #include "exp_runner.h"
 
 #include "rpq/rpq_generator.h"
 
 using namespace std;
 
+/*
 const char *ips[3] = {"192.168.188.135",
                       "192.168.188.136",
                       "192.168.188.137"};
 
-/*
 void time_max()
 {
     redisContext *c = redisConnect("127.0.0.1", 6379);
@@ -203,11 +204,11 @@ void test_delay(int round)
     }
 }
 
-void replica_fix(int replica, int round, rpq_type type)
+void replica_fix(int s_p_c, int round, rpq_type type)
 {
-    exp_setting::set_replica(round, replica);
+    exp_setting::set_replica(round, 3, s_p_c);
     char cmd[64];
-    sprintf(cmd, "python3 ../redis_test/connection.py %d", replica);
+    sprintf(cmd, "python3 ../redis_test/connection.py %d", s_p_c);
     system(cmd);
     rpq_test_dis(type);
 }
@@ -264,6 +265,19 @@ int main(int argc, char *argv[])
 {
     //time_max();
     //test_count_dis_one(ips[0],6379);
+
+    if (argc == 2)
+        strcpy(exp_env::sudo_pwd, argv[1]);
+    else if (argc == 1)
+    {
+        printf("please enter the password for sudo: ");
+        scanf("%s", exp_env::sudo_pwd);
+    }
+    else
+    {
+        printf("error. too many input arguments\n");
+        return -1;
+    }
 
     rpq_experiment();
 

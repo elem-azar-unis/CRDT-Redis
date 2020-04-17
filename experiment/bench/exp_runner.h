@@ -10,6 +10,7 @@
 
 #include "util.h"
 #include "constants.h"
+#include "exp_env.h"
 
 #if defined(__linux__)
 #include <hiredis/hiredis.h>
@@ -21,12 +22,36 @@
 #endif
 
 using namespace std;
-extern const char *ips[3];
+//extern const char *ips[3];
 
 template<class T>
 class exp_runner
 {
 private:
+    class task_queue
+    {
+        int n = 0;
+        mutex m;
+        condition_variable cv;
+    public:
+        void worker()
+        {
+            unique_lock<mutex> lk(m);
+            while (n == 0)
+                cv.wait(lk);
+            n--;
+        }
+
+        void add()
+        {
+            {
+                lock_guard<mutex> lk(m);
+                n++;
+            }
+            cv.notify_all();
+        }
+    };
+
     rdt_log &log;
     generator<T> &gen;
     cmd *read_cmd = nullptr;
@@ -87,12 +112,13 @@ public:
 
     void run()
     {
+        exp_env e;
+
         timeval t1{}, t2{};
         gettimeofday(&t1, nullptr);
 
-        for (auto ip:ips)
-            for (int i = 0; i < (exp_setting::total_servers / 3); ++i)
-                conn_one_server_timed(ip, 6379 + i);
+        for (int i = 0; i < TOTAL_SERVERS; ++i)
+            conn_one_server_timed(IP_SERVER, BASE_PORT + i);
 
         thread timer([this] {
             timeval td{}, tn{};
@@ -119,7 +145,7 @@ public:
         {
             rb = true;
             read_thread = new thread([this, &rb] {
-                redisContext *cl = redisConnect(ips[0], 6379);
+                redisContext *cl = redisConnect(IP_SERVER, BASE_PORT);
                 while (rb)
                 {
                     this_thread::sleep_for(chrono::seconds(TIME_MAX));
@@ -133,7 +159,7 @@ public:
         {
             ob = true;
             ovhd_thread = new thread([this, &ob] {
-                redisContext *cl = redisConnect(ips[1], 6379);
+                redisContext *cl = redisConnect(IP_SERVER, BASE_PORT + 1);
                 while (ob)
                 {
                     this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));

@@ -12,7 +12,8 @@ private:
     {
         delay = 50;
         delay_low = 10;
-        total_servers = 9;
+        total_clusters = 3;
+        server_per_cluster = 3;
         total_ops = 20000000;
         op_per_sec = 10000;
     }
@@ -20,7 +21,8 @@ private:
 public:
     static int delay;
     static int delay_low;
-    static int total_servers;
+    static int total_clusters;
+    static int server_per_cluster;
     static int total_ops;
     static int op_per_sec;
 
@@ -42,10 +44,11 @@ public:
         type = e_speed;
     }
 
-    static inline void set_replica(int round, int replica)
+    static inline void set_replica(int round, int cluster, int serverPCluster)
     {
         set_default();
-        total_servers = replica * 3;
+        total_clusters = cluster;
+        server_per_cluster = serverPCluster;
         total_ops = 20000000;
         round_num = round;
         type = e_replica;

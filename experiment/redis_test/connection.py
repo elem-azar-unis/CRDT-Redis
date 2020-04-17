@@ -24,7 +24,7 @@ def redis_exec(conn, *cm, prt=0):
 
 
 def ssh_exec(sshs, cmd):
-    cmd = "cd ~/Redis-RPQ/experiment/redis_test/;" + cmd + " 1>/dev/null 2>&1"
+    cmd = "cd ~/CRDT-Redis/experiment/redis_test/;" + cmd + " 1>/dev/null 2>&1"
     for ssh in sshs:
         stdin, stdout, stderr = ssh.exec_command(cmd)
         # data = stdout.read()
@@ -38,12 +38,12 @@ def ssh_exec(sshs, cmd):
 def _reset_redis(sshs):
     print("scp writing")
     for ssh in sshs:
-        stdin, stdout, stderr = ssh.exec_command("rm -rf ~/Redis-RPQ")
+        stdin, stdout, stderr = ssh.exec_command("rm -rf ~/CRDT-Redis")
         time.sleep(1)
         s = scp.SCPClient(ssh.get_transport())
-        s.put("../../Redis-RPQ", remote_path="~/", recursive=True)
+        s.put("../../CRDT-Redis", remote_path="~/", recursive=True)
         s.close()
-        stdin, stdout, stderr = ssh.exec_command("cd ~/Redis-RPQ/redis-4.0.8/;sudo make install", get_pty=True)
+        stdin, stdout, stderr = ssh.exec_command("cd ~/CRDT-Redis/redis-4.0.8/;sudo make install", get_pty=True)
         stdin.write("user\n")
         stdin.flush()
         data = stdout.read()
