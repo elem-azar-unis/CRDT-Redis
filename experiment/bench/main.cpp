@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 
 #include "exp_setting.h"

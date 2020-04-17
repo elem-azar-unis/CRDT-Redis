@@ -34,6 +34,29 @@ public:
     static const char *pattern_name;
     static int round_num;
 
+    static inline void print_settings()
+    {
+        printf("exp on ");
+        if (type != e_pattern)
+        {
+            switch (type)
+            {
+                case e_speed:
+                    printf("speed: %dop/s", op_per_sec);
+                    break;
+                case e_replica:
+                    printf("replica: %dx%d", total_clusters, server_per_cluster);
+                    break;
+                case e_delay:
+                    printf("delay: (%dms,%dms)", delay, delay_low);
+                    break;
+                case e_pattern:
+                    break;
+            }
+            printf(", round %d\n", round_num);
+        }
+        else printf("pattern: %s\n", pattern_name);
+    }
 
     static inline void set_speed(int round, int speed)
     {
