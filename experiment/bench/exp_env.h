@@ -19,15 +19,27 @@
 class exp_env
 {
 private:
+    void shell_exec(const char *cmd)
+    {
+#define PRINT_CMD
+#ifdef PRINT_CMD
+        printf("%s\n", cmd);
+#endif
+        char *_cmd_apend = new char[strlen(cmd) + 20];
+        sprintf(_cmd_apend, "%s 1>/dev/null", cmd);   // or "1>/dev/null 2>&1"
+        system(_cmd_apend);
+        delete[] _cmd_apend;
+    }
+
     void start_servers()
     {
-        char cmd[200];
+        char cmd[160];
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
             sprintf(cmd, "cd ../redis_test; redis-server ./6379.conf --port %d "
-                         "--pidfile /var/run/redis_%d.pid --logfile ./%d.log --dbfilename %d.rdb "
-                         "1>/dev/null", port, port, port, port);
-            system(cmd);
+                         "--pidfile /var/run/redis_%d.pid --logfile ./%d.log --dbfilename %d.rdb",
+                    port, port, port, port);
+            shell_exec(cmd);
         }
     }
 
@@ -43,7 +55,7 @@ private:
 
     void remove_delay()
     {
-        "echo user | sudo -S ifconfig 1>/dev/null";
+        "echo user | sudo -S ifconfig";
     }
 
     void shutdown_servers()
@@ -53,7 +65,7 @@ private:
 
     void clean()
     {
-        system("cd ../redis_test; rm -rf *.rdb *.log 1>/dev/null");
+        shell_exec("cd ../redis_test; rm -rf *.rdb *.log");
     }
 
 public:
