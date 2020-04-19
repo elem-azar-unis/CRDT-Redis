@@ -16,56 +16,97 @@
 #define IP_SERVER "127.0.0.1"
 #define BASE_PORT 6379
 
+#define SUDO_PREFIX "echo %s | sudo -S "
+#define CMD_SUFFIX " 1>/dev/null"   // or " 1>/dev/null 2>&1"
+
 class exp_env
 {
 private:
-    void shell_exec(const char *cmd)
+    static void shell_exec(const char *cmd, bool sudo)
     {
 #define PRINT_CMD
 #ifdef PRINT_CMD
-        printf("%s\n", cmd);
+        if (sudo)
+            printf("\nsudo %s\n", cmd);
+        else
+            printf("\n%s\n", cmd);
 #endif
-        char *_cmd_apend = new char[strlen(cmd) + 20];
-        sprintf(_cmd_apend, "%s 1>/dev/null", cmd);   // or "1>/dev/null 2>&1"
+        char *_cmd_apend;
+        if (sudo)
+        {
+            _cmd_apend = new char[strlen(cmd) + strlen(SUDO_PREFIX CMD_SUFFIX) + 1];
+            sprintf(_cmd_apend, SUDO_PREFIX "%s" CMD_SUFFIX, sudo_pwd, cmd);
+        }
+        else
+        {
+            _cmd_apend = new char[strlen(cmd) + strlen(CMD_SUFFIX) + 1];
+            sprintf(_cmd_apend, "%s" CMD_SUFFIX, cmd);
+        }
         system(_cmd_apend);
         delete[] _cmd_apend;
     }
 
-    void start_servers()
+    static void start_servers()
     {
-        char cmd[160];
+        char cmd[128];
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
-            sprintf(cmd, "cd ../redis_test; redis-server ./6379.conf --port %d "
-                         "--pidfile /var/run/redis_%d.pid --logfile ./%d.log --dbfilename %d.rdb",
-                    port, port, port, port);
-            shell_exec(cmd);
+            sprintf(cmd, "redis-server ../redis_test/6379.conf "
+                         "--port %d --logfile /dev/null "
+                         "--pidfile /var/run/redis_%d.pid "
+                         "--dbfilename %d.rdb",
+                    port, port, port);
+            shell_exec(cmd, false);
         }
     }
 
-    void construct_repl()
+    static void construct_repl()
     {
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
-    void set_delay()
+    static void set_delay()
     {
+        char cmd[128];
+        shell_exec("tc qdisc add dev lo root handle 1: prio", true);
 
+        sprintf(cmd, "tc qdisc add dev lo parent 1:1 handle 10: "
+                     "netem delay %dms %dms distribution normal limit 100000",
+                exp_setting::delay_low, exp_setting::delay_low / 5);
+        shell_exec(cmd, true);
+        shell_exec("tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst "
+                   IP_WITHIN_CLUSTER " flowid 1:1", true);
+
+        sprintf(cmd, "tc qdisc add dev lo parent 1:2 handle 20: "
+                     "netem delay %dms %dms distribution normal limit 100000",
+                exp_setting::delay, exp_setting::delay / 5);
+        shell_exec(cmd, true);
+        shell_exec("tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst "
+                   IP_BETWEEN_CLUSTER " flowid 1:2", true);
+
+        shell_exec("tc qdisc add dev lo parent 1:3 handle 30: pfifo_fast", true);
     }
 
-    void remove_delay()
+    static void remove_delay()
     {
-        "echo user | sudo -S ifconfig";
+        shell_exec("tc filter del dev lo", true);
+        shell_exec("tc qdisc del dev lo root", true);
     }
 
-    void shutdown_servers()
+    static void shutdown_servers()
     {
+        char cmd[64];
+        for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
+        {
+            sprintf(cmd, "redis-cli -h 127.0.0.1 -p %d SHUTDOWN NOSAVE", port);
+            shell_exec(cmd, false);
+        }
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
-    void clean()
+    static void clean()
     {
-        shell_exec("cd ../redis_test; rm -rf *.rdb *.log");
+        shell_exec("rm -rf *.rdb *.log", false);
     }
 
 public:
@@ -88,8 +129,8 @@ public:
         printf("delay removed, ");
         shutdown_servers();
         printf("server shutdown, ");
-        clean();
-        printf("cleaned\n\n");
+        // clean();
+        // printf("cleaned\n\n");
     }
 };
 
