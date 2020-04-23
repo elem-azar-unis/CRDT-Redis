@@ -26,9 +26,25 @@ public:
     static int total_ops;
     static int op_per_sec;
 
-    static enum exp_type
+/*
+#define EXP_TYPE_CODEC(ACTION)      \
+    ACTION(speed)                   \
+    ACTION(replica)                 \
+    ACTION(delay)                   \
+    ACTION(pattern)
+
+#define DEFINE_ACTION(_name) e##_name,
+    enum exp_type { EXP_TYPE_CODEC(DEFINE_ACTION) };
+#undef DEFINE_ACTION
+
+#define DEFINE_ACTION(_name) #_name,
+    static const char* type_str[] = { EXP_TYPE_CODEC(DEFINE_ACTION) };
+#undef DEFINE_ACTION
+*/
+
+    static enum class exp_type
     {
-        e_speed = 0, e_replica = 1, e_delay = 2, e_pattern
+        speed = 0, replica = 1, delay = 2, pattern
     } type;
     static const char *type_str[3];
     static const char *pattern_name;
@@ -37,20 +53,20 @@ public:
     static inline void print_settings()
     {
         printf("exp on ");
-        if (type != e_pattern)
+        if (type != exp_type::pattern)
         {
             switch (type)
             {
-                case e_speed:
+                case exp_type::speed:
                     printf("speed: %dop/s", op_per_sec);
                     break;
-                case e_replica:
+                case exp_type::replica:
                     printf("replica: %dx%d", total_clusters, server_per_cluster);
                     break;
-                case e_delay:
+                case exp_type::delay:
                     printf("delay: (%dms,%dms)", delay, delay_low);
                     break;
-                case e_pattern:
+                case exp_type::pattern:
                     break;
             }
             printf(", round %d\n", round_num);
@@ -64,7 +80,7 @@ public:
         op_per_sec = speed;
         total_ops = 200000;
         round_num = round;
-        type = e_speed;
+        type = exp_type::speed;
     }
 
     static inline void set_replica(int round, int cluster, int serverPCluster)
@@ -74,7 +90,7 @@ public:
         server_per_cluster = serverPCluster;
         total_ops = 20000000;
         round_num = round;
-        type = e_replica;
+        type = exp_type::replica;
     }
 
     static inline void set_delay(int round, int hd, int ld)
@@ -84,14 +100,14 @@ public:
         delay_low = ld;
         total_ops = 10000000;
         round_num = round;
-        type = e_delay;
+        type = exp_type::delay;
     }
 
     static inline void set_pattern(const char *name)
     {
         set_default();
         pattern_name = name;
-        type = e_pattern;
+        type = exp_type::pattern;
     }
 };
 

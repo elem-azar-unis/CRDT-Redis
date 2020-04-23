@@ -12,7 +12,7 @@ void rpq_generator::gen_and_exec(redisContext *c)
     double rand = decide();
     if (rand <= PA)
     {
-        t = zadd;
+        t = rpq_op_type::add;
         d = gen_initial();
         double conf = decide();
         if (conf < PAA)
@@ -39,14 +39,14 @@ void rpq_generator::gen_and_exec(redisContext *c)
     }
     else if (rand <= PI)
     {
-        t = zincrby;
+        t = rpq_op_type::incrby;
         e = ele.random_get();
         if (e == -1)return;
         d = gen_increament();
     }
     else
     {
-        t = zrem;
+        t = rpq_op_type::rem;
         d = -1;
         double conf = decide();
         if (conf < PRA)

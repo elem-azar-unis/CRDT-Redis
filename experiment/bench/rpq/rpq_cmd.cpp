@@ -9,27 +9,27 @@ const char *rpq_cmd_prefix[2] = {"o", "r"};
 void rpq_cmd::exec(redisContext *c)
 {
     char name[128];
-    sprintf(name, "%srpq", rpq_cmd_prefix[zt]);
+    sprintf(name, "%srpq", rpq_cmd_prefix[static_cast<int>(zt)]);
     char tmp[256];
     switch (t)
     {
-        case zadd:
-            sprintf(tmp, "%szadd %s %d %f", rpq_cmd_prefix[zt], name, e, d);
+        case rpq_op_type::add:
+            sprintf(tmp, "%szadd %s %d %f", rpq_cmd_prefix[static_cast<int>(zt)], name, e, d);
             break;
-        case zincrby:
-            sprintf(tmp, "%szincrby %s %d %f", rpq_cmd_prefix[zt], name, e, d);
+        case rpq_op_type::incrby:
+            sprintf(tmp, "%szincrby %s %d %f", rpq_cmd_prefix[static_cast<int>(zt)], name, e, d);
             break;
-        case zrem:
-            sprintf(tmp, "%szrem %s %d", rpq_cmd_prefix[zt], name, e);
+        case rpq_op_type::rem:
+            sprintf(tmp, "%szrem %s %d", rpq_cmd_prefix[static_cast<int>(zt)], name, e);
             break;
-        case zmax:
-            sprintf(tmp, "%szmax %s", rpq_cmd_prefix[zt], name);
+        case rpq_op_type::max:
+            sprintf(tmp, "%szmax %s", rpq_cmd_prefix[static_cast<int>(zt)], name);
             break;
-        case zoverhead:
-            sprintf(tmp, "%szoverhead %s", rpq_cmd_prefix[zt], name);
+        case rpq_op_type::overhead:
+            sprintf(tmp, "%szoverhead %s", rpq_cmd_prefix[static_cast<int>(zt)], name);
             break;
-        case zopcount:
-            sprintf(tmp, "%szopcount", rpq_cmd_prefix[zt]);
+        case rpq_op_type::opcount:
+            sprintf(tmp, "%szopcount", rpq_cmd_prefix[static_cast<int>(zt)]);
             break;
     }
     auto r = static_cast<redisReply *>(redisCommand(c, tmp));
@@ -40,16 +40,16 @@ void rpq_cmd::exec(redisContext *c)
     }
     switch (t)
     {
-        case zadd:
+        case rpq_op_type::add:
             ele.add(e, d);
             break;
-        case zincrby:
+        case rpq_op_type::incrby:
             ele.inc(e, d);
             break;
-        case zrem:
+        case rpq_op_type::rem:
             ele.rem(e);
             break;
-        case zmax:
+        case rpq_op_type::max:
         {
             int k = -1;
             double v = -1;
@@ -61,10 +61,10 @@ void rpq_cmd::exec(redisContext *c)
             ele.max(k, v);
             break;
         }
-        case zoverhead:
+        case rpq_op_type::overhead:
             ele.overhead(static_cast<int>(r->integer));
             break;
-        case zopcount:
+        case rpq_op_type::opcount:
             printf("%lli\n", r->integer);
             break;
     }

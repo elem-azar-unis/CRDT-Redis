@@ -5,7 +5,6 @@
 #ifndef BENCH_EXP_RUNNER_H
 #define BENCH_EXP_RUNNER_H
 
-#include <ctime>
 #include <thread>
 
 #include "util.h"
@@ -114,27 +113,28 @@ public:
     {
         exp_env e;
 
-        timeval t1{}, t2{};
-        gettimeofday(&t1, nullptr);
+        auto start = chrono::steady_clock::now();
 
         for (int i = 0; i < TOTAL_SERVERS; ++i)
             conn_one_server_timed(IP_SERVER, BASE_PORT + i);
 
         thread timer([this] {
-            timeval td{}, tn{};
-            gettimeofday(&td, nullptr);
+            auto start_time = chrono::steady_clock::now();
             for (int times = 0; times < OP_PER_THREAD; ++times)
             {
                 for (auto t:tasks)
                 {
                     t->add();
                 }
-                //this_thread::sleep_for(chrono::microseconds((int)SLEEP_TIME));
+                auto tar_time = start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
+                this_thread::sleep_until(tar_time);
+                /*
                 gettimeofday(&tn, nullptr);
                 auto slp_time =
                         (td.tv_sec - tn.tv_sec) * 1000000 + td.tv_usec - tn.tv_usec +
                         (long) ((times + 1) * INTERVAL_TIME);
                 this_thread::sleep_for(chrono::microseconds(slp_time));
+                 */
             }
         });
 
@@ -175,9 +175,9 @@ public:
         for (auto t:thds)
             t->join();
 
-        gettimeofday(&t2, nullptr);
-        double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
-        printf("%f, %f\n", time_diff_sec, exp_setting::total_ops / time_diff_sec);
+        auto end = chrono::steady_clock::now();
+        auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
+        printf("%f seconds, %f op/s\n", time, exp_setting::total_ops / time);
 
         printf("ending.\n");
 

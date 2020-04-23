@@ -143,10 +143,10 @@ public:
         sprintf(dir, "../result/%s", CRDT_name);
         bench_mkdir(dir);
 
-        if (exp_setting::type == exp_setting::e_pattern)
+        if (exp_setting::type == exp_setting::exp_type::pattern)
             sprintf(dir, "%s/%s", dir, exp_setting::pattern_name);
         else
-            sprintf(dir, "%s/%s", dir, exp_setting::type_str[exp_setting::type]);
+            sprintf(dir, "%s/%s", dir, exp_setting::type_str[static_cast<int>(exp_setting::type)]);
         bench_mkdir(dir);
 
         sprintf(dir, "%s/%d", dir, exp_setting::round_num);

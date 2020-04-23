@@ -21,8 +21,8 @@
 #define TOTAL_SERVERS (exp_setting::total_clusters * exp_setting::server_per_cluster)
 #define OP_PER_THREAD (exp_setting::total_ops/TOTAL_SERVERS/THREAD_PER_SERVER)
 
-// time in microseconds
-#define INTERVAL_TIME (1000000.0*TOTAL_SERVERS*THREAD_PER_SERVER/exp_setting::op_per_sec)
+// time in seconds
+#define INTERVAL_TIME ((double)TOTAL_SERVERS*THREAD_PER_SERVER/exp_setting::op_per_sec)
 //#define OP_PS_PTH ((double)OP_PER_SEC/TOTAL_SERVERS/THREAD_PER_SERVER)
 //#define ESTIMATE_COST (TOTAL_SERVERS*THREAD_PER_SERVER*(26.3629 + 0.0082*OP_PS_PTH))
 //#define _SLEEP_TIME (INTERVAL_TIME-ESTIMATE_COST)

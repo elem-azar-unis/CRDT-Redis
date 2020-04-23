@@ -25,14 +25,14 @@
 #define PRA PR_REM_CA
 #define PRR (PR_REM_CA + PR_REM_CR)
 
-enum rpq_op_type
+enum class rpq_op_type
 {
-    zadd = 0, zincrby = 1, zrem = 2, zmax = 3, zoverhead = 4, zopcount = 5
+    add = 0, incrby = 1, rem = 2, max = 3, overhead = 4, opcount = 5
 };
 
 extern const char *rpq_cmd_prefix[2];
 
-enum rpq_type
+enum class rpq_type
 {
     o = 0, r = 1
 };

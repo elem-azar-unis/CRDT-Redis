@@ -1,6 +1,5 @@
 #include <cstdio>
 #include <cstring>
-#include <ctime>
 
 #include "exp_setting.h"
 #include "exp_env.h"
@@ -173,7 +172,7 @@ void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 
 void rpq_test_dis(rpq_type zt)
 {
-    rpq_log qlog(rpq_cmd_prefix[zt]);
+    rpq_log qlog(rpq_cmd_prefix[static_cast<int>(zt)]);
     rpq_generator gen(zt, qlog);
     rpq_cmd read_max(zt, zmax, -1, -1, qlog);
     rpq_cmd ovhd(zt, zoverhead, -1, -1, qlog);
@@ -200,8 +199,8 @@ void test_delay(int round)
 {
     for (int d = 20; d <= 380; d += 40)
     {
-        delay_fix(d, round, o);
-        delay_fix(d, round, r);
+        delay_fix(d, round, rpq_type::o);
+        delay_fix(d, round, rpq_type::r);
     }
 }
 
@@ -218,8 +217,8 @@ void test_replica(int round)
 {
     for (int replica:{1, 2, 3, 4, 5})
     {
-        replica_fix(replica, round, o);
-        replica_fix(replica, round, r);
+        replica_fix(replica, round, rpq_type::o);
+        replica_fix(replica, round, rpq_type::r);
     }
 }
 
@@ -234,21 +233,20 @@ void test_speed(int round)
 {
     for (int i = 500; i <= 10000; i += 100)
     {
-        speed_fix(i, round, o);
-        speed_fix(i, round, r);
+        speed_fix(i, round, rpq_type::o);
+        speed_fix(i, round, rpq_type::r);
     }
 }
 
 void rpq_experiment()
 {
-    timeval t1{}, t2{};
-    gettimeofday(&t1, nullptr);
+    auto start = chrono::steady_clock::now();
 
     exp_setting::set_pattern("ardominant");
     system("python3 ../redis_test/connection.py");
-    rpq_test_dis(o);
+    rpq_test_dis(rpq_type::o);
     system("python3 ../redis_test/connection.py");
-    rpq_test_dis(r);
+    rpq_test_dis(rpq_type::r);
 
     for (int i = 0; i < 30; i++)
     {
@@ -257,9 +255,9 @@ void rpq_experiment()
         test_speed(i);
     }
 
-    gettimeofday(&t2, nullptr);
-    double time_diff_sec = (t2.tv_sec - t1.tv_sec) + (t2.tv_usec - t1.tv_usec) / 1000000.0;
-    printf("total time: %f\n", time_diff_sec);
+    auto end = chrono::steady_clock::now();
+    auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
+    printf("total time: %f seconds\n", time);
 }
 
 int main(int argc, char *argv[])
