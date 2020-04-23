@@ -174,9 +174,9 @@ void rpq_test_dis(rpq_type zt)
 {
     rpq_log qlog(rpq_cmd_prefix[static_cast<int>(zt)]);
     rpq_generator gen(zt, qlog);
-    rpq_cmd read_max(zt, zmax, -1, -1, qlog);
-    rpq_cmd ovhd(zt, zoverhead, -1, -1, qlog);
-    rpq_cmd opcount(zt, zopcount, -1, -1, qlog);
+    rpq_cmd read_max(zt, rpq_op_type::max, -1, -1, qlog);
+    rpq_cmd ovhd(zt, rpq_op_type::overhead, -1, -1, qlog);
+    rpq_cmd opcount(zt, rpq_op_type::opcount, -1, -1, qlog);
 
     exp_runner<int> runner(qlog, gen);
     runner.set_cmd_opcount(opcount);

@@ -6,6 +6,7 @@
 #define BENCH_EXP_ENV_H
 
 #include <cstdio>
+#include <cstring>
 #include <chrono>
 #include <thread>
 

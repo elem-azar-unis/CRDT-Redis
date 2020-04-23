@@ -5,6 +5,8 @@
 #ifndef BENCH_EXP_SETTING_H
 #define BENCH_EXP_SETTING_H
 
+#include <cstdio>
+
 class exp_setting
 {
 private:
