@@ -188,9 +188,11 @@ void rpq_test_dis(rpq_type zt)
 void delay_fix(int delay, int round, rpq_type type)
 {
     exp_setting::set_delay(round, delay, delay / 5);
+    /*
     char cmd[64];
     sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %d", delay, delay / 5, delay / 5, delay / 25);
     system(cmd);
+    */
     rpq_test_dis(type);
 }
 
@@ -207,9 +209,11 @@ void test_delay(int round)
 void replica_fix(int s_p_c, int round, rpq_type type)
 {
     exp_setting::set_replica(round, 3, s_p_c);
+    /*
     char cmd[64];
     sprintf(cmd, "python3 ../redis_test/connection.py %d", s_p_c);
     system(cmd);
+    */
     rpq_test_dis(type);
 }
 
@@ -224,7 +228,7 @@ void test_replica(int round)
 
 void speed_fix(int speed, int round, rpq_type type)
 {
-    system("python3 ../redis_test/connection.py");
+    // system("python3 ../redis_test/connection.py");
     exp_setting::set_speed(round, speed);
     rpq_test_dis(type);
 }
@@ -243,9 +247,9 @@ void rpq_experiment()
     auto start = chrono::steady_clock::now();
 
     exp_setting::set_pattern("ardominant");
-    system("python3 ../redis_test/connection.py");
+    // system("python3 ../redis_test/connection.py");
     rpq_test_dis(rpq_type::o);
-    system("python3 ../redis_test/connection.py");
+    // system("python3 ../redis_test/connection.py");
     rpq_test_dis(rpq_type::r);
 
     for (int i = 0; i < 30; i++)
