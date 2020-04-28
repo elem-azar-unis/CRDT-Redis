@@ -65,6 +65,7 @@ rze *rzeNew()
     e->value = NULL;
     e->aset = listCreate();
     e->rset = listCreate();
+    e->ops = listCreate();
     return e;
 }
 

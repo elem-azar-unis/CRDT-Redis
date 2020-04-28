@@ -25,7 +25,7 @@ class exp_env
 private:
     static void shell_exec(const char *cmd, bool sudo)
     {
-#define PRINT_CMD
+//#define PRINT_CMD
 #ifdef PRINT_CMD
         if (sudo)
             printf("\nsudo %s\n", cmd);
@@ -53,10 +53,10 @@ private:
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
             sprintf(cmd, "redis-server ../redis_test/6379.conf "
-                         "--port %d --logfile /dev/null "
+                         "--port %d --logfile %d.log "
                          "--pidfile /var/run/redis_%d.pid "
                          "--dbfilename %d.rdb",
-                    port, port, port);
+                    port, port, port, port);
             shell_exec(cmd, false);
         }
     }
@@ -149,8 +149,8 @@ public:
         printf("delay removed, ");
         shutdown_servers();
         printf("server shutdown, ");
-        // clean();
-        // printf("cleaned\n\n");
+        clean();
+        printf("cleaned\n\n");
     }
 };
 

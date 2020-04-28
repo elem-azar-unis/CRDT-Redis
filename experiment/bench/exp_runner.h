@@ -193,7 +193,6 @@ public:
             ovhd_thread->join();
             delete ovhd_thread;
         }
-        gen.stop_and_join();
 
         log.write_file();
 
@@ -202,7 +201,6 @@ public:
         for (auto t :tasks)
             delete t;
 
-        this_thread::sleep_for(chrono::seconds(5));
     }
 };
 

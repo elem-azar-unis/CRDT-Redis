@@ -115,7 +115,7 @@ protected:
 public:
     virtual void gen_and_exec(redisContext *c) = 0;
 
-    void stop_and_join()
+    ~generator()
     {
         running = false;
         maintainer.join();
