@@ -36,8 +36,7 @@ private:
         void worker()
         {
             unique_lock<mutex> lk(m);
-            while (n == 0)
-                cv.wait(lk);
+            cv.wait(lk, [this] { return n > 0; });
             n--;
         }
 
@@ -57,15 +56,16 @@ private:
     cmd *ovhd_cmd = nullptr;
     cmd *opcount_cmd = nullptr;
 
-    vector<thread *> thds;
-    vector<task_queue *> tasks;
+    vector<thread> thds;
+    vector<task_queue> tasks;
 
     void conn_one_server_timed(const char *ip, int port)
     {
         for (int i = 0; i < THREAD_PER_SERVER; ++i)
         {
-            auto task = new task_queue();
-            auto t = new thread([this, ip, port, task] {
+            tasks.emplace_back();
+            auto &task = tasks.back();
+            thds.emplace_back([this, ip, port, &task] {
                 redisContext *c = redisConnect(ip, port);
                 if (c == nullptr || c->err)
                 {
@@ -81,13 +81,11 @@ private:
                 }
                 for (int times = 0; times < OP_PER_THREAD; ++times)
                 {
-                    task->worker();
+                    task.worker();
                     gen.gen_and_exec(c);
                 }
                 redisFree(c);
             });
-            thds.emplace_back(t);
-            tasks.emplace_back(task);
         }
     }
 
@@ -122,9 +120,9 @@ public:
             auto start_time = chrono::steady_clock::now();
             for (int times = 0; times < OP_PER_THREAD; ++times)
             {
-                for (auto t:tasks)
+                for (auto &t:tasks)
                 {
-                    t->add();
+                    t.add();
                 }
                 auto tar_time = start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
                 this_thread::sleep_until(tar_time);
@@ -139,12 +137,12 @@ public:
         });
 
         volatile bool rb, ob;
-        thread *read_thread = nullptr, *ovhd_thread = nullptr;
+        thread read_thread, ovhd_thread;
 
         if (read_cmd != nullptr)
         {
             rb = true;
-            read_thread = new thread([this, &rb] {
+            read_thread = thread([this, &rb] {
                 redisContext *cl = redisConnect(IP_SERVER, BASE_PORT);
                 while (rb)
                 {
@@ -158,7 +156,7 @@ public:
         if (ovhd_cmd != nullptr)
         {
             ob = true;
-            ovhd_thread = new thread([this, &ob] {
+            ovhd_thread = thread([this, &ob] {
                 redisContext *cl = redisConnect(IP_SERVER, BASE_PORT + 1);
                 while (ob)
                 {
@@ -172,8 +170,8 @@ public:
         }
 
         timer.join();
-        for (auto t:thds)
-            t->join();
+        for (auto &t:thds)
+            t.join();
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
@@ -181,25 +179,18 @@ public:
 
         printf("ending.\n");
 
-        if (read_thread != nullptr)
+        if (read_thread.joinable())
         {
             rb = false;
-            read_thread->join();
-            delete read_thread;
+            read_thread.join();
         }
-        if (ovhd_thread != nullptr)
+        if (ovhd_thread.joinable())
         {
             ob = false;
-            ovhd_thread->join();
-            delete ovhd_thread;
+            ovhd_thread.join();
         }
 
         log.write_file();
-
-        for (auto t :thds)
-            delete t;
-        for (auto t :tasks)
-            delete t;
 
     }
 };

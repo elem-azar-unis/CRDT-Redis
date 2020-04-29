@@ -7,6 +7,7 @@
 
 
 #include <vector>
+#include <tuple>
 #include <unordered_map>
 #include <mutex>
 
@@ -17,25 +18,6 @@ using namespace std;
 class rpq_log : public rdt_log
 {
 private:
-
-    struct m_log
-    {
-        int kread;
-        double vread;
-        int kactural;
-        double vactural;
-
-        m_log(int a, double b, int c, double d)
-                : kread(a), vread(b), kactural(c), vactural(d) {}
-    };
-
-    struct ovhd_log
-    {
-        int num, ovhd;
-
-        ovhd_log(int a, int b)
-                : num(a), ovhd(b) {}
-    };
 
     class element
     {
@@ -59,10 +41,12 @@ private:
         bool operator!=(const element &e) const { return value != e.value; }
     };
 
-    unordered_map<int, element *> map;
-    vector<element *> heap;
-    vector<m_log> max_log;
-    vector<ovhd_log> overhead_log;
+    unordered_map<int, shared_ptr<element> > map;
+    vector<shared_ptr<element> > heap;
+    // kread, vread, kactural, vactural
+    vector<tuple<int, double, int, double> > max_log;
+    // num, ovhd
+    vector<tuple<int, int> > overhead_log;
 
     mutex mtx, max_mtx, ovhd_mtx;
 
@@ -72,12 +56,6 @@ private:
 
 public:
     explicit rpq_log(const char *type) : rdt_log("rpq", type) {}
-
-    ~rpq_log()
-    {
-        for(auto p:heap)
-            delete p;
-    }
 
     int random_get();
 

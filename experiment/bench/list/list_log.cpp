@@ -48,7 +48,7 @@ void list_log::read_list(redisReply r)
 
     {
         lock_guard<mutex> lk(dis_mtx);
-        distance_log.emplace_back(len,distance);
+        distance_log.emplace_back(len, distance);
     }
 }
 

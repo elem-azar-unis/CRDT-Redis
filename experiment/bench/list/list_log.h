@@ -8,6 +8,7 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <tuple>
 #include <unordered_map>
 #include <mutex>
 
@@ -18,22 +19,14 @@ using namespace std;
 class list_log : public rdt_log
 {
 private:
-    struct record
-    {
-        int num;
-        double value;
-
-        record(int n, double v) : num(n), value(v) {}
-    };
-
     struct element
     {
         string name;
         string content;
-        int font,size,  color;
+        int font, size, color;
         bool bold, italic, underline;
-        
-        element *prev=nullptr,*next=nullptr;
+
+        element *prev = nullptr, *next = nullptr;
 
         element(char *name, char *content, int font, int size, int color,
                 bool bold, bool italic, bool underline) :
@@ -41,18 +34,22 @@ private:
                 bold(bold), italic(italic), underline(underline) {}
     };
 
-    static double diff(const element& e, const redisReply * r);
+    static double diff(const element &e, const redisReply *r);
 
-    unordered_map<int, element *> map;
-    list<element *> document;
-    vector<record> distance_log;
-    vector<record> overhead_log;
+    unordered_map<int, shared_ptr<element> > map;
+    list<shared_ptr<element> > document;
+    // len, distance
+    vector<tuple<int, double> > distance_log;
+    // num, overhead
+    vector<tuple<int, int> > overhead_log;
 
     mutex mtx, dis_mtx, ovhd_mtx;
 
 public:
-    explicit list_log(const char *type) : rdt_log("list",type) {}
+    explicit list_log(const char *type) : rdt_log("list", type) {}
+
     void read_list(redisReply r);
+
     void overhead(int o);
 };
 

@@ -185,7 +185,7 @@ void rpq_test_dis(rpq_type zt)
     runner.run();
 }
 
-void delay_fix(int delay, int round, rpq_type type)
+void delay_fix(double delay, int round, rpq_type type)
 {
     exp_setting::set_delay(round, delay, delay / 5);
     /*

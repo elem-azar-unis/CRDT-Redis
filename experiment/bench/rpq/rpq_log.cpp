@@ -48,9 +48,9 @@ void rpq_log::add(int k, double v)
     lock_guard<mutex> lk(mtx);
     if (map.find(k) == map.end())
     {
-        auto e = new element(k, v);
+        shared_ptr<element> e(new element(k, v));
         map[k] = e;
-        heap.push_back(e);
+        heap.emplace_back(e);
         shift_up(static_cast<int>(heap.size() - 1));
     }
 }
@@ -80,7 +80,6 @@ void rpq_log::rem(int k)
         heap[e->index] = heap.back();
         heap.erase(heap.end() - 1);
         shift_down(e->index);
-        delete e;
     }
 }
 
@@ -126,15 +125,15 @@ void rpq_log::write_file()
 
     sprintf(f, "%s/s.ovhd", dir);
     FILE *ovhd = fopen(f, "w");
-    for (auto o:overhead_log)
-        fprintf(ovhd, "%d %d\n", o.num, o.ovhd);
+    for (auto &o:overhead_log)
+        fprintf(ovhd, "%d %d\n", get<0>(o), get<1>(o));
     fflush(ovhd);
     fclose(ovhd);
 
     sprintf(f, "%s/s.max", dir);
     FILE *max = fopen(f, "w");
-    for (auto o:max_log)
-        fprintf(max, "%d %f %d %f\n", o.kread, o.vread, o.kactural, o.vactural);
+    for (auto &o:max_log)
+        fprintf(max, "%d %f %d %f\n", get<0>(o), get<1>(o), get<2>(o), get<3>(o));
     fflush(max);
     fclose(max);
 }

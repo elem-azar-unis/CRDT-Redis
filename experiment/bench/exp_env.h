@@ -35,7 +35,7 @@ private:
         char *_cmd_apend;
         if (sudo)
         {
-            _cmd_apend = new char[strlen(cmd) + strlen(SUDO_PREFIX CMD_SUFFIX) + 1];
+            _cmd_apend = new char[strlen(cmd) + strlen(SUDO_PREFIX CMD_SUFFIX) + 32];
             sprintf(_cmd_apend, SUDO_PREFIX "%s" CMD_SUFFIX, sudo_pwd, cmd);
         }
         else
@@ -64,15 +64,15 @@ private:
     static void construct_repl()
     {
         char *cmd = new char[64 + 16 * (TOTAL_SERVERS - 1)];
-        char *repl = new char[16 * (TOTAL_SERVERS - 1)];
+        char *repl = new char[16 * TOTAL_SERVERS];
         for (int i = 0; i < exp_setting::total_clusters; ++i)
         {
             repl[0] = '\0';
-            for (int k = 0; k < i * exp_setting::total_clusters; ++k)
+            for (int k = 0; k < i * exp_setting::server_per_cluster; ++k)
                 sprintf(repl, "%s " IP_BETWEEN_CLUSTER " %d", repl, BASE_PORT + k);
             for (int j = 0; j < exp_setting::server_per_cluster; ++j)
             {
-                int num = i * exp_setting::total_clusters + j;
+                int num = i * exp_setting::server_per_cluster + j;
                 sprintf(cmd, "redis-cli -h 127.0.0.1 -p %d "
                              "REPLICATE %d %d exp_local%s",
                         BASE_PORT + num, TOTAL_SERVERS, num, repl);
@@ -91,14 +91,14 @@ private:
         shell_exec("tc qdisc add dev lo root handle 1: prio", true);
 
         sprintf(cmd, "tc qdisc add dev lo parent 1:1 handle 10: "
-                     "netem delay %dms %dms distribution normal limit 100000",
+                     "netem delay %fms %fms distribution normal limit 100000",
                 exp_setting::delay_low, exp_setting::delay_low / 5);
         shell_exec(cmd, true);
         shell_exec("tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst "
                    IP_WITHIN_CLUSTER " flowid 1:1", true);
 
         sprintf(cmd, "tc qdisc add dev lo parent 1:2 handle 20: "
-                     "netem delay %dms %dms distribution normal limit 100000",
+                     "netem delay %fms %fms distribution normal limit 100000",
                 exp_setting::delay, exp_setting::delay / 5);
         shell_exec(cmd, true);
         shell_exec("tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst "
