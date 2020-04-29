@@ -12,7 +12,9 @@
 #include "exp_env.h"
 
 #if defined(__linux__)
+
 #include <hiredis/hiredis.h>
+
 #elif defined(_WIN32)
 
 #include "../../redis-4.0.8/deps/hiredis/hiredis.h"
@@ -57,15 +59,15 @@ private:
     cmd *opcount_cmd = nullptr;
 
     vector<thread> thds;
-    vector<task_queue> tasks;
+    vector<shared_ptr<task_queue> > tasks;
 
     void conn_one_server_timed(const char *ip, int port)
     {
         for (int i = 0; i < THREAD_PER_SERVER; ++i)
         {
-            tasks.emplace_back();
+            tasks.emplace_back(new task_queue());
             auto &task = tasks.back();
-            thds.emplace_back([this, ip, port, &task] {
+            thds.emplace_back([this, ip, port, task] {
                 redisContext *c = redisConnect(ip, port);
                 if (c == nullptr || c->err)
                 {
@@ -81,7 +83,7 @@ private:
                 }
                 for (int times = 0; times < OP_PER_THREAD; ++times)
                 {
-                    task.worker();
+                    task->worker();
                     gen.gen_and_exec(c);
                 }
                 redisFree(c);
@@ -122,7 +124,7 @@ public:
             {
                 for (auto &t:tasks)
                 {
-                    t.add();
+                    t->add();
                 }
                 auto tar_time = start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
                 this_thread::sleep_until(tar_time);

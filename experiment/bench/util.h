@@ -52,7 +52,7 @@ protected:
         unordered_set<T> h;
         mutex mtx;
     public:
-        void add(T &&name)
+        void add(T &name)
         {
             lock_guard<mutex> lk(mtx);
             if (h.find(name) == h.end())
@@ -105,7 +105,7 @@ protected:
         maintainer = thread([this] {
             while (running)
             {
-                this_thread::sleep_for(chrono::microseconds(static_cast<int>(SLP_TIME_MICRO)));
+                this_thread::sleep_for(chrono::microseconds(SLP_TIME_MICRO));
                 for (auto &r:records)
                     r->inc_rem();
             }
@@ -152,7 +152,7 @@ public:
         sprintf(dir, "%s/%d", dir, exp_setting::round_num);
         bench_mkdir(dir);
 
-        sprintf(dir, "%s/%s:%d,%d,(%f,%f)", dir, type, TOTAL_SERVERS,
+        sprintf(dir, "%s/%s:%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS,
                 exp_setting::op_per_sec, exp_setting::delay, exp_setting::delay_low);
         bench_mkdir(dir);
     }

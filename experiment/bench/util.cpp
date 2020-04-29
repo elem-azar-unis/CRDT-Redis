@@ -8,8 +8,8 @@
 
 char exp_env::sudo_pwd[32];
 
-double exp_setting::delay = 50;
-double exp_setting::delay_low = 10;
+int exp_setting::delay = 50;
+int exp_setting::delay_low = 10;
 int exp_setting::total_clusters = 3;
 int exp_setting::server_per_cluster = 3;
 int exp_setting::total_ops = 20000000;

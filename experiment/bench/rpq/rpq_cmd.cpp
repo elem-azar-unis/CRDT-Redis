@@ -4,7 +4,7 @@
 
 #include "rpq_cmd.h"
 
-const char *rpq_cmd_prefix[2] = {"o", "r"};
+const char *rpq_cmd_prefix[2] = {"o", "rwf"};
 
 void rpq_cmd::exec(redisContext *c)
 {

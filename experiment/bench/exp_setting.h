@@ -16,13 +16,13 @@ private:
         delay_low = 10;
         total_clusters = 3;
         server_per_cluster = 3;
-        total_ops = 20000000;
+        total_ops = 27;
         op_per_sec = 10000;
     }
 
 public:
-    static double delay;
-    static double delay_low;
+    static int delay;
+    static int delay_low;
     static int total_clusters;
     static int server_per_cluster;
     static int total_ops;
@@ -66,7 +66,7 @@ public:
                     printf("replica: %dx%d", total_clusters, server_per_cluster);
                     break;
                 case exp_type::delay:
-                    printf("delay: (%fms,%fms)", delay, delay_low);
+                    printf("delay: (%dms,%dms)", delay, delay_low);
                     break;
                 case exp_type::pattern:
                     break;
@@ -90,17 +90,17 @@ public:
         set_default();
         total_clusters = cluster;
         server_per_cluster = serverPCluster;
-        total_ops = 20000000;
+        total_ops = 2000;
         round_num = round;
         type = exp_type::replica;
     }
 
-    static inline void set_delay(int round, double hd, double ld)
+    static inline void set_delay(int round, int hd, int ld)
     {
         set_default();
         delay = hd;
         delay_low = ld;
-        total_ops = 10000000;
+        total_ops = 1000;
         round_num = round;
         type = exp_type::delay;
     }
