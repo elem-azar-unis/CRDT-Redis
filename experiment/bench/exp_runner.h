@@ -176,7 +176,7 @@ public:
             t.join();
 
         auto end = chrono::steady_clock::now();
-        auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
+        auto time = chrono::duration_cast<chrono::duration<double> >(end - start).count();
         printf("%f seconds, %f op/s\n", time, exp_setting::total_ops / time);
 
         printf("ending.\n");

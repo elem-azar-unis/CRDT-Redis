@@ -185,7 +185,7 @@ void rpq_test_dis(rpq_type zt)
     runner.run();
 }
 
-void delay_fix(double delay, int round, rpq_type type)
+void delay_fix(int delay, int round, rpq_type type)
 {
     exp_setting::set_delay(round, delay, delay / 5);
     /*
@@ -260,7 +260,7 @@ void rpq_experiment()
     }
 
     auto end = chrono::steady_clock::now();
-    auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
+    auto time = chrono::duration_cast<chrono::duration<double> >(end - start).count();
     printf("total time: %f seconds\n", time);
 }
 

@@ -16,7 +16,7 @@ private:
         delay_low = 10;
         total_clusters = 3;
         server_per_cluster = 3;
-        total_ops = 27;
+        total_ops = 20000000;
         op_per_sec = 10000;
     }
 
@@ -90,7 +90,7 @@ public:
         set_default();
         total_clusters = cluster;
         server_per_cluster = serverPCluster;
-        total_ops = 2000;
+        total_ops = 20000000;
         round_num = round;
         type = exp_type::replica;
     }
@@ -100,7 +100,7 @@ public:
         set_default();
         delay = hd;
         delay_low = ld;
-        total_ops = 1000;
+        total_ops = 10000000;
         round_num = round;
         type = exp_type::delay;
     }
