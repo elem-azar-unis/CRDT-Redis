@@ -24,7 +24,7 @@ public:
 
     rpq_cmd(const rpq_cmd &c) = default;
 
-    void exec(redisContext *c) override;
+    void exec(redis_client &c) override;
 };
 
 

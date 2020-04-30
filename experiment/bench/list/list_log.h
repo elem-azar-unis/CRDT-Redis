@@ -48,7 +48,7 @@ private:
 public:
     explicit list_log(const char *type) : rdt_log("list", type) {}
 
-    void read_list(redisReply r);
+    void read_list(redisReply_ptr &r);
 
     void overhead(int o);
 };

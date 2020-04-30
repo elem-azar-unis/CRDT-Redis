@@ -34,10 +34,51 @@ double doubleRand(double min, double max);
 
 double decide();
 
+using redisReply_ptr = unique_ptr<redisReply, decltype(freeReplyObject) *>;
+
+class redis_client
+{
+private:
+    redisContext *c;
+public:
+    redis_client(const char *ip, int port)
+    {
+        c = redisConnect(ip, port);
+        if (c == nullptr || c->err)
+        {
+            if (c)
+            {
+                printf("Error: %s, ip:%s, port:%d\n", c->errstr, ip, port);
+            }
+            else
+            {
+                printf("Can't allocate redis context\n");
+            }
+            exit(-1);
+        }
+    }
+
+    redisReply_ptr exec(const char *cmd)
+    {
+        auto r = static_cast<redisReply *>(redisCommand(c, cmd));
+        if (r == nullptr)
+        {
+            printf("host %s:%d terminated.\nexecuting %s\n", c->tcp.host, c->tcp.port, cmd);
+            exit(-1);
+        }
+        return redisReply_ptr(r, freeReplyObject);
+    }
+
+    ~redis_client()
+    {
+        redisFree(c);
+    }
+};
+
 class cmd
 {
 public:
-    virtual void exec(redisContext *c) = 0;
+    virtual void exec(redis_client &c) = 0;
 };
 
 template<class T>
@@ -113,7 +154,7 @@ protected:
     }
 
 public:
-    virtual void gen_and_exec(redisContext *c) = 0;
+    virtual void gen_and_exec(redis_client &c) = 0;
 
     ~generator()
     {

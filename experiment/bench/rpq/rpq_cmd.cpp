@@ -6,7 +6,7 @@
 
 const char *rpq_cmd_prefix[2] = {"o", "rwf"};
 
-void rpq_cmd::exec(redisContext *c)
+void rpq_cmd::exec(redis_client &c)
 {
     char name[128];
     sprintf(name, "%srpq", rpq_cmd_prefix[static_cast<int>(zt)]);
@@ -32,12 +32,7 @@ void rpq_cmd::exec(redisContext *c)
             sprintf(tmp, "%szopcount", rpq_cmd_prefix[static_cast<int>(zt)]);
             break;
     }
-    auto r = static_cast<redisReply *>(redisCommand(c, tmp));
-    if (r == nullptr)
-    {
-        printf("host %s:%d terminated.\nexecuting %s\n", c->tcp.host, c->tcp.port, tmp);
-        exit(-1);
-    }
+    auto r = c.exec(tmp);
     switch (t)
     {
         case rpq_op_type::add:
@@ -68,5 +63,4 @@ void rpq_cmd::exec(redisContext *c)
             printf("%lli\n", r->integer);
             break;
     }
-    freeReplyObject(r);
 }

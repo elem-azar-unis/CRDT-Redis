@@ -21,7 +21,7 @@ double list_log::diff(const list_log::element &e, const redisReply *r)
     return 0;
 }
 
-void list_log::read_list(redisReply r)
+void list_log::read_list(redisReply_ptr &r)
 {
     int len;
     double distance;
@@ -29,7 +29,7 @@ void list_log::read_list(redisReply r)
     {
         lock_guard<mutex> lk(mtx);
         len = document.size();
-        int r_len = r.elements;
+        int r_len = r->elements;
 
         // Levenshtein distance
         vector<vector<double> > dp(len + 1, vector<double>(r_len + 1, 0));
@@ -39,7 +39,7 @@ void list_log::read_list(redisReply r)
         for (int i = 1; i <= len; i++)
         {
             for (int j = 1; j <= r_len; j++)
-                dp[i][j] = min(dp[i - 1][j - 1] + diff(**iter, r.element[j - 1]),
+                dp[i][j] = min(dp[i - 1][j - 1] + diff(**iter, r->element[j - 1]),
                         min(dp[i][j - 1] + 1, dp[i - 1][j] + 1));
             iter++;
         }

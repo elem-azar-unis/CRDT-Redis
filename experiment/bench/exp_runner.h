@@ -68,25 +68,12 @@ private:
             tasks.emplace_back(new task_queue());
             auto &task = tasks.back();
             thds.emplace_back([this, ip, port, task] {
-                redisContext *c = redisConnect(ip, port);
-                if (c == nullptr || c->err)
-                {
-                    if (c)
-                    {
-                        printf("Error: %s, ip:%s, port:%d\n", c->errstr, ip, port);
-                    }
-                    else
-                    {
-                        printf("Can't allocate redis context\n");
-                    }
-                    exit(-1);
-                }
+                redis_client c(ip, port);
                 for (int times = 0; times < OP_PER_THREAD; ++times)
                 {
                     task->worker();
                     gen.gen_and_exec(c);
                 }
-                redisFree(c);
             });
         }
     }
@@ -145,13 +132,12 @@ public:
         {
             rb = true;
             read_thread = thread([this, &rb] {
-                redisContext *cl = redisConnect(IP_SERVER, BASE_PORT);
+                redis_client cl(IP_SERVER, BASE_PORT);
                 while (rb)
                 {
                     this_thread::sleep_for(chrono::seconds(TIME_MAX));
                     read_cmd->exec(cl);
                 }
-                redisFree(cl);
             });
         }
 
@@ -159,7 +145,7 @@ public:
         {
             ob = true;
             ovhd_thread = thread([this, &ob] {
-                redisContext *cl = redisConnect(IP_SERVER, BASE_PORT + 1);
+                redis_client cl(IP_SERVER, BASE_PORT + 1);
                 while (ob)
                 {
                     this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
@@ -167,7 +153,6 @@ public:
                 }
                 if (opcount_cmd != nullptr)
                     opcount_cmd->exec(cl);
-                redisFree(cl);
             });
         }
 

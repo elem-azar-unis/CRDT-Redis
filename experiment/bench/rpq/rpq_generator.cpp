@@ -4,7 +4,7 @@
 
 #include "rpq_generator.h"
 
-void rpq_generator::gen_and_exec(redisContext *c)
+void rpq_generator::gen_and_exec(redis_client &c)
 {
     rpq_op_type t;
     int e;

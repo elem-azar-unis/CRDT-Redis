@@ -91,7 +91,7 @@ public:
         start_maintaining_records();
     }
 
-    void gen_and_exec(redisContext *c) override;
+    void gen_and_exec(redis_client &c) override;
 
 };
 
