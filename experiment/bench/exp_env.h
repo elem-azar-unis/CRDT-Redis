@@ -15,7 +15,7 @@
 #define IP_BETWEEN_CLUSTER "127.0.0.3"
 #define IP_WITHIN_CLUSTER "127.0.0.2"
 #define IP_SERVER "127.0.0.1"
-#define BASE_PORT 6379
+constexpr int BASE_PORT = 6379;
 
 #define SUDO_PREFIX "echo %s | sudo -S "
 #define CMD_SUFFIX " 1>/dev/null"   // or " 1>/dev/null 2>&1"

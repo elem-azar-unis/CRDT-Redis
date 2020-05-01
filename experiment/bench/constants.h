@@ -14,10 +14,10 @@
 //#define OP_PER_SEC 10000
 
 #define MAX_TIME_COLISION exp_setting::delay
-#define SPLIT_NUM 10
+constexpr int SPLIT_NUM = 10;
 #define SLP_TIME_MICRO (MAX_TIME_COLISION * 1000 / SPLIT_NUM)
 
-#define THREAD_PER_SERVER 3
+constexpr int THREAD_PER_SERVER = 3;
 #define TOTAL_SERVERS (exp_setting::total_clusters * exp_setting::server_per_cluster)
 #define OP_PER_THREAD (exp_setting::total_ops/TOTAL_SERVERS/THREAD_PER_SERVER)
 
@@ -29,7 +29,7 @@
 //#define SLEEP_TIME ((_SLEEP_TIME>0)?_SLEEP_TIME:0)
 
 // time in seconds
-#define TIME_OVERHEAD 1
-#define TIME_MAX 1
+constexpr int TIME_OVERHEAD = 1;
+constexpr int TIME_MAX = 1;
 
 #endif //BENCH_CONSTANTS_H

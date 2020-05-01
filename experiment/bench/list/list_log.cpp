@@ -4,9 +4,9 @@
 
 #include "list_log.h"
 
-#define __bold (1<<0)
-#define __italic (1<<1)
-#define __underline (1<<2)
+constexpr int BOLD = 1 << 0;
+constexpr int ITALIC = 1 << 1;
+constexpr int UNDERLINE = 1 << 2;
 
 double list_log::diff(const list_log::element &e, const redisReply *r)
 {
@@ -15,9 +15,9 @@ double list_log::diff(const list_log::element &e, const redisReply *r)
     if (e.size != atoi(r->element[3]->str))return 0.5;
     if (e.color != atoi(r->element[4]->str))return 0.5;
     int p = atoi(r->element[5]->str);
-    if (e.bold != (bool) (p & __bold))return 0.5;
-    if (e.italic != (bool) (p & __italic))return 0.5;
-    if (e.underline != (bool) (p & __underline))return 0.5;
+    if (e.bold != (bool) (p & BOLD))return 0.5;
+    if (e.italic != (bool) (p & ITALIC))return 0.5;
+    if (e.underline != (bool) (p & UNDERLINE))return 0.5;
     return 0;
 }
 
@@ -40,7 +40,7 @@ void list_log::read_list(redisReply_ptr &r)
         {
             for (int j = 1; j <= r_len; j++)
                 dp[i][j] = min(dp[i - 1][j - 1] + diff(**iter, r->element[j - 1]),
-                        min(dp[i][j - 1] + 1, dp[i - 1][j] + 1));
+                               min(dp[i][j - 1] + 1, dp[i - 1][j] + 1));
             iter++;
         }
         distance = dp[len][r_len];

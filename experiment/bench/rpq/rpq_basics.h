@@ -5,25 +5,25 @@
 #ifndef BENCH_RPQ_BASICS_H
 #define BENCH_RPQ_BASICS_H
 
-#define MAX_ELE 200000
-#define MAX_INIT 100
-#define MAX_INCR 50
+constexpr int MAX_ELE = 200000;
+constexpr int MAX_INIT = 100;
+constexpr int MAX_INCR = 50;
 
-#define PR_ADD 0.41
-#define PR_INC 0.2
-#define PR_REM 0.39
+constexpr double PR_ADD = 0.41;
+constexpr double PR_INC = 0.2;
+constexpr double PR_REM = 0.39;
 
-#define PR_ADD_CA 0.15
-#define PR_ADD_CR 0.05
-#define PR_REM_CA 0.1
-#define PR_REM_CR 0.1
+constexpr double PR_ADD_CA = 0.15;
+constexpr double PR_ADD_CR = 0.05;
+constexpr double PR_REM_CA = 0.1;
+constexpr double PR_REM_CR = 0.1;
 
-#define PA PR_ADD
-#define PI (PR_ADD + PR_INC)
-#define PAA PR_ADD_CA
-#define PAR (PR_ADD_CA + PR_ADD_CR)
-#define PRA PR_REM_CA
-#define PRR (PR_REM_CA + PR_REM_CR)
+constexpr double PA = PR_ADD;
+constexpr double PI = PR_ADD + PR_INC;
+constexpr double PAA = PR_ADD_CA;
+constexpr double PAR = PR_ADD_CA + PR_ADD_CR;
+constexpr double PRA = PR_REM_CA;
+constexpr double PRR = PR_REM_CA + PR_REM_CR;
 
 enum class rpq_op_type
 {
