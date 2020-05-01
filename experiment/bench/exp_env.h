@@ -35,12 +35,12 @@ private:
         char *_cmd_apend;
         if (sudo)
         {
-            _cmd_apend = new char[strlen(cmd) + strlen(SUDO_PREFIX CMD_SUFFIX) + 32];
+            _cmd_apend = new char[strlen(cmd) + sizeof(SUDO_PREFIX CMD_SUFFIX) + 32];
             sprintf(_cmd_apend, SUDO_PREFIX "%s" CMD_SUFFIX, sudo_pwd, cmd);
         }
         else
         {
-            _cmd_apend = new char[strlen(cmd) + strlen(CMD_SUFFIX) + 1];
+            _cmd_apend = new char[strlen(cmd) + sizeof(CMD_SUFFIX)];
             sprintf(_cmd_apend, "%s" CMD_SUFFIX, cmd);
         }
         system(_cmd_apend);

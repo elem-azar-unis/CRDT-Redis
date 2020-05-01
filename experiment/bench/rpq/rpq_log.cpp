@@ -75,11 +75,11 @@ void rpq_log::rem(int k)
     lock_guard<mutex> lk(mtx);
     if (map.find(k) != map.end())
     {
-        auto e = map[k];
+        int i = map[k]->index;
         map.erase(map.find(k));
-        heap[e->index] = heap.back();
+        heap[i] = heap.back();
         heap.erase(heap.end() - 1);
-        shift_down(e->index);
+        shift_down(i);
     }
 }
 
