@@ -4,7 +4,9 @@
 
 #include "rpq_cmd.h"
 
-const char *rpq_cmd_prefix[2] = {"o", "rwf"};
+#define DEFINE_ACTION(_name) #_name,
+const char *rpq_cmd_prefix[] = {RPQ_TYPE_CODEC(DEFINE_ACTION)};
+#undef DEFINE_ACTION
 
 void rpq_cmd::exec(redis_client &c)
 {

@@ -19,7 +19,9 @@ exp_setting::exp_type exp_setting::type;
 const char *exp_setting::pattern_name;
 int exp_setting::round_num;
 
-const char *exp_setting::type_str[3] = {"speed", "replica", "delay"};
+#define DEFINE_ACTION(_name) #_name,
+const char *exp_setting::type_str[] = {EXP_TYPE_CODEC(DEFINE_ACTION)};
+#undef DEFINE_ACTION
 
 int intRand(int min, int max)
 {

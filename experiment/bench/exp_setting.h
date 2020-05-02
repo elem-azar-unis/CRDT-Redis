@@ -28,27 +28,21 @@ public:
     static int total_ops;
     static int op_per_sec;
 
-/*
+
 #define EXP_TYPE_CODEC(ACTION)      \
     ACTION(speed)                   \
     ACTION(replica)                 \
     ACTION(delay)                   \
     ACTION(pattern)
 
-#define DEFINE_ACTION(_name) e##_name,
-    enum exp_type { EXP_TYPE_CODEC(DEFINE_ACTION) };
-#undef DEFINE_ACTION
-
-#define DEFINE_ACTION(_name) #_name,
-    static const char* type_str[] = { EXP_TYPE_CODEC(DEFINE_ACTION) };
-#undef DEFINE_ACTION
-*/
-
+#define DEFINE_ACTION(_name) _name,
     static enum class exp_type
     {
-        speed = 0, replica = 1, delay = 2, pattern
+        EXP_TYPE_CODEC(DEFINE_ACTION)
     } type;
-    static const char *type_str[3];
+#undef DEFINE_ACTION
+
+    static const char *type_str[];
     static const char *pattern_name;
     static int round_num;
 

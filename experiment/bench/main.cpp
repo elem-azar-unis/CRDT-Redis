@@ -202,7 +202,7 @@ void test_delay(int round)
     for (int d = 20; d <= 380; d += 40)
     {
         delay_fix(d, round, rpq_type::o);
-        delay_fix(d, round, rpq_type::r);
+        delay_fix(d, round, rpq_type::rwf);
     }
 }
 
@@ -222,7 +222,7 @@ void test_replica(int round)
     for (int replica:{1, 2, 3, 4, 5})
     {
         replica_fix(replica, round, rpq_type::o);
-        replica_fix(replica, round, rpq_type::r);
+        replica_fix(replica, round, rpq_type::rwf);
     }
 }
 
@@ -238,7 +238,7 @@ void test_speed(int round)
     for (int i = 500; i <= 10000; i += 100)
     {
         speed_fix(i, round, rpq_type::o);
-        speed_fix(i, round, rpq_type::r);
+        speed_fix(i, round, rpq_type::rwf);
     }
 }
 
@@ -250,7 +250,7 @@ void rpq_experiment()
     // system("python3 ../redis_test/connection.py");
     rpq_test_dis(rpq_type::o);
     // system("python3 ../redis_test/connection.py");
-    rpq_test_dis(rpq_type::r);
+    rpq_test_dis(rpq_type::rwf);
 
     for (int i = 0; i < 30; i++)
     {

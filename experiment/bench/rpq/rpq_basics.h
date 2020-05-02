@@ -30,11 +30,18 @@ enum class rpq_op_type
     add = 0, incrby = 1, rem = 2, max = 3, overhead = 4, opcount = 5
 };
 
-extern const char *rpq_cmd_prefix[2];
+#define RPQ_TYPE_CODEC(ACTION)      \
+    ACTION(o)                       \
+    ACTION(r)                       \
+    ACTION(rwf)
 
+#define DEFINE_ACTION(_name) _name,
 enum class rpq_type
 {
-    o = 0, r = 1
+    RPQ_TYPE_CODEC(DEFINE_ACTION)
 };
+#undef DEFINE_ACTION
+
+extern const char *rpq_cmd_prefix[2];
 
 #endif //BENCH_RPQ_BASICS_H
