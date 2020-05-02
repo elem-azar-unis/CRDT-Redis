@@ -42,6 +42,6 @@ enum class rpq_type
 };
 #undef DEFINE_ACTION
 
-extern const char *rpq_cmd_prefix[2];
+extern const char *rpq_cmd_prefix[];
 
 #endif //BENCH_RPQ_BASICS_H
