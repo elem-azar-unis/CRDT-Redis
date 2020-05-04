@@ -129,7 +129,7 @@ void test_local(rpq_type zt)
     max.join();
     overhead.join();
     gen.stop_and_join();
-    qlog.write_file(rpq_cmd_prefix[zt]);
+    qlog.write_file(rpq_type_str[zt]);
 }
 
 void test_count_dis_one(const char *ip, const int port, rpq_type zt)
@@ -172,7 +172,7 @@ void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 
 void rpq_test_dis(rpq_type zt)
 {
-    rpq_log qlog(rpq_cmd_prefix[static_cast<int>(zt)]);
+    rpq_log qlog(zt);
     rpq_generator gen(zt, qlog);
     rpq_cmd read_max(zt, rpq_op_type::max, -1, -1, qlog);
     rpq_cmd ovhd(zt, rpq_op_type::overhead, -1, -1, qlog);

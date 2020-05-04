@@ -27,7 +27,7 @@ constexpr double PRR = PR_REM_CA + PR_REM_CR;
 
 enum class rpq_op_type
 {
-    add = 0, incrby = 1, rem = 2, max = 3, overhead = 4, opcount = 5
+    add, incrby, rem, max, overhead, opcount
 };
 
 #define RPQ_TYPE_CODEC(ACTION)      \
@@ -42,6 +42,6 @@ enum class rpq_type
 };
 #undef DEFINE_ACTION
 
-extern const char *rpq_cmd_prefix[];
+extern const char *rpq_type_str[];
 
 #endif //BENCH_RPQ_BASICS_H

@@ -12,6 +12,7 @@
 #include <mutex>
 
 #include "../util.h"
+#include "rpq_basics.h"
 
 using namespace std;
 
@@ -55,7 +56,8 @@ private:
     void shift_down(int s);
 
 public:
-    explicit rpq_log(const char *type) : rdt_log("rpq", type) {}
+    explicit rpq_log(rpq_type type) : rdt_log("rpq",
+                                              rpq_type_str[static_cast<int>(type)]) {}
 
     int random_get();
 
