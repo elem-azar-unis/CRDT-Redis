@@ -36,9 +36,9 @@ typedef struct rzset_aset_element
     vc *t;
     double x;
     double inc;
-} rase;
+} rz_ase;
 
-sds raseToSds(rase *a)
+sds raseToSds(rz_ase *a)
 {
     sds vc_s = VCToSds(a->t);
     sds s = sdscatprintf(sdsempty(), "%f %f %s",
@@ -50,7 +50,7 @@ sds raseToSds(rase *a)
 typedef struct RW_RPQ_element
 {
     vc *current;
-    rase *value;
+    rz_ase *value;
     list *aset;
     list *rset;
     list *ops;
@@ -129,7 +129,7 @@ void ucmdDelete(ucmd *cmd)
 // doesn't free t, doesn't own t
 void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value, vc *t)
 {
-    rase *a = zmalloc(sizeof(rase));
+    rz_ase *a = zmalloc(sizeof(rz_ase));
     a->t = duplicateVC(t);
     a->x = value;
     a->inc = 0;
@@ -166,7 +166,7 @@ void increaseFunc(rze *e, redisDb *db, robj *tname, robj *key, double value, vc 
     listRewind(e->aset, &li);
     while ((ln = listNext(&li)))
     {
-        rase *a = ln->value;
+        rz_ase *a = ln->value;
         if (compareVC(a->t, t) == CLOCK_LESS)
             a->inc += value;
     }
@@ -190,7 +190,7 @@ void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
     listRewind(e->aset, &li);
     while ((ln = listNext(&li)))
     {
-        rase *a = ln->value;
+        rz_ase *a = ln->value;
         if (compareVC(a->t, t) == CLOCK_LESS)
         {
             listDelNode(e->aset, ln);
@@ -206,7 +206,7 @@ void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
         listRewind(e->aset, &li);
         while ((ln = listNext(&li)))
         {
-            rase *a = ln->value;
+            rz_ase *a = ln->value;
             if (e->value == NULL || e->value->t->id < a->t->id)
                 e->value = a;
         }
@@ -635,7 +635,7 @@ void rzestatusCommand(client *c)
     listRewind(e->aset, &li);
     while ((ln = listNext(&li)))
     {
-        rase *a = ln->value;
+        rz_ase *a = ln->value;
         addReplyBulkSds(c, raseToSds(a));
     }
 

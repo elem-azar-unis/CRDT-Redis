@@ -7,6 +7,22 @@
 
 #include "server.h"
 
+#define FORALL_NPR(ACTION)   \
+    ACTION(font)             \
+    ACTION(size)             \
+    ACTION(color)
+
+#define FORALL_PR(ACTION)   \
+    ACTION(bold)            \
+    ACTION(italic)          \
+    ACTION(underline)
+
+#define FORALL(ACTION) FORALL_NPR(ACTION) FORALL_PR(ACTION)
+
+#define __bold (1<<0)
+#define __italic (1<<1)
+#define __underline (1<<2)
+
 #define BASE (1<<24)
 #define RDM_STEP 8
 typedef struct position

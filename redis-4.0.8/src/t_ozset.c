@@ -38,13 +38,13 @@ typedef struct ozset_aset_element
     double x;
     double inc;
     double count;
-} oase;
+} oz_ase;
 
 typedef struct ORI_RPQ_element
 {
     int current;
-    oase *innate;
-    oase *acquired;
+    oz_ase *innate;
+    oz_ase *acquired;
     list *aset;
     list *rset;
 } oze;
@@ -53,7 +53,7 @@ typedef struct ORI_RPQ_element
                     + listLength((e)->aset) * (sizeof(oase) + sizeof(lc) + sizeof(listNode)) \
                     + listLength((e)->rset) * (sizeof(lc) + sizeof(listNode)))
 
-sds oaseToSds(oase *a)
+sds oaseToSds(oz_ase *a)
 {
     return sdscatprintf(sdsempty(), "(%d,%d),%f,%f,%f", a->t->x, a->t->id, a->x, a->inc, a->count);
 }
@@ -100,14 +100,14 @@ long get_ovhd_count(redisDb *db, sds tname, const char *suf)
 #endif
 
 
-oase *asetGet(oze *e, lc *t, int delete)
+oz_ase *asetGet(oze *e, lc *t, int delete)
 {
     listNode *ln;
     listIter li;
     listRewind(e->aset, &li);
     while ((ln = listNext(&li)))
     {
-        oase *a = ln->value;
+        oz_ase *a = ln->value;
         if (lc_cmp_as_tag(t, a->t) == 0)
         {
             if (delete)
@@ -147,9 +147,9 @@ lc *rsetGet(oze *e, lc *t, int delete)
 }
 
 // 下面函数对自己参数 t 没有所有权
-oase *add_ase(oze *e, lc *t)
+oz_ase *add_ase(oze *e, lc *t)
 {
-    oase *a = zmalloc(sizeof(oase));
+    oz_ase *a = zmalloc(sizeof(oz_ase));
     a->t = lc_dup(t);
     a->inc = 0;
     a->count = 0;
@@ -163,7 +163,7 @@ oase *add_ase(oze *e, lc *t)
 int update_innate_value(oze *e, lc *t, double v)
 {
     if (rsetGet(e, t, 0) != NULL)return 0;
-    oase *a = asetGet(e, t, 0);
+    oz_ase *a = asetGet(e, t, 0);
     if (a == NULL) a = add_ase(e, t);
     a->x = v;
     if (e->innate == NULL || lc_cmp_as_tag(e->innate->t, a->t) < 0)
@@ -177,7 +177,7 @@ int update_innate_value(oze *e, lc *t, double v)
 int update_acquired_value(oze *e, lc *t, double v)
 {
     if (rsetGet(e, t, 0) != NULL)return 0;
-    oase *a = asetGet(e, t, 0);
+    oz_ase *a = asetGet(e, t, 0);
     if (a == NULL) a = add_ase(e, t);
     a->inc += v;
     a->count += (v > 0) ? v : -v;
@@ -201,7 +201,7 @@ void remove_tag(oze *e, lc *t)
 #ifdef RW_OVERHEAD
     inc_ovhd_count(cur_db, cur_tname, SUF_RSET, 1);
 #endif
-    oase *a;
+    oz_ase *a;
     if ((a = asetGet(e, t, 1)) != NULL)
     {
         if (e->innate == a)e->innate = NULL;
@@ -221,7 +221,7 @@ void resort(oze *e)
 
     while ((ln = listNext(&li)))
     {
-        oase *a = ln->value;
+        oz_ase *a = ln->value;
         if (e->innate == NULL || lc_cmp_as_tag(e->innate->t, a->t) < 0)
             e->innate = a;
         if (e->acquired == NULL || e->acquired->count < a->count ||
@@ -354,7 +354,7 @@ void ozincrbyCommand(client *c)
             listRewind(e->aset, &li);
             while ((ln = listNext(&li)))
             {
-                oase *a = ln->value;
+                oz_ase *a = ln->value;
                 RARGV_ADD_SDS(lcToSds(a->t));
                 i++;
             }
@@ -412,7 +412,7 @@ void ozremCommand(client *c)
             listRewind(e->aset, &li);
             while ((ln = listNext(&li)))
             {
-                oase *a = ln->value;
+                oz_ase *a = ln->value;
                 RARGV_ADD_SDS(lcToSds(a->t));
                 i++;
             }
@@ -580,7 +580,7 @@ void ozestatusCommand(client *c)
     listRewind(e->aset, &li);
     while ((ln = listNext(&li)))
     {
-        oase *a = ln->value;
+        oz_ase *a = ln->value;
         addReplyBulkSds(c, oaseToSds(a));
     }
 
@@ -626,7 +626,7 @@ void ozoverheadCommand(client *c)
 {
     PRE_SET;
     long long size = get_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL) * (sizeof(oze) + 2 * sizeof(list))
-                     + get_ovhd_count(cur_db, cur_tname, SUF_ASET) * (sizeof(oase) + sizeof(lc) + sizeof(listNode))
+                     + get_ovhd_count(cur_db, cur_tname, SUF_ASET) * (sizeof(oz_ase) + sizeof(lc) + sizeof(listNode))
                      + get_ovhd_count(cur_db, cur_tname, SUF_RSET) * (sizeof(lc) + sizeof(listNode));
     addReplyLongLong(c, size);
 }

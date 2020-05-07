@@ -3,144 +3,60 @@
 //
 #include "server.h"
 #include "RWFramework.h"
+#include "list_basics.h"
 
-/*
-#define BASE (1<<24)
-#define RDM_STEP 8
-typedef struct position
+#define DEFINE_NPR(p) vc *p##_t;int p;
+#define DEFINE_PR(p) vc *p##_t;
+typedef struct rlist_aset_element
 {
-    unsigned int pos;
-    int pid;
-    int count;
-} position;
+    vc* t;
+    FORALL_NPR(DEFINE_NPR);
+    FORALL_PR(DEFINE_PR);
+    int property;
+}rl_ase;
+#undef DEFINE_NPR
+#undef DEFINE_PR
 
-inline int pos_cmp(const position *p1, const position *p2)
+rl_ase * rl_aseNew(vc* t)
 {
-    if (p1->pos != p2->pos) return p1->pos - p2->pos;
-    if (p1->pid != p2->pid) return p1->pid - p2->pid;
-    return p1->count - p2->count;
+    rl_ase *a = zmalloc(sizeof(rl_ase));
+    a->t = duplicateVC(t);
+#define TMP_ACTION(p) a->p##_t = duplicateVC(t);
+    FORALL(TMP_ACTION);
+#undef TMP_ACTION
+    return a;
 }
 
-typedef struct list_element_identifier
+typedef struct rw_list_element
 {
-    int num;
-    position *p;
-} leid;
+    sds oid;
+    leid *pos_id;
+    sds content;
 
-void leidFree(leid *id)
+    vc *current;
+    rl_ase *value;
+    list *aset;
+    list *rset;
+    list *ops;
+
+    struct rw_list_element *prev;
+    struct rw_list_element *next;
+}rle;
+
+rle* rleNew()
 {
-    zfree(id->p);
-    zfree(id);
+    rle* e = zmalloc(sizeof(rle));
+    e->oid = NULL;
+    e->pos_id = NULL;
+    e->content = NULL;
+
+    e->current = l_newVC;
+    e->value = NULL;
+    e->aset = listCreate();
+    e->rset = listCreate();
+    e->ops = listCreate();
+
+    e->prev = NULL;
+    e->next = NULL;
+    return e;
 }
-
-position leid_buf[100];
-
-sds leidToSds(const leid *p)
-{
-    sds s = sdsempty();
-    int i;
-    for (i = 0; i < p->num - 1; ++i)
-    {
-        s = sdscatprintf(s, "%d,%d,%d|", p->p[i].pos, p->p[i].pid, p->p[i].count);
-    }
-    s = sdscatprintf(s, "%d,%d,%d", p->p[i].pos, p->p[i].pid, p->p[i].count);
-    return s;
-}
-
-leid *sdsToLeid(sds s)
-{
-    int size = 0;
-    char *p = s;
-    while (1)
-    {
-        leid_buf[size].pos = (unsigned int) atoi(p);
-        while (*p != ',') p++;
-        p++;
-        leid_buf[size].pid = atoi(p);
-        while (*p != ',') p++;
-        p++;
-        leid_buf[size].count = atoi(p);
-        size++;
-        while (*p != '|' && *p != '\0') p++;
-        if (*p == '\0')break;
-        p++;
-    }
-    leid *rtn = zmalloc(sizeof(leid));
-    rtn->num = size;
-    rtn->p = zmalloc(size * sizeof(position));
-    for (int i = 0; i < size; ++i)
-    {
-        rtn->p[i].pos = leid_buf[i].pos;
-        rtn->p[i].pid = leid_buf[i].pid;
-        rtn->p[i].count = leid_buf[i].count;
-    }
-    return rtn;
-}
-
-int leid_cmp(const leid *id1, const leid *id2)
-{
-    int n = id1->num < id2->num ? id1->num : id2->num;
-    int i = 0;
-    for (; i < n; i++)
-        if (pos_cmp(&id1->p[i], &id2->p[i]) != 0)break;
-    if (i == n)return id1->num - id2->num;
-    return pos_cmp(&id1->p[i], &id2->p[i]);
-}
-
-inline int lprefix(leid *p, int i)
-{
-    if (p == NULL)return 0;
-    if (i >= p->num)return 0;
-    return p->p[i].pos;
-}
-
-inline int rprefix(leid *p, int i)
-{
-    if (p == NULL)return BASE;
-    if (i >= p->num)return BASE;
-    return p->p[i].pos;
-}
-
-leid *constructLeid(leid *p, leid *q, lc *t)
-{
-    int index = 0;
-    while (rprefix(q, index) - lprefix(p, index) < 2)index++;
-    int left = lprefix(p, index);
-    int right = rprefix(q, index);
-    // left<new<right
-    leid *rtn = zmalloc(sizeof(leid));
-    rtn->num = index + 1;
-    rtn->p = zmalloc(sizeof(position) * (index + 1));
-    if (p != NULL)
-    {
-        for (int i = 0; i < index && i < p->num; i++)
-        {
-            rtn->p[i].pos = p->p[i].pos;
-            rtn->p[i].pid = p->p[i].pid;
-            rtn->p[i].count = p->p[i].count;
-        }
-        for (int i = p->num; i < index && i < p->num; i++)
-        {
-            rtn->p[i].pos = 0;
-            rtn->p[i].pid = t->id;
-            rtn->p[i].count = t->x;
-        }
-    }
-    else
-    {
-        for (int i = 0; i < index; i++)
-        {
-            rtn->p[i].pos = 0;
-            rtn->p[i].pid = 0;
-            rtn->p[i].count = 0;
-        }
-    }
-    int step = right - left - 2;
-    step = step < RDM_STEP ? step : RDM_STEP;
-    rtn->p[index].pos = left + (unsigned int) (rand() % step) + 1;
-    rtn->p[index].pid = t->id;
-    rtn->p[index].count = t->x;
-    t->x++;
-    return rtn;
-}
- */
