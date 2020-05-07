@@ -50,7 +50,7 @@ reh *rwfzeNew()
 #define GET_RZE(arg_t, create)\
 (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew)
 #else
-#define RZE_HT_GET(arg_t,create)\
+#define GET_RZE(arg_t,create)\
 (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew, cur_db, cur_tname, SUF_RWFZETOTAL)
 #endif
 

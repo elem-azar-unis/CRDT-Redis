@@ -2034,13 +2034,16 @@ long currentTime()
 
 //#define RW_OVERHEAD
 #ifdef RW_OVERHEAD
-#define PRE_SET \
-do{\
-    cur_db=c->db;cur_tname=c->argv[1]->ptr;\
-}while(0)
-robj* _get_ovhd_count(redisDb* db,sds tname,const char* suf);
-void inc_ovhd_count(redisDb* db,sds tname,const char* suf,long i);
-long get_ovhd_count(redisDb* db,sds tname,const char* suf);
+//#define PRE_SET \
+//do{\
+//    cur_db=c->db;cur_tname=c->argv[1]->ptr;\
+//}while(0)
+//robj* _get_ovhd_count(redisDb* db,sds tname,const char* suf);
+//void inc_ovhd_count(redisDb* db,sds tname,const char* suf,long i);
+//long get_ovhd_count(redisDb* db,sds tname,const char* suf);
+void ozoverheadCommand(client* c);
+void rzoverheadCommand(client* c);
+void rwfzoverheadCommand(client* c);
 #endif
 
 //#define COUNT_OPS
@@ -2055,7 +2058,6 @@ void ozremCommand(client *c);
 void ozscoreCommand(client *c);
 void ozmaxCommand(client *c);
 void ozestatusCommand(client* c);
-void ozoverheadCommand(client* c);
 
 void rzaddCommand(client *c);
 void rzincrbyCommand(client *c);
@@ -2063,7 +2065,6 @@ void rzremCommand(client *c);
 void rzscoreCommand(client *c);
 void rzmaxCommand(client *c);
 void rzestatusCommand(client* c);
-void rzoverheadCommand(client* c);
 
 void rwfzaddCommand(client *c);
 void rwfzincrbyCommand(client *c);
@@ -2071,13 +2072,18 @@ void rwfzremCommand(client *c);
 void rwfzscoreCommand(client *c);
 void rwfzmaxCommand(client *c);
 void rwfzestatusCommand(client* c);
-void rwfzoverheadCommand(client* c);
 
 void rlinsertCommand(client* c);
 void rlupdateCommand(client* c);
 void rlremCommand(client* c);
 void rllenCommand(client* c);
 void rllistCommand(client* c);
+
+void rwflinsertCommand(client* c);
+void rwflupdateCommand(client* c);
+void rwflremCommand(client* c);
+void rwfllenCommand(client* c);
+void rwfllistCommand(client* c);
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));

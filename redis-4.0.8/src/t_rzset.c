@@ -6,9 +6,7 @@
 #include "RWFramework.h"
 
 #ifdef RW_OVERHEAD
-#define SUF_RZETOTAL "rzetotal"
-static redisDb *cur_db = NULL;
-static sds cur_tname = NULL;
+static long rze_count=0;
 #endif
 
 #ifdef COUNT_OPS
