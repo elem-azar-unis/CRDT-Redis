@@ -5,6 +5,7 @@
 #ifndef REDIS_4_0_8_LIST_BASICS_H
 #define REDIS_4_0_8_LIST_BASICS_H
 
+#include "RWFramework.h"
 #include "server.h"
 
 #define FORALL_NPR(ACTION)   \
@@ -19,9 +20,13 @@
 
 #define FORALL(ACTION) FORALL_NPR(ACTION) FORALL_PR(ACTION)
 
-#define __bold (1<<0)
-#define __italic (1<<1)
-#define __underline (1<<2)
+
+enum property_type
+{
+    __bold = 1 << 0,
+    __italic = 1 << 1,
+    __underline = 1 << 2
+};
 
 #define BASE (1<<24)
 #define RDM_STEP 8
@@ -71,6 +76,18 @@ inline int rprefix(leid *p, int i)
     return p->p[i].pos;
 }
 
-leid *constructLeid(leid *p, leid *q, lc *t);
+leid *constructLeid(leid *p, leid *q, vc *t);
+
+#define GET_RFWL_HT(arg_t, create) getInnerHT(c->db, c->arg_t[1], NULL, create)
+
+void *getHead(robj *ht);
+
+void setHead(robj *ht, void *e);
+
+vc *getCurrent(robj *ht);
+
+int getLen(robj *ht);
+
+void incrbyLen(robj *ht, int inc);
 
 #endif //REDIS_4_0_8_LIST_BASICS_H

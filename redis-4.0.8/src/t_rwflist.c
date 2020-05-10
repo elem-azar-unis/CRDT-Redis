@@ -5,8 +5,8 @@
 #include "RWFramework.h"
 #include "list_basics.h"
 
-#define DEFINE_NPR(p) lc *p##_t;int p;
-#define DEFINE_PR(p) lc *p##_t;
+#define DEFINE_NPR(p) int p;
+#define DEFINE_A(p) lc *p##_t;
 typedef struct rwf_list_element
 {
     reh header;
@@ -15,93 +15,21 @@ typedef struct rwf_list_element
     lc *current;
     sds content;
 
+    FORALL(DEFINE_A);
     FORALL_NPR(DEFINE_NPR);
-    FORALL_PR(DEFINE_PR);
     int property;
 
     struct rwf_list_element *prev;
     struct rwf_list_element *next;
 } rwfle;
 #undef DEFINE_NPR
-#undef DEFINE_PR
+#undef DEFINE_A
 
 #define GET_RWFLE(arg_t, create) \
 (rwfle *) rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, rwfleNew)
 
 #define GET_RWFLE_NEW(arg_t) \
 (rwfle *) rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[3], 1, rwfleNew)
-
-#define GET_RFWL_HT(arg_t, create) getInnerHT(c->db, c->arg_t[1], NULL, create)
-
-rwfle *getHead(robj *ht)
-{
-    sds hname = sdsnew("head");
-    robj *value = hashTypeGetValueObject(ht, hname);
-    sdsfree(hname);
-    if (value == NULL)return NULL;
-    rwfle *e = *(rwfle **) (value->ptr);
-    decrRefCount(value);
-    return e;
-}
-
-void setHead(robj *ht, rwfle *e)
-{
-    sds hname = sdsnew("head");
-    RWFHT_SET(ht, hname, rwfle*, e);
-    sdsfree(hname);
-}
-
-lc *getCurrent(robj *ht)
-{
-    lc *e;
-    sds hname = sdsnew("current");
-    robj *value = hashTypeGetValueObject(ht, hname);
-    if (value == NULL)
-    {
-        e = LC_NEW(0);
-        RWFHT_SET(ht, hname, lc*, e);
-    }
-    else
-    {
-        e = *(lc **) (value->ptr);
-        decrRefCount(value);
-    }
-    sdsfree(hname);
-    return e;
-}
-
-int getLen(robj *ht)
-{
-    sds hname = sdsnew("length");
-    robj *value = hashTypeGetValueObject(ht, hname);
-    sdsfree(hname);
-    if (value == NULL)
-        return 0;
-    else
-    {
-        int len = *(int *) (value->ptr);
-        decrRefCount(value);
-        return len;
-    }
-}
-
-void incrbyLen(robj *ht, int inc)
-{
-    sds hname = sdsnew("length");
-    robj *value = hashTypeGetValueObject(ht, hname);
-    int len;
-    if (value == NULL)
-        len = 0;
-    else
-    {
-        len = *(int *) (value->ptr);
-        decrRefCount(value);
-    }
-    len += inc;
-    RWFHT_SET(ht, hname, int, len);
-    sdsfree(hname);
-}
-
 
 void acquired_update(rwfle *e, sds type, lc *t, int value)
 {
@@ -208,7 +136,9 @@ void rwflinsertCommand(client *c)
                 }
                 else
                     right = pre->next == NULL ? NULL : pre->next->pos_id;
-                leid *id = constructLeid(left, right, getCurrent(GET_RFWL_HT(argv, 1)));
+                vc *cur = getCurrent(GET_RFWL_HT(argv, 1));
+                leid *id = constructLeid(left, right, cur);
+                l_increaseVC(cur);
                 RARGV_ADD_SDS(leidToSds(id));
                 leidFree(id);
             }
