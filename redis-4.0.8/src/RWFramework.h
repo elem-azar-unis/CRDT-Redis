@@ -48,7 +48,7 @@
  * }
  * */
 
-typedef struct RW_element_header
+typedef struct RWF_element_header
 {
     int pid;
     vc *current;

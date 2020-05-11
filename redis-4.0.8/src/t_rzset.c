@@ -226,9 +226,10 @@ static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
 
 static void notifyLoop(rze *e, redisDb *db, robj *tname, robj *key)
 {
-    int changed = 0;
+    int changed;
     do
     {
+        changed = 0;
         listNode *ln;
         listIter li;
         listRewind(e->ops, &li);

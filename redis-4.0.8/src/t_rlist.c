@@ -137,9 +137,10 @@ static void notifyLoop(client *c, robj *ht)
 {
     list *ops = getOps(ht);
     vc *current = getCurrent(ht);
-    int changed = 0;
+    int changed;
     do
     {
+        changed = 0;
         listNode *ln;
         listIter li;
         listRewind(ops, &li);
@@ -152,13 +153,13 @@ static void notifyLoop(client *c, robj *ht)
                 switch (cmd->type)
                 {
                     case RLADD:
-                        insertFunc(c, ht, c->argv, cmd->t);
+                        insertFunc(c, ht, cmd->argv, cmd->t);
                         break;
                     case RLUPDATE:
-                        updateFunc(c, ht, c->argv, cmd->t);
+                        updateFunc(c, ht, cmd->argv, cmd->t);
                         break;
                     case RLREM:
-                        removeFunc(c, ht, c->argv, cmd->t);
+                        removeFunc(c, ht, cmd->argv, cmd->t);
                         break;
                     default:
                         serverPanic("unknown rzset cmd type.");
