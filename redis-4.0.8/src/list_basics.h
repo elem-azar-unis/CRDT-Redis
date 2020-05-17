@@ -78,7 +78,7 @@ inline int rprefix(leid *p, int i)
 
 leid *constructLeid(leid *p, leid *q, vc *t);
 
-#define GET_RFWL_HT(arg_t, create) getInnerHT(c->db, c->arg_t[1], NULL, create)
+#define GET_LIST_HT(arg_t, create) getInnerHT(c->db, c->arg_t[1], NULL, create)
 
 void *getHead(robj *ht);
 

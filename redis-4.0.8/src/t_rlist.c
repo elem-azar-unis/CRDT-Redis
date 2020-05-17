@@ -114,6 +114,29 @@ rle *rleNew()
     return e;
 }
 
+rle *rleHTGet(redisDb *db, robj *tname, robj *key, int create)
+{
+    robj *ht = getInnerHT(db, tname, NULL, create);
+    if (ht == NULL)return NULL;
+    robj *value = hashTypeGetValueObject(ht, key->ptr);
+    rle *e;
+    if (value == NULL)
+    {
+        if (!create)return NULL;
+        e = rleNew();
+        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rle *)), HASH_SET_TAKE_VALUE);
+#ifdef RW_OVERHEAD
+        inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
+#endif
+    }
+    else
+    {
+        e = *(rle **) (value->ptr);
+        decrRefCount(value);
+    }
+    return e;
+}
+
 // doesn't free t, doesn't own t
 static void insertFunc(client *c, robj *ht, robj **argv, vc *t)
 {
@@ -176,11 +199,48 @@ void rlinsertCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            // TODO
-            RARGV_ADD_SDS(nowVC(getCurrent(GET_RFWL_HT(argv, 1))));
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 9);
+            for (int i = 5; i < 9; ++i)
+                CHECK_ARG_TYPE_INT(c->argv[i]);
+            rle *pre = rleHTGet(c->db,c->argv[1],c->argv[2],0);
+            if (pre == NULL)
+            {
+                sdstolower(c->argv[2]->ptr);
+                if (strcmp(c->argv[2]->ptr, "null") != 0)
+                {
+                    sds errs = sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
+                    addReplySds(c, errs);
+                    return;
+                }
+            }
+            rle*e=rleHTGet(c->db, c->argv[1], c->argv[3], 1);
+            if (LOOKUP(e))
+            {
+                addReply(c, shared.ele_exist);
+                return;
+            }
+            if (e->oid == NULL)
+            {
+                leid *left = pre == NULL ? NULL : pre->pos_id;
+                leid *right;
+                if (pre == NULL)
+                {
+                    rle *head = getHead(GET_LIST_HT(argv, 1));
+                    right = head == NULL ? NULL : head->pos_id;
+                }
+                else
+                    right = pre->next == NULL ? NULL : pre->next->pos_id;
+                vc *cur = getCurrent(GET_LIST_HT(argv, 1));
+                leid *id = constructLeid(left, right, cur);
+                RARGV_ADD_SDS(leidToSds(id));
+                leidFree(id);
+            }
+            else
+                RARGV_ADD_SDS(leidToSds(e->pos_id));
+            RARGV_ADD_SDS(nowVC(getCurrent(GET_LIST_HT(argv, 1))));
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
-            robj *ht = GET_RFWL_HT(rargv, 1);
+            robj *ht = GET_LIST_HT(rargv, 1);
             vc *current = getCurrent(ht);
             if (causally_ready(current, t))
             {
@@ -200,11 +260,18 @@ void rlupdateCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            // TODO
-            RARGV_ADD_SDS(nowVC(getCurrent(GET_RFWL_HT(argv, 1))));
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 5);
+            CHECK_ARG_TYPE_INT(c->argv[4]);
+            rle* e=rleHTGet(c->db,c->argv[1],c->argv[2], 0);
+            if (e == NULL || !LOOKUP(e))
+            {
+                addReply(c, shared.ele_nexist);
+                return;
+            }
+            RARGV_ADD_SDS(nowVC(getCurrent(GET_LIST_HT(argv, 1))));
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
-            robj *ht = GET_RFWL_HT(rargv, 1);
+            robj *ht = GET_LIST_HT(rargv, 1);
             vc *current = getCurrent(ht);
             if (causally_ready(current, t))
             {
@@ -224,11 +291,17 @@ void rlremCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            // TODO
-            RARGV_ADD_SDS(nowVC(getCurrent(GET_RFWL_HT(argv, 1))));
+            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 3);
+            rle* e=rleHTGet(c->db,c->argv[1],c->argv[2], 0);
+            if (e == NULL || !LOOKUP(e))
+            {
+                addReply(c, shared.ele_nexist);
+                return;
+            }
+            RARGV_ADD_SDS(nowVC(getCurrent(GET_LIST_HT(argv, 1))));
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
-            robj *ht = GET_RFWL_HT(rargv, 1);
+            robj *ht = GET_LIST_HT(rargv, 1);
             vc *current = getCurrent(ht);
             if (causally_ready(current, t))
             {

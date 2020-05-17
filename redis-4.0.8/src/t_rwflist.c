@@ -89,7 +89,7 @@ static void removeFunc(client *c, rwfle *e, vc *t)
 {
     if (removeCheck((reh *) e, t))
     {
-        robj *ht = GET_RFWL_HT(rargv, 0);
+        robj *ht = GET_LIST_HT(rargv, 0);
         if (EXISTS(e)) incrbyLen(ht, -1);
         REH_RMV_FUNC(e, t);
 #define RMV_LC(p)\
@@ -131,12 +131,12 @@ void rwflinsertCommand(client *c)
                 leid *right;
                 if (pre == NULL)
                 {
-                    rwfle *head = getHead(GET_RFWL_HT(argv, 1));
+                    rwfle *head = getHead(GET_LIST_HT(argv, 1));
                     right = head == NULL ? NULL : head->pos_id;
                 }
                 else
                     right = pre->next == NULL ? NULL : pre->next->pos_id;
-                vc *cur = getCurrent(GET_RFWL_HT(argv, 1));
+                vc *cur = getCurrent(GET_LIST_HT(argv, 1));
                 leid *id = constructLeid(left, right, cur);
                 l_increaseVC(cur);
                 RARGV_ADD_SDS(leidToSds(id));
@@ -151,7 +151,7 @@ void rwflinsertCommand(client *c)
             removeFunc(c, e, t);
             if (insertCheck((reh *) e, t))
             {
-                robj *ht = GET_RFWL_HT(rargv, 1);
+                robj *ht = GET_LIST_HT(rargv, 1);
                 if (!EXISTS(e)) incrbyLen(ht, 1);
                 PID(e) = t->id;
                 // The element is newly inserted.
