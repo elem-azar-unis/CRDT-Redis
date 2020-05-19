@@ -153,7 +153,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     server.dirty++;
 
     rle *e = rleHTGet(db, argv[0], argv[2], 1);
-    if (!LOOKUP(e)) incrbyLen(ht, 1);
+    int pre_insert = LOOKUP(e);
     // The element is newly inserted.
     if (e->oid == NULL)
     {
@@ -218,6 +218,9 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     }
     if (e->value == NULL || e->value->t->id < t->id)
         e->value = a;
+
+    if (pre_insert == 0 && LOOKUP(e))
+        incrbyLen(ht, 1);
 }
 
 static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
