@@ -27,6 +27,15 @@ rl_ase *rl_aseNew(vc *t)
     return a;
 }
 
+void rl_aseDelete(rl_ase *a)
+{
+    deleteVC(a->t);
+#define TMP_ACTION(p) deleteVC(a->p##_t);
+    FORALL(TMP_ACTION);
+#undef TMP_ACTION
+    zfree(a);
+}
+
 enum rl_cmd_type
 {
     RLADD, RLUPDATE, RLREM
@@ -138,25 +147,173 @@ rle *rleHTGet(redisDb *db, robj *tname, robj *key, int create)
 }
 
 // doesn't free t, doesn't own t
-static void insertFunc(client *c, robj *ht, robj **argv, vc *t)
+static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 {
     updateVC(getCurrent(ht), t);
-    // TODO
+    server.dirty++;
+
+    rle *e = rleHTGet(db, argv[0], argv[2], 1);
+    if (!LOOKUP(e)) incrbyLen(ht, 1);
+    // The element is newly inserted.
+    if (e->oid == NULL)
+    {
+        e->oid = sdsdup(argv[2]->ptr);
+        e->content = sdsdup(argv[3]->ptr);
+        e->pos_id = sdsToLeid(argv[8]->ptr);
+        rle *head = getHead(ht);
+        if (head == NULL)
+        {
+            setHead(ht, e);
+        }
+        else if (leid_cmp(e->pos_id, head->pos_id) < 0)
+        {
+            setHead(ht, e);
+            e->next = head;
+            head->prev = e;
+        }
+        else
+        {
+            rle *pre = rleHTGet(db, argv[0], argv[1], 0);
+            rle *p, *q;
+            if (pre != NULL)
+                p = pre;
+            else p = head;
+            q = p->next;
+            while (q != NULL && leid_cmp(e->pos_id, q->pos_id) > 0)
+            {
+                p = q;
+                q = q->next;
+            }
+            p->next = e;
+            e->prev = p;
+            e->next = q;
+            if (q != NULL)
+                q->prev = e;
+        }
+    }
+
+    rl_ase *a = rl_aseNew(t);
+#define TMP_ACTION(T) a->T=T;
+    long long font, size, color, property;
+    getLongLongFromObject(argv[4], &font);
+    getLongLongFromObject(argv[5], &size);
+    getLongLongFromObject(argv[6], &color);
+    FORALL_NPR(TMP_ACTION);
+    getLongLongFromObject(argv[7], &property);
+    a->property = property;
+#undef TMP_ACTION
+    listAddNodeTail(e->aset, a);
+
+    listNode *ln;
+    listIter li;
+    listRewind(e->rset, &li);
+    while ((ln = listNext(&li)))
+    {
+        vc *r = ln->value;
+        if (compareVC(r, t) == CLOCK_LESS)
+        {
+            listDelNode(e->rset, ln);
+            deleteVC(r);
+        }
+    }
+    if (e->value == NULL || e->value->t->id < t->id)
+        e->value = a;
 }
 
-static void updateFunc(client *c, robj *ht, robj **argv, vc *t)
+static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 {
     updateVC(getCurrent(ht), t);
-    // TODO
+    server.dirty++;
+
+    rle *e = rleHTGet(db, argv[0], argv[1], 1);
+    sds type = argv[2]->ptr;
+    sdstolower(type);
+    long long value;
+    getLongLongFromObject(argv[3], &value);
+
+    listNode *ln;
+    listIter li;
+    listRewind(e->aset, &li);
+    while ((ln = listNext(&li)))
+    {
+        rl_ase *a = ln->value;
+        if (compareVC(a->t, t) == CLOCK_LESS)
+            do
+            {
+#define UPD_NPR(T)\
+    if(strcmp(type,#T)==0)\
+    {\
+        if(compareVC(a->T##_t, t) <0)\
+        {\
+            updateVC(a->T##_t,t);\
+            a->T##_t->id=t->id;\
+            a->T=value;\
+        }\
+        break;\
+    }
+                FORALL_NPR(UPD_NPR);
+#undef UPD_NPR
+#define UPD_PR(T)\
+    if(strcmp(type,#T)==0)\
+    {\
+        if(compareVC(a->T##_t, t) <0)\
+        {\
+            updateVC(a->T##_t,t);\
+            a->T##_t->id=t->id;\
+            if(value==0)\
+                a->property &=~ __##T;\
+            else\
+                a->property |= __##T;\
+        }\
+        break;\
+    }
+                FORALL_PR(UPD_PR);
+#undef UPD_PR
+            } while (0);
+    }
 }
 
-static void removeFunc(client *c, robj *ht, robj **argv, vc *t)
+static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 {
     updateVC(getCurrent(ht), t);
-    // TODO
+    server.dirty++;
+
+    rle *e = rleHTGet(db, argv[0], argv[1], 1);
+    int pre_rmv = LOOKUP(e);
+    vc *r = duplicateVC(t);
+    listAddNodeTail(e->rset, r);
+
+    listNode *ln;
+    listIter li;
+    listRewind(e->aset, &li);
+    while ((ln = listNext(&li)))
+    {
+        rl_ase *a = ln->value;
+        if (compareVC(a->t, t) == CLOCK_LESS)
+        {
+            listDelNode(e->aset, ln);
+            if (e->value == a)
+                e->value = NULL;
+            rl_aseDelete(a);
+        }
+    }
+
+    if (e->value == NULL)
+    {
+        listRewind(e->aset, &li);
+        while ((ln = listNext(&li)))
+        {
+            rl_ase *a = ln->value;
+            if (e->value == NULL || e->value->t->id < a->t->id)
+                e->value = a;
+        }
+    }
+
+    if (pre_rmv == 1 && !LOOKUP(e))
+        incrbyLen(ht, -1);
 }
 
-static void notifyLoop(client *c, robj *ht)
+static void notifyLoop(redisDb *db, robj *ht)
 {
     list *ops = getOps(ht);
     vc *current = getCurrent(ht);
@@ -176,13 +333,13 @@ static void notifyLoop(client *c, robj *ht)
                 switch (cmd->type)
                 {
                     case RLADD:
-                        insertFunc(c, ht, cmd->argv, cmd->t);
+                        insertFunc(db, ht, cmd->argv, cmd->t);
                         break;
                     case RLUPDATE:
-                        updateFunc(c, ht, cmd->argv, cmd->t);
+                        updateFunc(db, ht, cmd->argv, cmd->t);
                         break;
                     case RLREM:
-                        removeFunc(c, ht, cmd->argv, cmd->t);
+                        removeFunc(db, ht, cmd->argv, cmd->t);
                         break;
                     default:
                         serverPanic("unknown rzset cmd type.");
@@ -202,7 +359,7 @@ void rlinsertCommand(client *c)
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 9);
             for (int i = 5; i < 9; ++i)
                 CHECK_ARG_TYPE_INT(c->argv[i]);
-            rle *pre = rleHTGet(c->db,c->argv[1],c->argv[2],0);
+            rle *pre = rleHTGet(c->db, c->argv[1], c->argv[2], 0);
             if (pre == NULL)
             {
                 sdstolower(c->argv[2]->ptr);
@@ -213,7 +370,7 @@ void rlinsertCommand(client *c)
                     return;
                 }
             }
-            rle*e=rleHTGet(c->db, c->argv[1], c->argv[3], 1);
+            rle *e = rleHTGet(c->db, c->argv[1], c->argv[3], 1);
             if (LOOKUP(e))
             {
                 addReply(c, shared.ele_exist);
@@ -244,9 +401,9 @@ void rlinsertCommand(client *c)
             vc *current = getCurrent(ht);
             if (causally_ready(current, t))
             {
-                insertFunc(c, ht, &c->rargv[1], t);
+                insertFunc(c->db, ht, &c->rargv[1], t);
                 deleteVC(t);
-                notifyLoop(c, ht);
+                notifyLoop(c->db, ht);
             }
             else
             {
@@ -262,7 +419,7 @@ void rlupdateCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 5);
             CHECK_ARG_TYPE_INT(c->argv[4]);
-            rle* e=rleHTGet(c->db,c->argv[1],c->argv[2], 0);
+            rle *e = rleHTGet(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -275,9 +432,9 @@ void rlupdateCommand(client *c)
             vc *current = getCurrent(ht);
             if (causally_ready(current, t))
             {
-                updateFunc(c, ht, &c->rargv[1], t);
+                updateFunc(c->db, ht, &c->rargv[1], t);
                 deleteVC(t);
-                notifyLoop(c, ht);
+                notifyLoop(c->db, ht);
             }
             else
             {
@@ -292,7 +449,7 @@ void rlremCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 3);
-            rle* e=rleHTGet(c->db,c->argv[1],c->argv[2], 0);
+            rle *e = rleHTGet(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -305,9 +462,9 @@ void rlremCommand(client *c)
             vc *current = getCurrent(ht);
             if (causally_ready(current, t))
             {
-                removeFunc(c, ht, &c->rargv[1], t);
+                removeFunc(c->db, ht, &c->rargv[1], t);
                 deleteVC(t);
-                notifyLoop(c, ht);
+                notifyLoop(c->db, ht);
             }
             else
             {
