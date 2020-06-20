@@ -454,7 +454,6 @@ typedef long long mstime_t; /* millisecond time type. */
 #define OBJ_SET 2
 #define OBJ_ZSET 3
 #define OBJ_HASH 4
-#define OBJ_VECTOR_CLOCK 6
 
 /* The "module" object type is a special one that signals that the object
  * is one directly managed by a Redis module. In this case the value points
@@ -1576,7 +1575,6 @@ typedef struct {
     sds min, max;     /* May be set to shared.(minstring|maxstring) */
     int minex, maxex; /* are min or max exclusive? */
 } zlexrangespec;
-
 
 zskiplist *zslCreate(void);
 void zslFree(zskiplist *zsl);
