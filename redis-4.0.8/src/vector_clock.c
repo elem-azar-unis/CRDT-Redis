@@ -3,6 +3,7 @@
 //
 
 #include "server.h"
+#include "CRDT.h"
 
 int vc_int_buf[100];
 

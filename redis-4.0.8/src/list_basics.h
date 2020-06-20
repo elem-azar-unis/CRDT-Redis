@@ -5,6 +5,7 @@
 #ifndef REDIS_4_0_8_LIST_BASICS_H
 #define REDIS_4_0_8_LIST_BASICS_H
 
+#include "CRDT.h"
 #include "RWFramework.h"
 #include "server.h"
 

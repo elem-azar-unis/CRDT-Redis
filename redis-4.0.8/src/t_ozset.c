@@ -3,6 +3,7 @@
 //
 
 #include "server.h"
+#include "CRDT.h"
 #include "RWFramework.h"
 
 #ifdef CRDT_OVERHEAD
@@ -50,10 +51,10 @@ typedef struct ORI_RPQ_element
 } oze;
 
 #define OZESIZE(e) (sizeof(oze) + 2 * sizeof(list) \
-                    + listLength((e)->aset) * (sizeof(oase) + sizeof(lc) + sizeof(listNode)) \
+                    + listLength((e)->aset) * (sizeof(oz_ase) + sizeof(lc) + sizeof(listNode)) \
                     + listLength((e)->rset) * (sizeof(lc) + sizeof(listNode)))
 
-sds oaseToSds(oz_ase *a)
+sds oz_aseToSds(oz_ase *a)
 {
     return sdscatprintf(sdsempty(), "(%d,%d),%f,%f,%f", a->t->x, a->t->id, a->x, a->inc, a->count);
 }
@@ -567,11 +568,11 @@ void ozestatusCommand(client *c)
     if (e->innate == NULL)
         addReply(c, shared.emptybulk);
     else
-        addReplyBulkSds(c, oaseToSds(e->innate));
+        addReplyBulkSds(c, oz_aseToSds(e->innate));
     if (e->acquired == NULL)
         addReply(c, shared.emptybulk);
     else
-        addReplyBulkSds(c, oaseToSds(e->acquired));
+        addReplyBulkSds(c, oz_aseToSds(e->acquired));
 
     listNode *ln;
     listIter li;
@@ -581,7 +582,7 @@ void ozestatusCommand(client *c)
     while ((ln = listNext(&li)))
     {
         oz_ase *a = ln->value;
-        addReplyBulkSds(c, oaseToSds(a));
+        addReplyBulkSds(c, oz_aseToSds(a));
     }
 
     addReplyBulkSds(c, sdsnew("Remove Set:"));

@@ -2,6 +2,7 @@
 // Created by user on 19-11-10.
 //
 #include "server.h"
+#include "CRDT.h"
 #include "RWFramework.h"
 #include "list_basics.h"
 

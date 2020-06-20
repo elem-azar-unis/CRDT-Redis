@@ -3,6 +3,7 @@
 //
 
 #include "server.h"
+#include "CRDT.h"
 #include "RWFramework.h"
 
 #ifdef CRDT_OVERHEAD
