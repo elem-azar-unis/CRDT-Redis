@@ -216,12 +216,12 @@ struct redisCommand redisCommandTable[] = {
     {"rwfzscore", rwfzscoreCommand, 3, "rF", 0, NULL, 1, 1, 1, 0, 0},
     {"rwfzmax", rwfzmaxCommand, 2, "rF", 0, NULL, 1, 1, 1, 0, 0},
     {"rwfzestatus", rwfzestatusCommand, 3, "rF", 0, NULL, 1, 1, 1, 0, 0},
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     {"ozoverhead",ozoverheadCommand,2,"rF",0,NULL,1,1,1,0,0},
     {"rzoverhead", rzoverheadCommand, 2, "rF", 0, NULL, 1, 1, 1, 0, 0},
     {"rwfzoverhead", rwfzoverheadCommand, 2, "rF", 0, NULL, 1, 1, 1, 0, 0},
 #endif
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
     {"ozopcount",ozopcountCommand,1,"rF",0,NULL,1,1,1,0,0},
     {"rzopcount",rzopcountCommand,1,"rF",0,NULL,1,1,1,0,0},
     {"rwfzopcount",rzopcountCommand,1,"rF",0,NULL,1,1,1,0,0},

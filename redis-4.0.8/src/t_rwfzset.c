@@ -5,17 +5,17 @@
 #include "server.h"
 #include "RWFramework.h"
 
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
 #define SUF_RWFZETOTAL "rwfzetotal"
 static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
 #endif
 
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
 static int rcount = 0;
 #endif
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
 static FILE *rzLog = NULL;
 #define check(f)\
     do\
@@ -46,7 +46,7 @@ reh *rwfzeNew()
 
 #define SCORE(e) ((e)->innate+(e)->acquired)
 
-#ifndef RW_OVERHEAD
+#ifndef CRDT_OVERHEAD
 #define GET_RZE(arg_t, create)\
 (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew)
 #else
@@ -71,7 +71,7 @@ static void removeFunc(client *c, rwfze *e, vc *t)
 
 void rwfzaddCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -81,7 +81,7 @@ void rwfzaddCommand(client *c)
             rwfze *e = GET_RZE(argv, 1);
             PREPARE_PRECOND_ADD(e);
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
                 check(rzLog);
                 fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
                         (char *) c->argv[0]->ptr,
@@ -92,7 +92,7 @@ void rwfzaddCommand(client *c)
 #endif
             ADD_CR_NON_RMV(e);
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             rcount++;
 #endif
             double v;
@@ -115,7 +115,7 @@ void rwfzaddCommand(client *c)
 
 void rwfzincrbyCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -125,7 +125,7 @@ void rwfzincrbyCommand(client *c)
             rwfze *e = GET_RZE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
                 check(rzLog);
                 fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
                         (char *) c->argv[0]->ptr,
@@ -137,7 +137,7 @@ void rwfzincrbyCommand(client *c)
 
             ADD_CR_NON_RMV(e);
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             rcount++;
 #endif
             double v;
@@ -159,7 +159,7 @@ void rwfzincrbyCommand(client *c)
 
 void rwfzremCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -168,7 +168,7 @@ void rwfzremCommand(client *c)
             rwfze *e = GET_RZE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
                 check(rzLog);
                 fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
                         (char *) c->argv[0]->ptr,
@@ -178,7 +178,7 @@ void rwfzremCommand(client *c)
 #endif
             ADD_CR_RMV(e);
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             rcount++;
 #endif
             rwfze *e = GET_RZE(rargv, 1);
@@ -217,7 +217,7 @@ void rwfzmaxCommand(client *c)
     if (zsetLength(zobj) == 0)
     {
         addReply(c, shared.emptymultibulk);
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(rzLog);
         fprintf(rzLog, "%ld,%s,%s,NONE\n", currentTime(),
                 (char *) c->argv[0]->ptr,
@@ -246,7 +246,7 @@ void rwfzmaxCommand(client *c)
             addReplyBulkCBuffer(c, vstr, vlen);
         addReplyDouble(c, zzlGetScore(sptr));
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(rzLog);
         if (vstr == NULL)
             fprintf(rzLog, "%ld,%s,%s,%ld %f\n", currentTime(),
@@ -277,7 +277,7 @@ void rwfzmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(rzLog);
         fprintf(rzLog, "%ld,%s,%s,%s %f\n", currentTime(),
                 (char *) c->argv[0]->ptr,
@@ -314,7 +314,7 @@ void rwfzestatusCommand(client *c)
 
 }
 
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
 
 void rwfzopcountCommand(client *c)
 {
@@ -341,7 +341,7 @@ void rwfzopcountCommand(client *c)
  * the metadata contains score information
  * overall the metadata overhead is size used by rwfze
  * */
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
 
 void rwfzoverheadCommand(client *c)
 {

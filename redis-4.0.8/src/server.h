@@ -68,7 +68,7 @@ typedef long long mstime_t; /* millisecond time type. */
 #include "rax.h"     /* Radix tree */
 #include "vector_clock.h" /* vector clock */
 #include "lamport_clock.h" /* lamport clock, can also be used as unique tag */
-#include "CRDT.h" /* CRDT framework */
+//#include "CRDT.h" /* CRDT framework */
 
 /* Following includes allow test functions to be called from Redis main() */
 #include "zipmap.h"
@@ -2021,8 +2021,8 @@ void vcincCommand(client *c);
 
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
 
-//#define RPQ_LOG
-#ifdef RPQ_LOG
+//#define CRDT_LOG
+#ifdef CRDT_LOG
 #include <sys/time.h>
 long currentTime()
 {
@@ -2032,8 +2032,8 @@ long currentTime()
 }
 #endif
 
-//#define RW_OVERHEAD
-#ifdef RW_OVERHEAD
+//#define CRDT_OVERHEAD
+#ifdef CRDT_OVERHEAD
 //#define PRE_SET \
 //do{\
 //    cur_db=c->db;cur_tname=c->argv[1]->ptr;\
@@ -2046,8 +2046,8 @@ void rzoverheadCommand(client* c);
 void rwfzoverheadCommand(client* c);
 #endif
 
-//#define COUNT_OPS
-#ifdef COUNT_OPS
+//#define CRDT_OPCOUNT
+#ifdef CRDT_OPCOUNT
 void ozopcountCommand(client *c);
 void rzopcountCommand(client *c);
 #endif

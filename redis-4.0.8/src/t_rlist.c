@@ -134,7 +134,7 @@ rle *rleHTGet(redisDb *db, robj *tname, robj *key, int create)
         if (!create)return NULL;
         e = rleNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rle *)), HASH_SET_TAKE_VALUE);
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
         inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
 #endif
     }

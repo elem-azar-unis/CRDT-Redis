@@ -5,7 +5,7 @@
 #include "server.h"
 #include "RWFramework.h"
 
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
 #define SUF_OZETOTAL "ozetotal"
 #define SUF_ASET "ozaset"
 #define SUF_RSET "ozrset"
@@ -13,11 +13,11 @@ static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
 #endif
 
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
 static int ocount = 0;
 #endif
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
 static FILE *ozLog = NULL;
 #define check(f)\
     do\
@@ -69,7 +69,7 @@ oze *ozeNew()
     return e;
 }
 
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
 
 robj *_get_ovhd_count(redisDb *db, sds tname, const char *suf)
 {
@@ -113,7 +113,7 @@ oz_ase *asetGet(oze *e, lc *t, int delete)
             if (delete)
             {
                 listDelNode(e->aset, ln);
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
                 inc_ovhd_count(cur_db, cur_tname, SUF_ASET, -1);
 #endif
             }
@@ -136,7 +136,7 @@ lc *rsetGet(oze *e, lc *t, int delete)
             if (delete)
             {
                 listDelNode(e->rset, ln);
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
                 inc_ovhd_count(cur_db, cur_tname, SUF_RSET, -1);
 #endif
             }
@@ -154,7 +154,7 @@ oz_ase *add_ase(oze *e, lc *t)
     a->inc = 0;
     a->count = 0;
     listAddNodeTail(e->aset, a);
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     inc_ovhd_count(cur_db, cur_tname, SUF_ASET, 1);
 #endif
     return a;
@@ -198,7 +198,7 @@ void remove_tag(oze *e, lc *t)
     if (rsetGet(e, t, 0) != NULL)return;
     lc *nt = lc_dup(t);
     listAddNodeTail(e->rset, nt);
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     inc_ovhd_count(cur_db, cur_tname, SUF_RSET, 1);
 #endif
     oz_ase *a;
@@ -241,7 +241,7 @@ oze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
         if (!create)return NULL;
         e = ozeNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(oze *)), HASH_SET_TAKE_VALUE);
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
         inc_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL, 1);
 #endif
     }
@@ -274,7 +274,7 @@ robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
 
 void ozaddCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -288,7 +288,7 @@ void ozaddCommand(client *c)
                 return;
             }
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
             check(ozLog);
             fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
@@ -304,7 +304,7 @@ void ozaddCommand(client *c)
             zfree(t);
 
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             ocount++;
 #endif
             double v;
@@ -324,7 +324,7 @@ void ozaddCommand(client *c)
 
 void ozincrbyCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -338,7 +338,7 @@ void ozincrbyCommand(client *c)
                 return;
             }
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
             check(ozLog);
             fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
@@ -359,7 +359,7 @@ void ozincrbyCommand(client *c)
                 i++;
             }
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             ocount++;
 #endif
             double v;
@@ -384,7 +384,7 @@ void ozincrbyCommand(client *c)
 
 void ozremCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -397,7 +397,7 @@ void ozremCommand(client *c)
                 return;
             }
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
             check(ozLog);
             fprintf(ozLog, "%ld,%s,%s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
@@ -417,7 +417,7 @@ void ozremCommand(client *c)
                 i++;
             }
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             ocount++;
 #endif
             oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
@@ -474,7 +474,7 @@ void ozmaxCommand(client *c)
     if (zsetLength(zobj) == 0)
     {
         addReply(c, shared.emptymultibulk);
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(ozLog);
         fprintf(ozLog, "%ld,%s,%s,NONE\n", currentTime(),
                 (char *) c->argv[0]->ptr,
@@ -503,7 +503,7 @@ void ozmaxCommand(client *c)
             addReplyBulkCBuffer(c, vstr, vlen);
         addReplyDouble(c, zzlGetScore(sptr));
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(ozLog);
         if (vstr == NULL)
             fprintf(ozLog, "%ld,%s,%s,%ld %f\n", currentTime(),
@@ -534,7 +534,7 @@ void ozmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(ozLog);
         fprintf(ozLog, "%ld,%s,%s,%s %f\n", currentTime(),
                 (char *) c->argv[0]->ptr,
@@ -593,7 +593,7 @@ void ozestatusCommand(client *c)
     }
 }
 
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
 
 void ozopcountCommand(client *c)
 {
@@ -620,7 +620,7 @@ void ozopcountCommand(client *c)
  * the metadata contains score information
  * overall the metadata overhead is size used by oze
  * */
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
 
 void ozoverheadCommand(client *c)
 {

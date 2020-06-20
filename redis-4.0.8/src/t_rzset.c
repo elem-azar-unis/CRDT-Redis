@@ -5,15 +5,15 @@
 #include "server.h"
 #include "RWFramework.h"
 
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
 static long rze_count=0;
 #endif
 
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
 static int rcount = 0;
 #endif
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
 static FILE *rzLog = NULL;
 #define check(f)\
     do\
@@ -78,7 +78,7 @@ rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
         if (!create)return NULL;
         e = rzeNew();
         hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
         inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
 #endif
     }
@@ -376,7 +376,7 @@ void notifyLoop(rze *e, redisDb *db)
 
 void rzaddCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -390,7 +390,7 @@ void rzaddCommand(client *c)
                 return;
             }
             RARGV_ADD_SDS(nowVC(e->current));
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
             check(rzLog);
             fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
@@ -400,7 +400,7 @@ void rzaddCommand(client *c)
             fflush(rzLog);
 #endif
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             rcount++;
 #endif
             double v;
@@ -423,7 +423,7 @@ void rzaddCommand(client *c)
 
 void rzincrbyCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -437,7 +437,7 @@ void rzincrbyCommand(client *c)
                 return;
             }
             RARGV_ADD_SDS(nowVC(e->current));
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
             check(rzLog);
             fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
@@ -447,7 +447,7 @@ void rzincrbyCommand(client *c)
             fflush(rzLog);
 #endif
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             rcount++;
 #endif
             double v;
@@ -470,7 +470,7 @@ void rzincrbyCommand(client *c)
 
 void rzremCommand(client *c)
 {
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
     CRDT_BEGIN
@@ -483,7 +483,7 @@ void rzremCommand(client *c)
                 return;
             }
             RARGV_ADD_SDS(nowVC(e->current));
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
             check(rzLog);
             fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
                     (char *) c->argv[0]->ptr,
@@ -492,7 +492,7 @@ void rzremCommand(client *c)
             fflush(rzLog);
 #endif
         CRDT_EFFECT
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
             rcount++;
 #endif
             vc *t = SdsToVC(c->rargv[3]->ptr);
@@ -540,7 +540,7 @@ void rzmaxCommand(client *c)
     if (zsetLength(zobj) == 0)
     {
         addReply(c, shared.emptymultibulk);
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(rzLog);
         fprintf(rzLog, "%ld,%s,%s,NONE\n", currentTime(),
                 (char *) c->argv[0]->ptr,
@@ -569,7 +569,7 @@ void rzmaxCommand(client *c)
             addReplyBulkCBuffer(c, vstr, vlen);
         addReplyDouble(c, zzlGetScore(sptr));
 
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(rzLog);
         if (vstr == NULL)
             fprintf(rzLog, "%ld,%s,%s,%ld %f\n", currentTime(),
@@ -600,7 +600,7 @@ void rzmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
-#ifdef RPQ_LOG
+#ifdef CRDT_LOG
         check(rzLog);
         fprintf(rzLog, "%ld,%s,%s,%s %f\n", currentTime(),
                 (char *) c->argv[0]->ptr,
@@ -661,7 +661,7 @@ void rzestatusCommand(client *c)
     }
 }
 
-#ifdef COUNT_OPS
+#ifdef CRDT_OPCOUNT
 
 void rzopcountCommand(client *c)
 {
@@ -688,7 +688,7 @@ void rzopcountCommand(client *c)
  * the metadata contains score information
  * overall the metadata overhead is size used by rze
  * */
-#ifdef RW_OVERHEAD
+#ifdef CRDT_OVERHEAD
 
 void rzoverheadCommand(client *c)
 {
