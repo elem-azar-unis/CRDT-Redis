@@ -66,8 +66,6 @@ typedef long long mstime_t; /* millisecond time type. */
 #include "quicklist.h"  /* Lists are encoded as linked lists of
                            N-elements flat arrays */
 #include "rax.h"     /* Radix tree */
-#include "vector_clock.h" /* vector clock */
-#include "lamport_clock.h" /* lamport clock, can also be used as unique tag */
 
 /* Following includes allow test functions to be called from Redis main() */
 #include "zipmap.h"
@@ -590,9 +588,9 @@ typedef struct RedisModuleDigest {
 typedef struct redisObject {
     unsigned type:4;
     unsigned encoding:4;
-    unsigned lru:LRU_BITS;   /* LRU time (relative to global lru_clock) or
-                                * LFU data (least significant 8 bits frequency
-                                * and most significant 16 bits access time). */
+    unsigned lru:LRU_BITS; /* LRU time (relative to global lru_clock) or
+                            * LFU data (least significant 8 bits frequency
+                            * and most significant 16 bits access time). */
     int refcount;
     void *ptr;
 } robj;
@@ -2014,9 +2012,6 @@ void securityWarningCommand(client *c);
 void replicateCommand(client *c);
 void repltestCommand(client* c);
 
-void vcnewCommand(client *c);
-void vcgetCommand(client *c);
-void vcincCommand(client *c);
 
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
 

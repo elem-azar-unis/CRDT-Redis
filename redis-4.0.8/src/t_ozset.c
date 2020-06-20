@@ -5,6 +5,7 @@
 #include "server.h"
 #include "CRDT.h"
 #include "RWFramework.h"
+#include "lamport_clock.h"
 
 #ifdef CRDT_OVERHEAD
 #define SUF_OZETOTAL "ozetotal"

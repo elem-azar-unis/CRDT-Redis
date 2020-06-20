@@ -5,6 +5,7 @@
 #include "CRDT.h"
 #include "RWFramework.h"
 #include "list_basics.h"
+#include "lamport_clock.h"
 
 #define DEFINE_NPR(p) int p;
 #define DEFINE_A(p) lc *p##_t;

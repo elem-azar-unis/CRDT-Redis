@@ -345,9 +345,6 @@ struct redisCommand redisCommandTable[] = {
     {"latency",latencyCommand,-2,"aslt",0,NULL,0,0,0,0,0},
     {"replicate",replicateCommand,-3,"ast",0,NULL,0,0,0,0,0},
     {"repltest",repltestCommand,-1,"astF",0,NULL,0,0,0,0,0},
-    {"vcnew",vcnewCommand,-2,"wm",0,NULL,1,1,1,0,0},
-    {"vcget",vcgetCommand,2,"rF",0,NULL,1,1,1,0,0},
-    {"vcinc",vcincCommand,-2,"wmF",0,NULL,1,1,1,0,0}
 };
 
 /*============================ Utility functions ============================ */

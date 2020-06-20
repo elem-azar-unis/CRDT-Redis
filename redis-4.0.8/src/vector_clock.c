@@ -4,6 +4,7 @@
 
 #include "server.h"
 #include "CRDT.h"
+#include "vector_clock.h"
 
 int vc_int_buf[100];
 
@@ -129,6 +130,7 @@ vc *SdsToVC(sds s)
     return clock;
 }
 
+/*
 void vcnewCommand(client *c)
 {
     CRDT_BEGIN
@@ -200,3 +202,4 @@ void vcincCommand(client *c)
             else deleteVC(vc);
     CRDT_END
 }
+*/

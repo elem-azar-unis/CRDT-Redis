@@ -6,6 +6,7 @@
 #define RWFRAMEWORK_H
 
 #include "server.h"
+#include "vector_clock.h"
 
 /*
  * The header of elements' metadata.
