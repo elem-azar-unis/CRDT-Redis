@@ -49,13 +49,13 @@ private:
 
     static void start_servers()
     {
-        char cmd[128];
+        char cmd[256];
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
-            sprintf(cmd, "redis-server ../redis_test/6379.conf "
-                         "--port %d --logfile %d.log "
-                         "--pidfile /var/run/redis_%d.pid "
-                         "--dbfilename %d.rdb",
+            sprintf(cmd, "redis-server ../../redis-4.0.8/redis.conf "
+                         "--protected-mode no --daemonize yes --loglevel debug "
+                         "--port %d --logfile %d.log --dbfilename %d.rdb "
+                         "--pidfile /var/run/redis_%d.pid ",
                     port, port, port, port);
             shell_exec(cmd, false);
         }

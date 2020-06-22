@@ -3,7 +3,6 @@
 Here are the tests and the experiments we do on our CPRQ implementations. There are 3 folders here:
 
 * *redis_test* : The testing bash scripts and server configuration files. Also used in the experiment.
-  * **.conf* : The configuration files for our modified Redis servers.
   * **.sh* : Bash scripts for starting and testing on local machine.
   * *test.py* : Local test we do to test the correctness of our CRPQ implementations.
   * *connection.py* : Construct the server part of experiment framework, close it and clean it when the experiment is finished. It use ssh to control the server VMs to start their Redis instances, construct replication among them, and add networking delay between them. When the experiment is finished, close all the server and remove their .rdb and .log files.
