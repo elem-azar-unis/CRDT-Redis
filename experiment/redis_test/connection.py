@@ -43,7 +43,7 @@ def _reset_redis(sshs):
         s = scp.SCPClient(ssh.get_transport())
         s.put("../../CRDT-Redis", remote_path="~/", recursive=True)
         s.close()
-        stdin, stdout, stderr = ssh.exec_command("cd ~/CRDT-Redis/redis-4.0.8/;sudo make install", get_pty=True)
+        stdin, stdout, stderr = ssh.exec_command("cd ~/CRDT-Redis/redis-6.0.5/;sudo make install", get_pty=True)
         stdin.write("user\n")
         stdin.flush()
         data = stdout.read()

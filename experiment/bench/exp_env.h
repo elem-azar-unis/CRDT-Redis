@@ -52,10 +52,10 @@ private:
         char cmd[256];
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
-            sprintf(cmd, "redis-server ../../redis-4.0.8/redis.conf "
+            sprintf(cmd, "redis-server ../../redis-6.0.5/redis.conf "
                          "--protected-mode no --daemonize yes --loglevel debug "
                          "--port %d --logfile %d.log --dbfilename %d.rdb "
-                         "--pidfile /var/run/redis_%d.pid ",
+                         "--pidfile /var/run/redis_%d.pid --io-threads 2",
                     port, port, port, port);
             shell_exec(cmd, false);
         }

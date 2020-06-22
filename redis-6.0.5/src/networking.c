@@ -115,6 +115,8 @@ client *createClient(connection *conn) {
     c->reqtype = 0;
     c->argc = 0;
     c->argv = NULL;
+    c->rargc = 0;
+    c->rargv = NULL;
     c->cmd = c->lastcmd = NULL;
     c->user = DefaultUser;
     c->multibulklen = 0;
@@ -229,6 +231,11 @@ int prepareClientToWrite(client *c) {
      * is set. */
     if ((c->flags & CLIENT_MASTER) &&
         !(c->flags & CLIENT_MASTER_FORCE_REPLY)) return C_ERR;
+
+    /* Replicas don't receive replies, unless CLIENT_REPLICA_MESSAGE flag
+     * is set. */
+    if ((c->flags & CLIENT_REPLICA) &&
+        !(c->flags & CLIENT_REPLICA_MESSAGE)) return C_ERR;
 
     if (!c->conn) return C_ERR; /* Fake client for AOF loading. */
 
@@ -1008,6 +1015,14 @@ static void freeClientArgv(client *c) {
     for (j = 0; j < c->argc; j++)
         decrRefCount(c->argv[j]);
     c->argc = 0;
+    if(c->rargv)
+    {
+        for (j = 0; j < c->rargc; j++)
+            decrRefCount(c->rargv[j]);
+        zfree(c->rargv);
+        c->rargv=NULL;
+    }
+    c->rargc = 0;
     c->cmd = NULL;
 }
 

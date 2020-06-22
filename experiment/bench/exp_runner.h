@@ -17,7 +17,7 @@
 
 #elif defined(_WIN32)
 
-#include "../../redis-4.0.8/deps/hiredis/hiredis.h"
+#include "../../redis-6.0.5/deps/hiredis/hiredis.h"
 #include <direct.h>
 
 #endif

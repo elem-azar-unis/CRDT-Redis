@@ -1,6 +1,6 @@
 # Conflict-Free Rpelicated Priority Queues Based on Redis
 
-[**Add-Win CRPQ**](document/add-win-crpq.pdf) and [**Remove-Win CRPQ**](https://arxiv.org/abs/1905.01403) implementations based on Redis (4.0.8). 
+[**Add-Win CRPQ**](document/add-win-crpq.pdf) and [**Remove-Win CRPQ**](https://arxiv.org/abs/1905.01403) implementations based on Redis (6.0.5, previously 4.0.8). 
 
 Things we do for such implementation:
 
@@ -13,9 +13,9 @@ For more detail of our implementation, please read the *Performance measurements
 
 ## Build
 
-Our modified Redis is in folder *redis-4.0.8*. Please build it in the default mode:
+Our modified Redis is in folder *redis-6.0.5*. Please build it in the default mode:
 
-    cd redis-4.0.8
+    cd redis-6.0.5
     sudo make install
 
 ## Test

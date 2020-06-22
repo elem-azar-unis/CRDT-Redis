@@ -33,6 +33,7 @@
 #include "bio.h"
 #include "latency.h"
 #include "atomicvar.h"
+#include "CRDT_exp.h"
 
 #include <time.h>
 #include <signal.h>
@@ -1008,7 +1009,156 @@ struct redisCommand redisCommandTable[] = {
 
     {"stralgo",stralgoCommand,-2,
      "read-only @string",
-     0,lcsGetKeys,0,0,0,0,0,0}
+     0,lcsGetKeys,0,0,0,0,0,0},
+
+    // P2P and CRDT operations
+
+    {"replicate", replicateCommand, -3,
+     "admin no-script ok-stale",
+     0, NULL, 0, 0, 0, 0, 0, 0},
+
+    {"repltest", repltestCommand, -1,
+     "admin no-script ok-stale fast",
+     0, NULL, 0, 0, 0, 0, 0, 0},
+
+    {"ozadd", ozaddCommand, -4,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"ozincrby", ozincrbyCommand, -4,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"ozrem", ozremCommand, -3,
+     "write fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"ozscore", ozscoreCommand, 3,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"ozmax", ozmaxCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"ozestatus", ozestatusCommand, 3,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rzadd", rzaddCommand, -4,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rzincrby", rzincrbyCommand, -4,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rzrem", rzremCommand, -3,
+     "write fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rzscore", rzscoreCommand, 3,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rzmax", rzmaxCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rzestatus", rzestatusCommand, 3,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfzadd", rwfzaddCommand, -4,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfzincrby", rwfzincrbyCommand, -4,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfzrem", rwfzremCommand, -3,
+     "write fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfzscore", rwfzscoreCommand, 3,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfzmax", rwfzmaxCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfzestatus", rwfzestatusCommand, 3,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rlinsert", rlinsertCommand, -9,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rlupdate", rlupdateCommand, -5,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rlrem", rlremCommand, -3,
+     "write fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rllen", rllenCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rllist", rllistCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwflinsert", rwflinsertCommand, -9,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwflupdate", rwflupdateCommand, -5,
+     "write use-memory fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwflrem", rwflremCommand, -3,
+     "write fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfllen", rwfllenCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfllist", rwfllistCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0}
+
+#ifdef CRDT_OVERHEAD
+        {"ozoverhead",ozoverheadCommand,2,
+         "read-only fast",
+         0,NULL,1,1,1,0,0,0},
+
+        {"rzoverhead", rzoverheadCommand, 2,
+         "read-only fast",
+         0, NULL, 1, 1, 1, 0, 0,0},
+
+        {"rwfzoverhead", rwfzoverheadCommand, 2,
+         "read-only fast",
+         0, NULL, 1, 1, 1, 0, 0,0},
+#endif
+#ifdef CRDT_OPCOUNT
+        {"ozopcount",ozopcountCommand,1,
+         "read-only fast",
+         0,NULL,1,1,1,0,0,0},
+
+        {"rzopcount",rzopcountCommand,1,
+         "read-only fast",
+         0,NULL,1,1,1,0,0,0},
+
+        {"rwfzopcount",rzopcountCommand,1,
+         "read-only fast",
+         0,NULL,1,1,1,0,0,0},
+#endif
 };
 
 /*============================ Utility functions ============================ */
@@ -2320,6 +2470,18 @@ void createSharedObjects(void) {
      * string in string comparisons for the ZRANGEBYLEX command. */
     shared.minstring = sdsnew("minstring");
     shared.maxstring = sdsnew("maxstring");
+
+    // CRDT needed shared messages
+    shared.replhandshake = createObject(OBJ_STRING, sdsnew(
+            "*3\r\n$9\r\nREPLICATE\r\n$7\r\nreplica\r\n$9\r\nhandshake\r\n"));
+    shared.multi_cmd = createObject(OBJ_STRING, sdsnew("*1\r\n$5\r\nMULTI\r\n"));
+    shared.exec_cmd = createObject(OBJ_STRING, sdsnew("*1\r\n$4\r\nEXEC\r\n"));
+    shared.ele_exist = createObject(OBJ_STRING, sdsnew(
+            "-Element already exists\r\n"));
+    shared.ele_nexist = createObject(OBJ_STRING, sdsnew(
+            "-Element does not exist\r\n"));
+    /*shared.alreadyexisterr= createObject(OBJ_STRING,sdsnew(
+            "-ERR the key already exists\r\n"));*/
 }
 
 void initServerConfig(void) {
@@ -2757,11 +2919,16 @@ void initServer(void) {
     server.clients_index = raxNew();
     server.clients_to_close = listCreate();
     server.slaves = listCreate();
+    server.replicas = listCreate();
     server.monitors = listCreate();
     server.clients_pending_write = listCreate();
     server.clients_pending_read = listCreate();
     server.clients_timeout_table = raxNew();
-    server.slaveseldb = -1; /* Force to emit the first SELECT command. */
+    /* Force to emit the first SELECT command. */
+    server.slaveseldb = -1;
+    server.p2p_seldb = -1;
+    server.p2p_count = 0;
+    server.p2p_id = -1;
     server.unblocked_clients = listCreate();
     server.ready_keys = listCreate();
     server.clients_waiting_acks = listCreate();
@@ -3265,6 +3432,11 @@ void call(client *c, int flags) {
     dirty = server.dirty;
     updateCachedTime(0);
     start = server.ustime;
+    if(c->flags & CLIENT_REPLICA)
+    {
+        c->rargc = c->argc;
+        c->rargv = c->argv;
+    }
     c->cmd->proc(c);
     duration = ustime()-start;
     dirty = server.dirty-dirty;
@@ -3300,6 +3472,17 @@ void call(client *c, int flags) {
          * EXPIRE, GEOADD, etc. */
         real_cmd->microseconds += duration;
         real_cmd->calls++;
+    }
+
+    // Propagate the command to P2P replicas
+    if (c->rargv && !(c->flags & CLIENT_REPLICA))
+    {
+        replicationBroadcast(server.replicas, c->db->id, c->rargv, c->rargc);
+    }
+    if (c->flags & CLIENT_REPLICA)
+    {
+        c->rargc = 0;
+        c->rargv = NULL;
     }
 
     /* Propagate the command into the AOF and replication link */

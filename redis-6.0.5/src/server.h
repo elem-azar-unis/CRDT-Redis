@@ -256,6 +256,8 @@ typedef long long ustime_t; /* microsecond time type. */
                                              about writes performed by myself.*/
 #define CLIENT_IN_TO_TABLE (1ULL<<38) /* This client is in the timeout table. */
 #define CLIENT_PROTOCOL_ERROR (1ULL<<39) /* Protocol error chatting with it. */
+#define CLIENT_REPLICA (1ULL<<40)
+#define CLIENT_REPLICA_MESSAGE (1ULL<<41)
 
 /* Client block type (btype field in client structure)
  * if CLIENT_BLOCKED flag is set. */
@@ -780,6 +782,8 @@ typedef struct client {
     size_t querybuf_peak;   /* Recent (100ms or more) peak of querybuf size. */
     int argc;               /* Num of arguments of current command. */
     robj **argv;            /* Arguments of current command. */
+    int rargc;
+    robj **rargv;
     struct redisCommand *cmd, *lastcmd;  /* Last command executed. */
     user *user;             /* User associated with this connection. If the
                                user is set to NULL the connection can do
@@ -872,6 +876,7 @@ struct sharedObjectsStruct {
     *unsubscribebulk, *psubscribebulk, *punsubscribebulk, *del, *unlink,
     *rpop, *lpop, *lpush, *rpoplpush, *zpopmin, *zpopmax, *emptyscan,
     *multi, *exec,
+    *multi_cmd, *exec_cmd, *replhandshake, *ele_exist, *ele_nexist, //*alreadyexisterr,
     *select[PROTO_SHARED_SELECT_CMDS],
     *integers[OBJ_SHARED_INTEGERS],
     *mbulkhdr[OBJ_SHARED_BULKHDR_LEN], /* "*<value>\r\n" */
@@ -1082,6 +1087,7 @@ struct redisServer {
     list *clients_pending_write; /* There is to write or install handler. */
     list *clients_pending_read;  /* Client has pending read socket buffers. */
     list *slaves, *monitors;    /* List of slaves and MONITORs */
+    list *replicas;             /* List of replicas */
     client *current_client;     /* Current client executing the command. */
     rax *clients_timeout_table; /* Radix tree for blocked clients timeouts. */
     long fixed_time_expire;     /* If > 0, expire keys against server.mstime. */
@@ -1313,6 +1319,10 @@ struct redisServer {
     char master_replid[CONFIG_RUN_ID_SIZE+1];  /* Master PSYNC runid. */
     long long master_initial_offset;           /* Master PSYNC offset. */
     int repl_slave_lazy_flush;          /* Lazy FLUSHALL before loading DB? */
+    /* Replication(P2P) */
+    int p2p_seldb;
+    int p2p_count;
+    int p2p_id;
     /* Replication script cache. */
     dict *repl_scriptcache_dict;        /* SHA1 all slaves are aware of. */
     list *repl_scriptcache_fifo;        /* First in, first out LRU eviction. */
@@ -1814,6 +1824,9 @@ void showLatestBacklog(void);
 void rdbPipeReadHandler(struct aeEventLoop *eventLoop, int fd, void *clientData, int mask);
 void rdbPipeWriteHandlerConnRemoved(struct connection *conn);
 
+/* P2P replication */
+void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc);
+
 /* Generic persistence functions */
 void startLoadingFile(FILE* fp, char* filename, int rdbflags);
 void startLoading(size_t size, int rdbflags);
@@ -1968,7 +1981,7 @@ void forceCommandPropagation(client *c, int flags);
 void preventCommandPropagation(client *c);
 void preventCommandAOF(client *c);
 void preventCommandReplication(client *c);
-int prepareForShutdown();
+int prepareForShutdown(int flags);
 #ifdef __GNUC__
 void serverLog(int level, const char *fmt, ...)
     __attribute__((format(printf, 2, 3)));
@@ -2398,6 +2411,46 @@ void xtrimCommand(client *c);
 void lolwutCommand(client *c);
 void aclCommand(client *c);
 void stralgoCommand(client *c);
+
+void replicateCommand(client *c);
+void repltestCommand(client* c);
+
+
+robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
+
+void ozaddCommand(client *c);
+void ozincrbyCommand(client *c);
+void ozremCommand(client *c);
+void ozscoreCommand(client *c);
+void ozmaxCommand(client *c);
+void ozestatusCommand(client* c);
+
+void rzaddCommand(client *c);
+void rzincrbyCommand(client *c);
+void rzremCommand(client *c);
+void rzscoreCommand(client *c);
+void rzmaxCommand(client *c);
+void rzestatusCommand(client* c);
+
+void rwfzaddCommand(client *c);
+void rwfzincrbyCommand(client *c);
+void rwfzremCommand(client *c);
+void rwfzscoreCommand(client *c);
+void rwfzmaxCommand(client *c);
+void rwfzestatusCommand(client* c);
+
+void rlinsertCommand(client* c);
+void rlupdateCommand(client* c);
+void rlremCommand(client* c);
+void rllenCommand(client* c);
+void rllistCommand(client* c);
+
+void rwflinsertCommand(client* c);
+void rwflupdateCommand(client* c);
+void rwflremCommand(client* c);
+void rwfllenCommand(client* c);
+void rwfllistCommand(client* c);
+
 
 #if defined(__GNUC__)
 void *calloc(size_t count, size_t size) __attribute__ ((deprecated));

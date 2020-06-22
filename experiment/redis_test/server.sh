@@ -9,6 +9,6 @@ fi
 
 for port in ${ports[*]}
 do
-    redis-server ../../redis-4.0.8/redis.conf --protected-mode no --daemonize yes --loglevel debug --port ${port} --logfile ${port}.log --dbfilename ${port}.rdb --pidfile /var/run/redis_${port}.pid
+    redis-server ../../redis-6.0.5/redis.conf --protected-mode no --daemonize yes --loglevel debug --port ${port} --logfile ${port}.log --dbfilename ${port}.rdb --pidfile /var/run/redis_${port}.pid --io-threads 2
     echo "server ${port} started."
 done
