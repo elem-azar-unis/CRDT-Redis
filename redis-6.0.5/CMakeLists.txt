@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.9)
 project(redis_6_0_5)
 
 set(CMAKE_C_STANDARD 11)
