@@ -19,7 +19,7 @@ typedef struct vector_clock
 #define CLOCK_C_GREATER 1
 #define CLOCK_GREATER 2
 
-#define CONCURRENT(x) ((x)==CLOCK_C_LESS || (x)==CLOCK_C_GREATER)
+#define CONCURRENT(x) ((x) == CLOCK_C_LESS || (x) == CLOCK_C_GREATER)
 
 #define VC_SIZE(clock) (sizeof(vc) + (clock)->size * sizeof(int))
 #define CURRENT_PID server.p2p_id
@@ -34,13 +34,13 @@ sds VCToSds(const vc *c);
 vc *SdsToVC(sds s);
 int equalVC(const vc *c1, const vc *c2);
 int causally_ready(const vc *current, const vc *next);
-inline void deleteVC(vc *c)
+static inline void deleteVC(vc *c)
 {
     zfree(c->vector);
     zfree(c);
 }
 
-inline vc *increaseVC(vc *c, int id)
+static inline vc *increaseVC(vc *c, int id)
 {
     c->id = id;
     c->vector[id]++;
@@ -48,7 +48,7 @@ inline vc *increaseVC(vc *c, int id)
 }
 
 // get the next vc in sds format, doesn't change the current vc
-inline sds nowVC(vc *c)
+static inline sds nowVC(vc *c)
 {
     c->vector[c->id]++;
     sds rtn = VCToSds(c);

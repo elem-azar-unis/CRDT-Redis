@@ -53,8 +53,8 @@ int leid_cmp(const leid *id1, const leid *id2)
     int n = id1->num < id2->num ? id1->num : id2->num;
     int i = 0;
     for (; i < n; i++)
-        if (pos_cmp(&id1->p[i], &id2->p[i]) != 0)break;
-    if (i == n)return id1->num - id2->num;
+        if (pos_cmp(&id1->p[i], &id2->p[i]) != 0) break;
+    if (i == n) return id1->num - id2->num;
     return pos_cmp(&id1->p[i], &id2->p[i]);
 }
 
@@ -63,7 +63,7 @@ leid *constructLeid(leid *p, leid *q, vc *t)
     int index = 0, count = 0;
     for (int i = 0; i < t->size; ++i)
         count += t->vector[i];
-    while (rprefix(q, index) - lprefix(p, index) < 2)index++;
+    while (rprefix(q, index) - lprefix(p, index) < 2) index++;
     int left = lprefix(p, index);
     int right = rprefix(q, index);
     // left<new<right

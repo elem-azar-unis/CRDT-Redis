@@ -9,18 +9,18 @@
 #include "RWFramework.h"
 #include "server.h"
 
-#define FORALL_NPR(ACTION)   \
-    ACTION(font)             \
-    ACTION(size)             \
+#define FORALL_NPR(ACTION) \
+    ACTION(font)           \
+    ACTION(size)           \
     ACTION(color)
 
-#define FORALL_PR(ACTION)   \
-    ACTION(bold)            \
-    ACTION(italic)          \
+#define FORALL_PR(ACTION) \
+    ACTION(bold)          \
+    ACTION(italic)        \
     ACTION(underline)
 
-#define FORALL(ACTION) FORALL_NPR(ACTION) FORALL_PR(ACTION)
-
+#define FORALL(ACTION) FORALL_NPR(ACTION) \
+FORALL_PR(ACTION)
 
 enum property_type
 {
@@ -29,7 +29,7 @@ enum property_type
     __underline = 1 << 2
 };
 
-#define BASE (1<<24)
+#define BASE (1 << 24)
 #define RDM_STEP 8
 typedef struct position
 {
@@ -38,10 +38,12 @@ typedef struct position
     int count;
 } position;
 
-inline int pos_cmp(const position *p1, const position *p2)
+static inline int pos_cmp(const position *p1, const position *p2)
 {
-    if (p1->pos != p2->pos) return p1->pos - p2->pos;
-    if (p1->pid != p2->pid) return p1->pid - p2->pid;
+    if (p1->pos != p2->pos)
+        return p1->pos - p2->pos;
+    if (p1->pid != p2->pid)
+        return p1->pid - p2->pid;
     return p1->count - p2->count;
 }
 
@@ -51,7 +53,7 @@ typedef struct list_element_identifier
     position *p;
 } leid;
 
-inline void leidFree(leid *id)
+static inline void leidFree(leid *id)
 {
     zfree(id->p);
     zfree(id);
@@ -63,17 +65,21 @@ leid *sdsToLeid(sds s);
 
 int leid_cmp(const leid *id1, const leid *id2);
 
-inline int lprefix(leid *p, int i)
+static inline int lprefix(leid *p, int i)
 {
-    if (p == NULL)return 0;
-    if (i >= p->num)return 0;
+    if (p == NULL)
+        return 0;
+    if (i >= p->num)
+        return 0;
     return p->p[i].pos;
 }
 
-inline int rprefix(leid *p, int i)
+static inline int rprefix(leid *p, int i)
 {
-    if (p == NULL)return BASE;
-    if (i >= p->num)return BASE;
+    if (p == NULL)
+        return BASE;
+    if (i >= p->num)
+        return BASE;
     return p->p[i].pos;
 }
 

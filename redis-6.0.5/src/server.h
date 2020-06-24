@@ -2423,21 +2423,18 @@ void ozincrbyCommand(client *c);
 void ozremCommand(client *c);
 void ozscoreCommand(client *c);
 void ozmaxCommand(client *c);
-void ozestatusCommand(client* c);
 
 void rzaddCommand(client *c);
 void rzincrbyCommand(client *c);
 void rzremCommand(client *c);
 void rzscoreCommand(client *c);
 void rzmaxCommand(client *c);
-void rzestatusCommand(client* c);
 
 void rwfzaddCommand(client *c);
 void rwfzincrbyCommand(client *c);
 void rwfzremCommand(client *c);
 void rwfzscoreCommand(client *c);
 void rwfzmaxCommand(client *c);
-void rwfzestatusCommand(client* c);
 
 void rlinsertCommand(client* c);
 void rlupdateCommand(client* c);

@@ -13,7 +13,7 @@ typedef struct lamport_clock
     int id;
 } lc;
 
-inline lc *_lc_new(int x, int id)
+static inline lc *_lc_new(int x, int id)
 {
     lc *t = zmalloc(sizeof(lc));
     t->id = id;
@@ -25,7 +25,7 @@ inline lc *_lc_new(int x, int id)
 
 // used as unique tags, only used to be total ordered, like in add-win CRPQ, no update lc,
 // coexisting tags == concurrent, it makes more sense to prioritise id
-inline int lc_cmp_as_tag(lc *t1, lc *t2)
+static inline int lc_cmp_as_tag(lc *t1, lc *t2)
 {
     if (t1->id != t2->id)return t1->id - t2->id;
     return t1->x - t2->x;
@@ -33,13 +33,13 @@ inline int lc_cmp_as_tag(lc *t1, lc *t2)
 
 // lamport clock compare. require update lc every time a new lc arrives.
 // hence prioritize x, preserves causality
-inline int lc_cmp(const lc *t1, const lc *t2)
+static inline int lc_cmp(const lc *t1, const lc *t2)
 {
     if (t1->x != t2->x)return t1->x - t2->x;
     return t1->id - t2->id;
 }
 
-inline lc *lc_dup(lc *t)
+static inline lc *lc_dup(lc *t)
 {
     lc *n = zmalloc(sizeof(lc));
     n->x = t->x;
@@ -47,19 +47,19 @@ inline lc *lc_dup(lc *t)
     return n;
 }
 
-inline sds lcToSds(const lc *t)
+static inline sds lcToSds(const lc *t)
 {
     return sdscatprintf(sdsempty(), "%d,%d", t->x, t->id);
 }
 
-inline lc *sdsToLc(sds s)
+static inline lc *sdsToLc(sds s)
 {
     lc *t = zmalloc(sizeof(lc));
     sscanf(s, "%d,%d", &t->x, &t->id);
     return t;
 }
 
-inline void lc_update(lc *tar, const lc *m)
+static inline void lc_update(lc *tar, const lc *m)
 {
     tar->x = (tar->x > m->x) ? tar->x : m->x;
 }
@@ -73,14 +73,14 @@ do\
         lc_copy(tar,m);\
 }while(0)
 
-inline void lc_copy(lc *tar, const lc *m)
+static inline void lc_copy(lc *tar, const lc *m)
 {
     tar->x = m->x;
     tar->id = m->id;
 }
 
 // get the next lc in sds format, doesn't change the current lc
-inline sds lc_now(lc *t)
+static inline sds lc_now(lc *t)
 {
     t->x++;
     sds rtn = lcToSds(t);

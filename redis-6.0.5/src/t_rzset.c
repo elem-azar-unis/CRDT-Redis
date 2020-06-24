@@ -10,20 +10,6 @@
 static long rze_count=0;
 #endif
 
-#ifdef CRDT_OPCOUNT
-static int rcount = 0;
-#endif
-
-#ifdef CRDT_LOG
-static FILE *rzLog = NULL;
-#define check(f)\
-    do\
-    {\
-        if((f)==NULL)\
-            (f)=fopen("rzlog","a");\
-    }while(0)
-#endif
-
 #define RW_RPQ_TABLE_SUFFIX "_rzets_"
 #define LOOKUP(e) (listLength((e)->aset) != 0 && listLength((e)->rset) == 0)
 #define SCORE(e) ((e)->value->x + (e)->value->inc)
@@ -391,19 +377,7 @@ void rzaddCommand(client *c)
                 return;
             }
             RARGV_ADD_SDS(nowVC(e->current));
-#ifdef CRDT_LOG
-            check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr,
-                    (char *) c->argv[3]->ptr);
-            fflush(rzLog);
-#endif
         CRDT_EFFECT
-#ifdef CRDT_OPCOUNT
-            rcount++;
-#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = SdsToVC(c->rargv[4]->ptr);
@@ -438,19 +412,7 @@ void rzincrbyCommand(client *c)
                 return;
             }
             RARGV_ADD_SDS(nowVC(e->current));
-#ifdef CRDT_LOG
-            check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr,
-                    (char *) c->argv[3]->ptr);
-            fflush(rzLog);
-#endif
         CRDT_EFFECT
-#ifdef CRDT_OPCOUNT
-            rcount++;
-#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = SdsToVC(c->rargv[4]->ptr);
@@ -484,18 +446,7 @@ void rzremCommand(client *c)
                 return;
             }
             RARGV_ADD_SDS(nowVC(e->current));
-#ifdef CRDT_LOG
-            check(rzLog);
-            fprintf(rzLog, "%ld,%s,%s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr);
-            fflush(rzLog);
-#endif
         CRDT_EFFECT
-#ifdef CRDT_OPCOUNT
-            rcount++;
-#endif
             vc *t = SdsToVC(c->rargv[3]->ptr);
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             if (causally_ready(e->current, t))
@@ -541,13 +492,13 @@ void rzmaxCommand(client *c)
     if (zsetLength(zobj) == 0)
     {
         addReply(c, shared.emptyarray);
+
 #ifdef CRDT_LOG
-        check(rzLog);
-        fprintf(rzLog, "%ld,%s,%s,NONE\n", currentTime(),
-                (char *) c->argv[0]->ptr,
-                (char *) c->argv[1]->ptr);
-        fflush(rzLog);
+        CRDT_log("%s %s, NONE",
+                 (char *)(c->argv[0]->ptr),
+                 (char *)(c->argv[1]->ptr));
 #endif
+
         return;
     }
     addReplyArrayLen(c, 2);
@@ -571,26 +522,25 @@ void rzmaxCommand(client *c)
         addReplyDouble(c, zzlGetScore(sptr));
 
 #ifdef CRDT_LOG
-        check(rzLog);
         if (vstr == NULL)
-            fprintf(rzLog, "%ld,%s,%s,%ld %f\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (long) vlong, zzlGetScore(sptr));
+            CRDT_log("%s %s, %ld: %f",
+                     (char *)(c->argv[0]->ptr),
+                     (char *)(c->argv[1]->ptr),
+                     (long)vlong, zzlGetScore(sptr));
         else
         {
             char *temp = zmalloc(sizeof(char) * (vlen + 1));
             for (unsigned int i = 0; i < vlen; ++i)
                 temp[i] = vstr[i];
             temp[vlen] = '\0';
-            fprintf(rzLog, "%ld,%s,%s,%s %f\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    temp, zzlGetScore(sptr));
+            CRDT_log("%s %s, %s: %f",
+                     (char *)(c->argv[0]->ptr),
+                     (char *)(c->argv[1]->ptr),
+                     temp, zzlGetScore(sptr));
             zfree(temp);
         }
-        fflush(rzLog);
 #endif
+
     }
     else if (zobj->encoding == OBJ_ENCODING_SKIPLIST)
     {
@@ -601,14 +551,14 @@ void rzmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
+ 
 #ifdef CRDT_LOG
-        check(rzLog);
-        fprintf(rzLog, "%ld,%s,%s,%s %f\n", currentTime(),
-                (char *) c->argv[0]->ptr,
-                (char *) c->argv[1]->ptr,
-                ele, ln->score);
-        fflush(rzLog);
+        CRDT_log("%s %s, %s: %f",
+                 (char *)(c->argv[0]->ptr),
+                 (char *)(c->argv[1]->ptr),
+                 ele, ln->score);
 #endif
+
     }
     else
     {
@@ -616,6 +566,7 @@ void rzmaxCommand(client *c)
     }
 }
 
+#ifdef CRDT_ELE_STATUS
 void rzestatusCommand(client *c)
 {
     rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
@@ -661,14 +612,13 @@ void rzestatusCommand(client *c)
         addReplyBulkSds(c, rz_cmdToSds(cmd));
     }
 }
+#endif
 
 #ifdef CRDT_OPCOUNT
-
 void rzopcountCommand(client *c)
 {
-    addReplyLongLong(c, rcount);
+    addReplyLongLong(c, get_op_count());
 }
-
 #endif
 
 /* Actually the hash set used here to store rze structures is not necessary.

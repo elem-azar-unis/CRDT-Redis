@@ -15,20 +15,6 @@ static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
 #endif
 
-#ifdef CRDT_OPCOUNT
-static int ocount = 0;
-#endif
-
-#ifdef CRDT_LOG
-static FILE *ozLog = NULL;
-#define check(f)\
-    do\
-    {\
-        if((f)==NULL)\
-            (f)=fopen("ozlog","a");\
-    }while(0)
-#endif
-
 #define ORI_RPQ_TABLE_SUFFIX "_ozets_"
 #define LOOKUP(e) (listLength((e)->aset) != 0)
 #define SCORE(e) (((e)->innate == NULL ? 0 : (e)->innate->x)\
@@ -289,26 +275,11 @@ void ozaddCommand(client *c)
                 addReply(c, shared.ele_exist);
                 return;
             }
-
-#ifdef CRDT_LOG
-            check(ozLog);
-            fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr,
-                    (char *) c->argv[3]->ptr);
-            fflush(ozLog);
-#endif
-
             lc *t = LC_NEW(e->current);
             e->current++;
             RARGV_ADD_SDS(lcToSds(t));
             zfree(t);
-
         CRDT_EFFECT
-#ifdef CRDT_OPCOUNT
-            ocount++;
-#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             lc *t = sdsToLc(c->rargv[4]->ptr);
@@ -339,18 +310,6 @@ void ozincrbyCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
-
-#ifdef CRDT_LOG
-            check(ozLog);
-            fprintf(ozLog, "%ld,%s,%s %s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr,
-                    (char *) c->argv[3]->ptr);
-            fflush(ozLog);
-#endif
-
-            int i = 4;
             listNode *ln;
             listIter li;
             listRewind(e->aset, &li);
@@ -358,12 +317,8 @@ void ozincrbyCommand(client *c)
             {
                 oz_ase *a = ln->value;
                 RARGV_ADD_SDS(lcToSds(a->t));
-                i++;
             }
         CRDT_EFFECT
-#ifdef CRDT_OPCOUNT
-            ocount++;
-#endif
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
@@ -398,17 +353,6 @@ void ozremCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
-
-#ifdef CRDT_LOG
-            check(ozLog);
-            fprintf(ozLog, "%ld,%s,%s %s\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (char *) c->argv[2]->ptr);
-            fflush(ozLog);
-#endif
-
-            int i = 3;
             listNode *ln;
             listIter li;
             listRewind(e->aset, &li);
@@ -416,12 +360,8 @@ void ozremCommand(client *c)
             {
                 oz_ase *a = ln->value;
                 RARGV_ADD_SDS(lcToSds(a->t));
-                i++;
             }
         CRDT_EFFECT
-#ifdef CRDT_OPCOUNT
-            ocount++;
-#endif
             oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
             for (int i = 3; i < c->rargc; i++)
             {
@@ -476,13 +416,13 @@ void ozmaxCommand(client *c)
     if (zsetLength(zobj) == 0)
     {
         addReply(c, shared.emptyarray);
+
 #ifdef CRDT_LOG
-        check(ozLog);
-        fprintf(ozLog, "%ld,%s,%s,NONE\n", currentTime(),
-                (char *) c->argv[0]->ptr,
-                (char *) c->argv[1]->ptr);
-        fflush(ozLog);
+        CRDT_log("%s %s, NONE",
+                 (char *)(c->argv[0]->ptr),
+                 (char *)(c->argv[1]->ptr));
 #endif
+
         return;
     }
     addReplyArrayLen(c, 2);
@@ -506,26 +446,25 @@ void ozmaxCommand(client *c)
         addReplyDouble(c, zzlGetScore(sptr));
 
 #ifdef CRDT_LOG
-        check(ozLog);
         if (vstr == NULL)
-            fprintf(ozLog, "%ld,%s,%s,%ld %f\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    (long) vlong, zzlGetScore(sptr));
+            CRDT_log("%s %s, %ld: %f",
+                     (char *)(c->argv[0]->ptr),
+                     (char *)(c->argv[1]->ptr),
+                     (long)vlong, zzlGetScore(sptr));
         else
         {
             char *temp = zmalloc(sizeof(char) * (vlen + 1));
             for (unsigned int i = 0; i < vlen; ++i)
                 temp[i] = vstr[i];
             temp[vlen] = '\0';
-            fprintf(ozLog, "%ld,%s,%s,%s %f\n", currentTime(),
-                    (char *) c->argv[0]->ptr,
-                    (char *) c->argv[1]->ptr,
-                    temp, zzlGetScore(sptr));
+            CRDT_log("%s %s, %s: %f",
+                     (char *)(c->argv[0]->ptr),
+                     (char *)(c->argv[1]->ptr),
+                     temp, zzlGetScore(sptr));
             zfree(temp);
         }
-        fflush(ozLog);
 #endif
+
     }
     else if (zobj->encoding == OBJ_ENCODING_SKIPLIST)
     {
@@ -536,14 +475,14 @@ void ozmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
+ 
 #ifdef CRDT_LOG
-        check(ozLog);
-        fprintf(ozLog, "%ld,%s,%s,%s %f\n", currentTime(),
-                (char *) c->argv[0]->ptr,
-                (char *) c->argv[1]->ptr,
-                ele, ln->score);
-        fflush(ozLog);
+        CRDT_log("%s %s, %s: %f",
+                 (char *)(c->argv[0]->ptr),
+                 (char *)(c->argv[1]->ptr),
+                 ele, ln->score);
 #endif
+
     }
     else
     {
@@ -551,6 +490,7 @@ void ozmaxCommand(client *c)
     }
 }
 
+#ifdef CRDT_ELE_STATUS
 void ozestatusCommand(client *c)
 {
     oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
@@ -594,14 +534,13 @@ void ozestatusCommand(client *c)
         addReplyBulkSds(c, lcToSds(a));
     }
 }
+#endif
 
 #ifdef CRDT_OPCOUNT
-
 void ozopcountCommand(client *c)
 {
-    addReplyLongLong(c, ocount);
+    addReplyLongLong(c, get_op_count());
 }
-
 #endif
 
 /* Actually the hash set used here to store oze structures is not necessary.

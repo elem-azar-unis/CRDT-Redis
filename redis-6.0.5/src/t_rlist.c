@@ -505,3 +505,10 @@ void rllistCommand(client *c)
         e = e->next;
     }
 }
+
+#ifdef CRDT_OPCOUNT
+void rlopcountCommand(client *c)
+{
+    addReplyLongLong(c, get_op_count());
+}
+#endif

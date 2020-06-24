@@ -56,22 +56,22 @@ typedef struct RWF_element_header
 } reh;
 
 // The access macro for fields in header.
-#define PID(h) (((reh*)(h))->pid)
-#define CURRENT(h) (((reh*)(h))->current)
+#define PID(h) (((reh *)(h))->pid)
+#define CURRENT(h) (((reh *)(h))->current)
 
-#define REH_INIT(h) \
-do\
-{\
-    CURRENT(h) = l_newVC;\
-    PID(h) = -1;\
-}while(0)
+#define REH_INIT(h)           \
+    do                        \
+    {                         \
+        CURRENT(h) = l_newVC; \
+        PID(h) = -1;          \
+    } while (0)
 
-#define REH_RMV_FUNC(h, t) \
-do\
-{\
-    updateVC(CURRENT(h), t);\
-    PID(h) = -1;\
-}while(0)
+#define REH_RMV_FUNC(h, t)       \
+    do                           \
+    {                            \
+        updateVC(CURRENT(h), t); \
+        PID(h) = -1;             \
+    } while (0)
 
 // If the element is in the container.
 #define EXISTS(h) (PID(h) >= 0)
@@ -81,50 +81,50 @@ do\
  * Add operation and non-add operations.
  * e is the metadata element.
  * */
-#define PREPARE_PRECOND_ADD(e) \
-do\
-{\
-    if (e != NULL && EXISTS(e))\
-    {\
-        addReply(c, shared.ele_exist);\
-        return;\
-    }\
-}while(0)
+#define PREPARE_PRECOND_ADD(e)             \
+    do                                     \
+    {                                      \
+        if (e != NULL && EXISTS(e))        \
+        {                                  \
+            addReply(c, shared.ele_exist); \
+            return;                        \
+        }                                  \
+    } while (0)
 
-#define PREPARE_PRECOND_NON_ADD(e) \
-do\
-{\
-    if (e == NULL || !EXISTS(e))\
-    {\
-        addReply(c, shared.ele_nexist);\
-        return;\
-    }\
-}while(0)
+#define PREPARE_PRECOND_NON_ADD(e)          \
+    do                                      \
+    {                                       \
+        if (e == NULL || !EXISTS(e))        \
+        {                                   \
+            addReply(c, shared.ele_nexist); \
+            return;                         \
+        }                                   \
+    } while (0)
 
 /*
  * Three functions to check if it is ready for increase/remove/update.
  * Do the corresponding check before you do the actual effect phase.
  * */
 
-inline int insertCheck(reh *h, vc *t)
+static inline int insertCheck(reh *h, vc *t)
 {
-    if (equalVC(t, CURRENT(h)) == 0)return 0;
+    if (equalVC(t, CURRENT(h)) == 0)
+        return 0;
     return PID(h) < t->id;
 }
 
-inline int updateCheck(reh *h, vc *t)
+static inline int updateCheck(reh *h, vc *t)
 {
     return equalVC(t, CURRENT(h));
 }
 
-inline int removeCheck(reh *h, vc *t)
+static inline int removeCheck(reh *h, vc *t)
 {
     for (int i = 0; i < t->size; ++i)
         if (CURRENT(h)->vector[i] < t->vector[i])
             return 1;
     return 0;
 }
-
 
 /* Get the hash table -- the top layer of the container metadata.
  *
@@ -133,7 +133,7 @@ inline int removeCheck(reh *h, vc *t)
  * const char *suffix : the suffix of the container, can be null string
  * int create : 1 (or 0) if you want to create the container if it doesn't exist (or not)
  * */
-robj *getInnerHT(redisDb *db, robj* tname, const char *suffix, int create);
+robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create);
 
 /* Get the element metadata type from the container, in the format of the header struct. You may cast it
  * to your actual element struct.
@@ -161,13 +161,14 @@ robj *getInnerHT(redisDb *db, robj* tname, const char *suffix, int create);
  * */
 reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, reh *(*p)()
 #ifdef CRDT_OVERHEAD
-        ,redisDb *cur_db, sds cur_tname, const char *ovhd_suf
+                                                                                       ,
+              redisDb *cur_db, sds cur_tname, const char *ovhd_suf
 #endif
 );
 
 // set key(sds type) with value(value_t type) in ht(hash table type)
 #define RWFHT_SET(ht, key, value_t, value) \
-hashTypeSet(ht, key, sdsnewlen(&(value), sizeof(value_t)), HASH_SET_TAKE_VALUE)
+    hashTypeSet(ht, key, sdsnewlen(&(value), sizeof(value_t)), HASH_SET_TAKE_VALUE)
 
 /*
  * Add the remove history into rargv. Use the macro at the end of the prepare phase.
@@ -176,10 +177,10 @@ hashTypeSet(ht, key, sdsnewlen(&(value), sizeof(value_t)), HASH_SET_TAKE_VALUE)
  * - remove operation: ADD_CR_RMV(e)
  * */
 #define ADD_CR_NON_RMV(e) RARGV_ADD_SDS(VCToSds(CURRENT(e)))
-#define ADD_CR_RMV(e) RARGV_ADD_SDS(nowVC(CURRENT((reh *) (e))))
+#define ADD_CR_RMV(e) RARGV_ADD_SDS(nowVC(CURRENT((reh *)(e))))
 
 // Get the timestamp from rargv. Remember to free it when it's no longer needed.
 #define CR_GET(n) SdsToVC(c->rargv[n]->ptr)
-#define CR_GET_LAST CR_GET(c->rargc-1)
+#define CR_GET_LAST CR_GET(c->rargc - 1)
 
 #endif //RWFRAMEWORK_H
