@@ -49,10 +49,7 @@ static inline int lc_cmp(const lc *t1, const lc *t2)
 // duplicate
 static inline lc *lc_dup(lc *t)
 {
-    lc *n = zmalloc(sizeof(lc));
-    n->x = t->x;
-    n->id = t->id;
-    return n;
+    return _lc_new(t->x, t->id);
 }
 
 static inline sds lcToSds(const lc *t)
