@@ -17,8 +17,8 @@ typedef struct rwf_list_element
     lc *current;
     sds content;
 
-    FORALL(DEFINE_A);
-    FORALL_NPR(DEFINE_NPR);
+    FORALL(DEFINE_A)
+    FORALL_NPR(DEFINE_NPR)
     int property;
 
     struct rwf_list_element *prev;

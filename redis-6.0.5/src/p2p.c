@@ -10,7 +10,7 @@ void get_peer_ip(int fd, char *ip)
 {
     socklen_t clilen;
     struct sockaddr_in cliaddr;
-    getpeername(fd, (struct sockaddr *) &cliaddr, &clilen);
+    getpeername(fd, (struct sockaddr *)&cliaddr, &clilen);
     inet_ntop(AF_INET, &cliaddr.sin_addr, ip, 32);
 }
 
@@ -63,8 +63,8 @@ void repltestCommand(client *c)
         long id, size;
         getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
         getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
-        server.p2p_count = (int) size;
-        server.p2p_id = (int) id;
+        server.p2p_count = (int)size;
+        server.p2p_id = (int)id;
         serverLog(LL_NOTICE, "An instructing fake replica.");
     }
     addReply(c, shared.ok);
@@ -94,8 +94,8 @@ void replicateCommand(client *c)
     long id, size;
     getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
     getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
-    server.p2p_count = (int) size;
-    server.p2p_id = (int) id;
+    server.p2p_count = (int)size;
+    server.p2p_id = (int)id;
 
     if (c->argc > 3 && !strcasecmp(c->argv[3]->ptr, "exp_local"))
         exp_local = 1;
@@ -104,9 +104,10 @@ void replicateCommand(client *c)
     {
         long port;
         getLongFromObjectOrReply(c, c->argv[i + 1], &port, "invalid port number.");
-        if (connectWithReplica(c->argv[i]->ptr, (int) port) == C_OK)
+        if (connectWithReplica(c->argv[i]->ptr, (int)port) == C_OK)
         {
-            serverLog(LL_NOTICE, "Connected to REPLICA %s:%ld", c->argv[i + 1]->ptr, port);
+            serverLog(LL_NOTICE, "Connected to REPLICA %s:%ld",
+                      (char *)(c->argv[i + 1]->ptr), port);
         }
         else
         {
@@ -124,7 +125,8 @@ void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc)
     int j, selected = 0;
     char llstr[LONG_STR_SIZE];
 
-    if (listLength(replicas) == 0)return;
+    if (listLength(replicas) == 0)
+        return;
 
     /* Send SELECT command to every replica if needed. */
     if (server.p2p_seldb != dictid)
@@ -184,7 +186,8 @@ void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc)
         for (j = 0; j < argc; j++)
             addReplyBulk(replica, argv[j]);
 
-        if (selected) addReply(replica, shared.exec_cmd);
+        if (selected)
+            addReply(replica, shared.exec_cmd);
 
         replica->flags &= ~CLIENT_REPLICA_MESSAGE;
     }

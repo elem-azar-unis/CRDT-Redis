@@ -10,8 +10,8 @@
 typedef struct rlist_aset_element
 {
     vc *t;
-    FORALL(DEFINE_A);
-    FORALL_NPR(DEFINE_NPR);
+    FORALL(DEFINE_A)
+    FORALL_NPR(DEFINE_NPR)
     int property;
 } rl_ase;
 #undef DEFINE_NPR
