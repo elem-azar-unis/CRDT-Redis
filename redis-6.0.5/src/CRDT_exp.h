@@ -18,6 +18,7 @@
 #ifdef CRDT_LOG
 
 #include <sys/time.h>
+#include "vector_clock.h"
 
 static FILE *__CRDT_log = NULL;
 
@@ -28,11 +29,13 @@ static inline long currentTime()
     return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-#define CHECK_FILE                               \
-    do                                           \
-    {                                            \
-        if (__CRDT_log == NULL)                  \
-            __CRDT_log = fopen("crdt.log", "a"); \
+#define CHECK_FILE                                        \
+    do                                                    \
+    {                                                     \
+        char fname[32];                                   \
+        sprintf(fname, "server%d_crdt.log", CURRENT_PID); \
+        if (__CRDT_log == NULL)                           \
+            __CRDT_log = fopen(fname, "a");               \
     } while (0)
 
 #define LOG_ISTR_PRE                                               \

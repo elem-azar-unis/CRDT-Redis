@@ -27,7 +27,7 @@ typedef struct rzset_aset_element
 
 sds rz_aseToSds(rz_ase *a)
 {
-    sds vc_s = VCToSds(a->t);
+    sds vc_s = vcToSds(a->t);
     sds s = sdscatprintf(sdsempty(), "%f %f %s",
                          a->x, a->inc, vc_s);
     sdsfree(vc_s);
@@ -46,7 +46,7 @@ typedef struct RW_RPQ_element
 rze *rzeNew()
 {
     rze *e = zmalloc(sizeof(rze));
-    e->current = l_newVC;
+    e->current = vc_new();
     e->value = NULL;
     e->aset = listCreate();
     e->rset = listCreate();
@@ -91,7 +91,7 @@ typedef struct rzset_unready_command
 sds rz_cmdToSds(rz_cmd *cmd)
 {
     static char *tp[] = {"RZADD", "RZINCBY", "RZREM"};
-    sds vc_s = VCToSds(cmd->t);
+    sds vc_s = vcToSds(cmd->t);
     sds s = sdscatprintf(sdsempty(), "%s %f %s",
                          tp[cmd->type], cmd->value, vc_s);
     sdsfree(vc_s);
@@ -110,7 +110,7 @@ rz_cmd *rz_cmdNew(enum rz_cmd_type type, double value, vc *t)
 
 void rz_cmdDelete(rz_cmd *cmd)
 {
-    deleteVC(cmd->t);
+    vc_delete(cmd->t);
     zfree(cmd);
 }
 
@@ -118,7 +118,7 @@ void rz_cmdDelete(rz_cmd *cmd)
 static void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value, vc *t)
 {
     rz_ase *a = zmalloc(sizeof(rz_ase));
-    a->t = duplicateVC(t);
+    a->t = vc_dup(t);
     a->x = value;
     a->inc = 0;
     listAddNodeTail(e->aset, a);
@@ -129,10 +129,10 @@ static void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value
     while ((ln = listNext(&li)))
     {
         vc *r = ln->value;
-        if (compareVC(r, t) == CLOCK_LESS)
+        if (vc_cmp(r, t) == VC_LESS)
         {
             listDelNode(e->rset, ln);
-            deleteVC(r);
+            vc_delete(r);
         }
     }
 
@@ -144,7 +144,7 @@ static void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value
         int flags = ZADD_NONE;
         zsetAdd(zset, SCORE(e), key->ptr, &flags, NULL);
     }
-    updateVC(e->current, t);
+    vc_update(e->current, t);
     server.dirty++;
 }
 
@@ -156,23 +156,23 @@ static void increaseFunc(rze *e, redisDb *db, robj *tname, robj *key, double val
     while ((ln = listNext(&li)))
     {
         rz_ase *a = ln->value;
-        if (compareVC(a->t, t) == CLOCK_LESS)
+        if (vc_cmp(a->t, t) == VC_LESS)
             a->inc += value;
     }
 
-    if (LOOKUP(e) && compareVC(e->value->t, t) == CLOCK_LESS)
+    if (LOOKUP(e) && vc_cmp(e->value->t, t) == VC_LESS)
     {
         robj *zset = getZsetOrCreate(db, tname, key);
         int flags = ZADD_NONE;
         zsetAdd(zset, SCORE(e), key->ptr, &flags, NULL);
     }
-    updateVC(e->current, t);
+    vc_update(e->current, t);
     server.dirty++;
 }
 
 static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
 {
-    vc *r = duplicateVC(t);
+    vc *r = vc_dup(t);
     listAddNodeTail(e->rset, r);
 
     listNode *ln;
@@ -181,12 +181,12 @@ static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
     while ((ln = listNext(&li)))
     {
         rz_ase *a = ln->value;
-        if (compareVC(a->t, t) == CLOCK_LESS)
+        if (vc_cmp(a->t, t) == VC_LESS)
         {
             listDelNode(e->aset, ln);
             if (e->value == a)
                 e->value = NULL;
-            deleteVC(a->t);
+            vc_delete(a->t);
             zfree(a);
         }
     }
@@ -207,7 +207,7 @@ static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
         robj *zset = getZsetOrCreate(db, tname, key);
         zsetDel(zset, key->ptr);
     }
-    updateVC(e->current, t);
+    vc_update(e->current, t);
     server.dirty++;
 }
 
@@ -223,7 +223,7 @@ static void notifyLoop(rze *e, redisDb *db, robj *tname, robj *key)
         while ((ln = listNext(&li)))
         {
             rz_cmd *cmd = ln->value;
-            if (causally_ready(e->current, cmd->t))
+            if (vc_causally_ready(e->current, cmd->t))
             {
                 changed = 1;
                 switch (cmd->type)
@@ -323,7 +323,7 @@ void notifyLoop(rze *e, redisDb *db)
             if (readyCheck(e, t))
             {
                 insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-                deleteVC(t);
+                vc_delete(t);
             }
             else
             {
@@ -335,7 +335,7 @@ void notifyLoop(rze *e, redisDb *db)
             if (readyCheck(e, t))
             {
                 increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-                deleteVC(t);
+                vc_delete(t);
             }
             else
             {
@@ -346,7 +346,7 @@ void notifyLoop(rze *e, redisDb *db)
             // in effect of remCommand function:
             if (removeCheck(e, t))
             {
-                updateVC(e->current, t);
+                vc_update(e->current, t);
                 e->aid = -1;
                 e->acquired = 0;
                 e->innate = 0;
@@ -376,16 +376,16 @@ void rzaddCommand(client *c)
                 addReply(c, shared.ele_exist);
                 return;
             }
-            RARGV_ADD_SDS(nowVC(e->current));
+            RARGV_ADD_SDS(vc_now(e->current));
         CRDT_EFFECT
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            vc *t = SdsToVC(c->rargv[4]->ptr);
+            vc *t = sdsToVC(c->rargv[4]->ptr);
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-            if (causally_ready(e->current, t))
+            if (vc_causally_ready(e->current, t))
             {
                 insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-                deleteVC(t);
+                vc_delete(t);
                 notifyLoop(e, c->db, c->rargv[1], c->rargv[2]);
             }
             else
@@ -411,16 +411,16 @@ void rzincrbyCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
-            RARGV_ADD_SDS(nowVC(e->current));
+            RARGV_ADD_SDS(vc_now(e->current));
         CRDT_EFFECT
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            vc *t = SdsToVC(c->rargv[4]->ptr);
+            vc *t = sdsToVC(c->rargv[4]->ptr);
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-            if (causally_ready(e->current, t))
+            if (vc_causally_ready(e->current, t))
             {
                 increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
-                deleteVC(t);
+                vc_delete(t);
                 notifyLoop(e, c->db, c->rargv[1], c->rargv[2]);
             }
             else
@@ -445,14 +445,14 @@ void rzremCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
-            RARGV_ADD_SDS(nowVC(e->current));
+            RARGV_ADD_SDS(vc_now(e->current));
         CRDT_EFFECT
-            vc *t = SdsToVC(c->rargv[3]->ptr);
+            vc *t = sdsToVC(c->rargv[3]->ptr);
             rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
-            if (causally_ready(e->current, t))
+            if (vc_causally_ready(e->current, t))
             {
                 removeFunc(e, c->db, c->rargv[1], c->rargv[2], t);
-                deleteVC(t);
+                vc_delete(t);
                 notifyLoop(e, c->db, c->rargv[1], c->rargv[2]);
             }
             else
@@ -580,7 +580,7 @@ void rzestatusCommand(client *c)
     addReplyArrayLen(c, len);
 
     addReplyBulkSds(c, sdsnew("current:"));
-    addReplyBulkSds(c, VCToSds(e->current));
+    addReplyBulkSds(c, vcToSds(e->current));
 
     addReplyBulkSds(c, sdscatprintf(sdsempty(), "value:"));
     addReplyBulkSds(c, rz_aseToSds(e->value));
@@ -601,7 +601,7 @@ void rzestatusCommand(client *c)
     while ((ln = listNext(&li)))
     {
         vc *a = ln->value;
-        addReplyBulkSds(c, VCToSds(a));
+        addReplyBulkSds(c, vcToSds(a));
     }
 
     addReplyBulkSds(c, sdsnew("unready commands:"));

@@ -13,34 +13,35 @@ typedef struct vector_clock
     int id;
 } vc;
 
-#define CLOCK_LESS (-2)
-#define CLOCK_C_LESS (-1)
-#define CLOCK_ERROR 0
-#define CLOCK_C_GREATER 1
-#define CLOCK_GREATER 2
+#define VC_LESS (-2)
+#define VC_C_LESS (-1)
+#define VC_CMP_ERR 0
+#define VC_C_GREATER 1
+#define VC_GREATER 2
 
-#define CONCURRENT(x) ((x) == CLOCK_C_LESS || (x) == CLOCK_C_GREATER)
+#define CONCURRENT(x) ((x) == VC_C_LESS || (x) == VC_C_GREATER)
 
 #define VC_SIZE(clock) (sizeof(vc) + (clock)->size * sizeof(int))
 #define CURRENT_PID server.p2p_id
-#define l_newVC newVC(server.p2p_count, CURRENT_PID)
-#define l_increaseVC(c) increaseVC((c), CURRENT_PID)
+#define vc_new() _vc_new(server.p2p_count, CURRENT_PID)
+#define vc_inc(c) _vc_inc((c), CURRENT_PID)
 
-vc *newVC(int size, int id);
-vc *duplicateVC(const vc *c);
-int compareVC(const vc *c1, const vc *c2);
-vc *updateVC(vc *tar, const vc *m);
-sds VCToSds(const vc *c);
-vc *SdsToVC(sds s);
-int equalVC(const vc *c1, const vc *c2);
-int causally_ready(const vc *current, const vc *next);
-static inline void deleteVC(vc *c)
+vc *_vc_new(int size, int id);
+// duplicate
+vc *vc_dup(const vc *c);
+int vc_cmp(const vc *c1, const vc *c2);
+vc *vc_update(vc *tar, const vc *m);
+sds vcToSds(const vc *c);
+vc *sdsToVC(sds s);
+int vc_equal(const vc *c1, const vc *c2);
+int vc_causally_ready(const vc *current, const vc *next);
+static inline void vc_delete(vc *c)
 {
     zfree(c->vector);
     zfree(c);
 }
 
-static inline vc *increaseVC(vc *c, int id)
+static inline vc *_vc_inc(vc *c, int id)
 {
     c->id = id;
     c->vector[id]++;
@@ -48,10 +49,10 @@ static inline vc *increaseVC(vc *c, int id)
 }
 
 // get the next vc in sds format, doesn't change the current vc
-static inline sds nowVC(vc *c)
+static inline sds vc_now(vc *c)
 {
     c->vector[c->id]++;
-    sds rtn = VCToSds(c);
+    sds rtn = vcToSds(c);
     c->vector[c->id]--;
     return rtn;
 }

@@ -8,7 +8,7 @@
 
 int vc_int_buf[100];
 
-vc *newVC(int size, int id)
+vc *_vc_new(int size, int id)
 {
     vc *clock = zmalloc(sizeof(vc));
     clock->vector = zmalloc(sizeof(int) * size);
@@ -19,7 +19,7 @@ vc *newVC(int size, int id)
     return clock;
 }
 
-vc *duplicateVC(const vc *c)
+vc *vc_dup(const vc *c)
 {
     vc *clock = zmalloc(sizeof(vc));
     clock->vector = zmalloc(sizeof(int) * c->size);
@@ -30,7 +30,7 @@ vc *duplicateVC(const vc *c)
     return clock;
 }
 
-int equalVC(const vc *c1, const vc *c2)
+int vc_equal(const vc *c1, const vc *c2)
 {
     if (c1 == c2)return 1;
     if (c1->size != c2->size) return 0;
@@ -40,7 +40,7 @@ int equalVC(const vc *c1, const vc *c2)
     return 1;
 }
 
-int causally_ready(const vc *current, const vc *next)
+int vc_causally_ready(const vc *current, const vc *next)
 {
     serverAssert(current->size == next->size);
     int o = next->id;
@@ -54,41 +54,41 @@ int causally_ready(const vc *current, const vc *next)
     return 0;
 }
 
-int compareVC(const vc *c1, const vc *c2)
+int vc_cmp(const vc *c1, const vc *c2)
 {
-    if (c1->size != c2->size) return CLOCK_ERROR;
+    if (c1->size != c2->size) return VC_CMP_ERR;
     int i = 0;
     for (; i < c1->size && c1->vector[i] == c2->vector[i]; ++i);
     if (i == c1->size)
     {
-        if (c1->id == c2->id) return CLOCK_ERROR;
-        if (c1->id > c2->id) return CLOCK_C_GREATER;
-        if (c1->id < c2->id) return CLOCK_C_LESS;
+        if (c1->id == c2->id) return VC_CMP_ERR;
+        if (c1->id > c2->id) return VC_C_GREATER;
+        if (c1->id < c2->id) return VC_C_LESS;
     }
     if (c1->vector[i] > c2->vector[i])
     {
         for (++i; i < c1->size; ++i)
             if (c1->vector[i] < c2->vector[i])
             {
-                if (c1->id > c2->id) return CLOCK_C_GREATER;
-                if (c1->id < c2->id) return CLOCK_C_LESS;
+                if (c1->id > c2->id) return VC_C_GREATER;
+                if (c1->id < c2->id) return VC_C_LESS;
             }
-        return CLOCK_GREATER;
+        return VC_GREATER;
     }
     if (c1->vector[i] < c2->vector[i])
     {
         for (++i; i < c1->size; ++i)
             if (c1->vector[i] > c2->vector[i])
             {
-                if (c1->id > c2->id) return CLOCK_C_GREATER;
-                if (c1->id < c2->id) return CLOCK_C_LESS;
+                if (c1->id > c2->id) return VC_C_GREATER;
+                if (c1->id < c2->id) return VC_C_LESS;
             }
-        return CLOCK_LESS;
+        return VC_LESS;
     }
-    return CLOCK_ERROR;
+    return VC_CMP_ERR;
 }
 
-vc *updateVC(vc *tar, const vc *m)
+vc *vc_update(vc *tar, const vc *m)
 {
     if (tar->size != m->size)return tar;
     for (int i = 0; i < tar->size; ++i)
@@ -97,7 +97,7 @@ vc *updateVC(vc *tar, const vc *m)
     return tar;
 }
 
-sds VCToSds(const vc *c)
+sds vcToSds(const vc *c)
 {
     sds p = sdsempty();
     int i;
@@ -107,7 +107,7 @@ sds VCToSds(const vc *c)
     return p;
 }
 
-vc *SdsToVC(sds s)
+vc *sdsToVC(sds s)
 {
     int size = 0, id;
     char *p = s;
@@ -146,11 +146,11 @@ void vcnewCommand(client *c)
                 addReply(c, shared.alreadyexisterr);
                 return;
             }
-            vc *vc = l_newVC;
-            RARGV_ADD_SDS(VCToSds(vc));
-            deleteVC(vc);
+            vc *vc = vc_new();
+            RARGV_ADD_SDS(vcToSds(vc));
+            vc_delete(vc);
         CRDT_EFFECT
-            vc *vc = SdsToVC(c->rargv[2]->ptr);
+            vc *vc = sdsToVC(c->rargv[2]->ptr);
             dbAdd(c->db, c->rargv[1], createObject(OBJ_VECTOR_CLOCK, vc));
             server.dirty += 1;
     CRDT_END
@@ -165,7 +165,7 @@ void vcgetCommand(client *c)
         addReply(c, shared.wrongtypeerr);
         return;
     }
-    addReplyBulkSds(c, VCToSds(o->ptr));
+    addReplyBulkSds(c, vcToSds(o->ptr));
 }
 
 void vcincCommand(client *c)
@@ -185,21 +185,21 @@ void vcincCommand(client *c)
                 return;
             }
 
-            vc *vc = duplicateVC(o->ptr);
-            l_increaseVC(vc);
-            RARGV_ADD_SDS(VCToSds(vc));
-            deleteVC(vc);
+            vc *vc = vc_dup(o->ptr);
+            vc_inc(vc);
+            RARGV_ADD_SDS(vcToSds(vc));
+            vc_delete(vc);
         CRDT_EFFECT
             robj *o = lookupKeyWrite(c->db, c->rargv[1]);
-            vc *tmp, *vc = SdsToVC(c->rargv[2]->ptr);
-            if (compareVC(o->ptr, vc) < 0)
+            vc *tmp, *vc = sdsToVC(c->rargv[2]->ptr);
+            if (vc_cmp(o->ptr, vc) < 0)
             {
                 tmp = o->ptr;
                 o->ptr = vc;
-                deleteVC(tmp);
+                vc_delete(tmp);
                 server.dirty++;
             }
-            else deleteVC(vc);
+            else vc_delete(vc);
     CRDT_END
 }
 */

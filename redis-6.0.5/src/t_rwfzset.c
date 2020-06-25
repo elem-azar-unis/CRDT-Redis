@@ -83,7 +83,7 @@ void rwfzaddCommand(client *c)
                 zsetAdd(zset, SCORE(e), c->rargv[2]->ptr, &flags, NULL);
                 server.dirty++;
             }
-            deleteVC(t);
+            vc_delete(t);
     CRDT_END
 }
 
@@ -113,7 +113,7 @@ void rwfzincrbyCommand(client *c)
                 zsetAdd(zset, SCORE(e), c->rargv[2]->ptr, &flags, NULL);
                 server.dirty++;
             }
-            deleteVC(t);
+            vc_delete(t);
     CRDT_END
 }
 
@@ -132,7 +132,7 @@ void rwfzremCommand(client *c)
             rwfze *e = GET_RZE(rargv, 1);
             vc *t = CR_GET_LAST;
             removeFunc(c, e, t);
-            deleteVC(t);
+            vc_delete(t);
     CRDT_END
 }
 
@@ -258,7 +258,7 @@ void rwfzestatusCommand(client *c)
     addReplyBulkSds(c, sdscatprintf(sdsempty(), "add id:%d", PID(e)));
 
     addReplyBulkSds(c, sdsnew("current:"));
-    addReplyBulkSds(c, VCToSds(CURRENT(e)));
+    addReplyBulkSds(c, vcToSds(CURRENT(e)));
 
 }
 #endif

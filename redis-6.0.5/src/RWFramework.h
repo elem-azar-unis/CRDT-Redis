@@ -59,18 +59,18 @@ typedef struct RWF_element_header
 #define PID(h) (((reh *)(h))->pid)
 #define CURRENT(h) (((reh *)(h))->current)
 
-#define REH_INIT(h)           \
-    do                        \
-    {                         \
-        CURRENT(h) = l_newVC; \
-        PID(h) = -1;          \
+#define REH_INIT(h)                \
+    do                             \
+    {                              \
+        CURRENT(h) = vc_new(); \
+        PID(h) = -1;               \
     } while (0)
 
-#define REH_RMV_FUNC(h, t)       \
-    do                           \
-    {                            \
-        updateVC(CURRENT(h), t); \
-        PID(h) = -1;             \
+#define REH_RMV_FUNC(h, t)        \
+    do                            \
+    {                             \
+        vc_update(CURRENT(h), t); \
+        PID(h) = -1;              \
     } while (0)
 
 // If the element is in the container.
@@ -108,14 +108,14 @@ typedef struct RWF_element_header
 
 static inline int insertCheck(reh *h, vc *t)
 {
-    if (equalVC(t, CURRENT(h)) == 0)
+    if (!vc_equal(t, CURRENT(h)))
         return 0;
     return PID(h) < t->id;
 }
 
 static inline int updateCheck(reh *h, vc *t)
 {
-    return equalVC(t, CURRENT(h));
+    return vc_equal(t, CURRENT(h));
 }
 
 static inline int removeCheck(reh *h, vc *t)
@@ -176,11 +176,11 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
  * - non-remove operations: ADD_CR_NON_RMV(e)
  * - remove operation: ADD_CR_RMV(e)
  * */
-#define ADD_CR_NON_RMV(e) RARGV_ADD_SDS(VCToSds(CURRENT(e)))
-#define ADD_CR_RMV(e) RARGV_ADD_SDS(nowVC(CURRENT((reh *)(e))))
+#define ADD_CR_NON_RMV(e) RARGV_ADD_SDS(vcToSds(CURRENT(e)))
+#define ADD_CR_RMV(e) RARGV_ADD_SDS(vc_now(CURRENT((reh *)(e))))
 
 // Get the timestamp from rargv. Remember to free it when it's no longer needed.
-#define CR_GET(n) SdsToVC(c->rargv[n]->ptr)
+#define CR_GET(n) sdsToVC(c->rargv[n]->ptr)
 #define CR_GET_LAST CR_GET(c->rargc - 1)
 
 #endif //RWFRAMEWORK_H

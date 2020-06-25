@@ -127,7 +127,7 @@ vc *getCurrent(robj *ht)
     robj *value = hashTypeGetValueObject(ht, hname);
     if (value == NULL)
     {
-        e = l_newVC;
+        e = vc_new();
         RWFHT_SET(ht, hname, vc*, e);
     }
     else

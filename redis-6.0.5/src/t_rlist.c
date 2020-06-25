@@ -20,8 +20,8 @@ typedef struct rlist_aset_element
 rl_ase *rl_aseNew(vc *t)
 {
     rl_ase *a = zmalloc(sizeof(rl_ase));
-    a->t = duplicateVC(t);
-#define TMP_ACTION(p) a->p##_t = duplicateVC(t);
+    a->t = vc_dup(t);
+#define TMP_ACTION(p) a->p##_t = vc_dup(t);
     FORALL(TMP_ACTION);
 #undef TMP_ACTION
     return a;
@@ -29,8 +29,8 @@ rl_ase *rl_aseNew(vc *t)
 
 void rl_aseDelete(rl_ase *a)
 {
-    deleteVC(a->t);
-#define TMP_ACTION(p) deleteVC(a->p##_t);
+    vc_delete(a->t);
+#define TMP_ACTION(p) vc_delete(a->p##_t);
     FORALL(TMP_ACTION);
 #undef TMP_ACTION
     zfree(a);
@@ -66,7 +66,7 @@ rl_cmd *rl_cmdNew(enum rl_cmd_type type, client *c, vc *t)
 
 void rl_cmdDelete(rl_cmd *cmd)
 {
-    deleteVC(cmd->t);
+    vc_delete(cmd->t);
     for (int i = 0; i < cmd->argc; ++i)
         decrRefCount(cmd->argv[i]);
     zfree(cmd->argv);
@@ -149,7 +149,7 @@ rle *rleHTGet(redisDb *db, robj *tname, robj *key, int create)
 // doesn't free t, doesn't own t
 static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 {
-    updateVC(getCurrent(ht), t);
+    vc_update(getCurrent(ht), t);
     server.dirty++;
 
     rle *e = rleHTGet(db, argv[0], argv[2], 1);
@@ -210,10 +210,10 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     while ((ln = listNext(&li)))
     {
         vc *r = ln->value;
-        if (compareVC(r, t) == CLOCK_LESS)
+        if (vc_cmp(r, t) == VC_LESS)
         {
             listDelNode(e->rset, ln);
-            deleteVC(r);
+            vc_delete(r);
         }
     }
     if (e->value == NULL || e->value->t->id < t->id)
@@ -225,7 +225,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 
 static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 {
-    updateVC(getCurrent(ht), t);
+    vc_update(getCurrent(ht), t);
     server.dirty++;
 
     rle *e = rleHTGet(db, argv[0], argv[1], 1);
@@ -240,15 +240,15 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     while ((ln = listNext(&li)))
     {
         rl_ase *a = ln->value;
-        if (compareVC(a->t, t) == CLOCK_LESS)
+        if (vc_cmp(a->t, t) == VC_LESS)
             do
             {
 #define UPD_NPR(T)\
     if(strcmp(type,#T)==0)\
     {\
-        if(compareVC(a->T##_t, t) <0)\
+        if(vc_cmp(a->T##_t, t) <0)\
         {\
-            updateVC(a->T##_t,t);\
+            vc_update(a->T##_t,t);\
             a->T##_t->id=t->id;\
             a->T=value;\
         }\
@@ -259,9 +259,9 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 #define UPD_PR(T)\
     if(strcmp(type,#T)==0)\
     {\
-        if(compareVC(a->T##_t, t) <0)\
+        if(vc_cmp(a->T##_t, t) <0)\
         {\
-            updateVC(a->T##_t,t);\
+            vc_update(a->T##_t,t);\
             a->T##_t->id=t->id;\
             if(value==0)\
                 a->property &=~ __##T;\
@@ -278,12 +278,12 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 
 static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 {
-    updateVC(getCurrent(ht), t);
+    vc_update(getCurrent(ht), t);
     server.dirty++;
 
     rle *e = rleHTGet(db, argv[0], argv[1], 1);
     int pre_rmv = LOOKUP(e);
-    vc *r = duplicateVC(t);
+    vc *r = vc_dup(t);
     listAddNodeTail(e->rset, r);
 
     listNode *ln;
@@ -292,7 +292,7 @@ static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     while ((ln = listNext(&li)))
     {
         rl_ase *a = ln->value;
-        if (compareVC(a->t, t) == CLOCK_LESS)
+        if (vc_cmp(a->t, t) == VC_LESS)
         {
             listDelNode(e->aset, ln);
             if (e->value == a)
@@ -330,7 +330,7 @@ static void notifyLoop(redisDb *db, robj *ht)
         while ((ln = listNext(&li)))
         {
             rl_cmd *cmd = ln->value;
-            if (causally_ready(current, cmd->t))
+            if (vc_causally_ready(current, cmd->t))
             {
                 changed = 1;
                 switch (cmd->type)
@@ -397,15 +397,15 @@ void rlinsertCommand(client *c)
             }
             else
                 RARGV_ADD_SDS(leidToSds(e->pos_id));
-            RARGV_ADD_SDS(nowVC(getCurrent(GET_LIST_HT(argv, 1))));
+            RARGV_ADD_SDS(vc_now(getCurrent(GET_LIST_HT(argv, 1))));
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
             robj *ht = GET_LIST_HT(rargv, 1);
             vc *current = getCurrent(ht);
-            if (causally_ready(current, t))
+            if (vc_causally_ready(current, t))
             {
                 insertFunc(c->db, ht, &c->rargv[1], t);
-                deleteVC(t);
+                vc_delete(t);
                 notifyLoop(c->db, ht);
             }
             else
@@ -428,15 +428,15 @@ void rlupdateCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
-            RARGV_ADD_SDS(nowVC(getCurrent(GET_LIST_HT(argv, 1))));
+            RARGV_ADD_SDS(vc_now(getCurrent(GET_LIST_HT(argv, 1))));
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
             robj *ht = GET_LIST_HT(rargv, 1);
             vc *current = getCurrent(ht);
-            if (causally_ready(current, t))
+            if (vc_causally_ready(current, t))
             {
                 updateFunc(c->db, ht, &c->rargv[1], t);
-                deleteVC(t);
+                vc_delete(t);
                 notifyLoop(c->db, ht);
             }
             else
@@ -458,15 +458,15 @@ void rlremCommand(client *c)
                 addReply(c, shared.ele_nexist);
                 return;
             }
-            RARGV_ADD_SDS(nowVC(getCurrent(GET_LIST_HT(argv, 1))));
+            RARGV_ADD_SDS(vc_now(getCurrent(GET_LIST_HT(argv, 1))));
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
             robj *ht = GET_LIST_HT(rargv, 1);
             vc *current = getCurrent(ht);
-            if (causally_ready(current, t))
+            if (vc_causally_ready(current, t))
             {
                 removeFunc(c->db, ht, &c->rargv[1], t);
-                deleteVC(t);
+                vc_delete(t);
                 notifyLoop(c->db, ht);
             }
             else

@@ -41,7 +41,7 @@ void acquired_update(rwfle *e, sds type, lc *t, int value)
     {\
         if((e->T##_t)==NULL || lc_cmp(e->T##_t,t)<=0)\
         {\
-            LC_COPY(e->T##_t,t);\
+            lc_copy(e->T##_t,t);\
             e->T=value;\
             lc_update(e->current, t);\
         }\
@@ -54,7 +54,7 @@ void acquired_update(rwfle *e, sds type, lc *t, int value)
     {\
         if((e->T##_t)==NULL || lc_cmp(e->T##_t,t)<=0)\
         {\
-            LC_COPY(e->T##_t,t);\
+            lc_copy(e->T##_t,t);\
             if(value==0)\
                 e->property &=~ __##T;\
             else\
@@ -73,7 +73,7 @@ reh *rwfleNew()
     REH_INIT(e);
     e->oid = NULL;
     e->pos_id = NULL;
-    e->current = LC_NEW(0);
+    e->current = lc_new(0);
     e->content = NULL;
 
 #define TMP_ACTION(p) e->p##_t = NULL;
@@ -94,11 +94,11 @@ static void removeFunc(client *c, rwfle *e, vc *t)
         robj *ht = GET_LIST_HT(rargv, 0);
         if (EXISTS(e)) incrbyLen(ht, -1);
         REH_RMV_FUNC(e, t);
-#define RMV_LC(p)\
-    if((e->p##_t)!=NULL)\
-    {\
-        zfree(e->p##_t);\
-        (e->p##_t)=NULL;\
+#define RMV_LC(p)            \
+    if ((e->p##_t) != NULL)  \
+    {                        \
+        lc_delete(e->p##_t); \
+        (e->p##_t) = NULL;   \
     }
         FORALL(RMV_LC);
 #undef RMV_LC
@@ -140,7 +140,7 @@ void rwflinsertCommand(client *c)
                     right = pre->next == NULL ? NULL : pre->next->pos_id;
                 vc *cur = getCurrent(GET_LIST_HT(argv, 1));
                 leid *id = constructLeid(left, right, cur);
-                l_increaseVC(cur);
+                vc_inc(cur);
                 RARGV_ADD_SDS(leidToSds(id));
                 leidFree(id);
             }
@@ -217,7 +217,7 @@ void rwflinsertCommand(client *c)
 #undef IN_UPDATE_PR
                 server.dirty++;
             }
-            deleteVC(t);
+            vc_delete(t);
     CRDT_END
 }
 
@@ -245,8 +245,8 @@ void rwflupdateCommand(client *c)
                 acquired_update(e, c->rargv[3]->ptr, lt, value);
                 server.dirty++;
             }
-            deleteVC(t);
-            zfree(lt);
+            vc_delete(t);
+            lc_delete(lt);
     CRDT_END
 }
 
@@ -262,7 +262,7 @@ void rwflremCommand(client *c)
             rwfle *e = GET_RWFLE(rargv, 1);
             vc *t = CR_GET_LAST;
             removeFunc(c, e, t);
-            deleteVC(t);
+            vc_delete(t);
     CRDT_END
 }
 

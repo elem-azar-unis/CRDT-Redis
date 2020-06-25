@@ -275,10 +275,10 @@ void ozaddCommand(client *c)
                 addReply(c, shared.ele_exist);
                 return;
             }
-            lc *t = LC_NEW(e->current);
+            lc *t = lc_new(e->current);
             e->current++;
             RARGV_ADD_SDS(lcToSds(t));
-            zfree(t);
+            lc_delete(t);
         CRDT_EFFECT
             double v;
             getDoubleFromObject(c->rargv[3], &v);
@@ -290,7 +290,7 @@ void ozaddCommand(client *c)
                 int flags = ZADD_NONE;
                 zsetAdd(zset, SCORE(e), c->rargv[2]->ptr, &flags, NULL);
             }
-            zfree(t);
+            lc_delete(t);
             server.dirty++;
     CRDT_END
 }
@@ -327,7 +327,7 @@ void ozincrbyCommand(client *c)
             {
                 lc *t = sdsToLc(c->rargv[i]->ptr);
                 changed += update_acquired_value(e, t, v);
-                zfree(t);
+                lc_delete(t);
             }
             if (changed)
             {
@@ -367,7 +367,7 @@ void ozremCommand(client *c)
             {
                 lc *t = sdsToLc(c->rargv[i]->ptr);
                 remove_tag(e, t);
-                zfree(t);
+                lc_delete(t);
             }
             if (e->innate == NULL || e->acquired == NULL)
             {
