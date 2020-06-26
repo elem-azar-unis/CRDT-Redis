@@ -222,7 +222,7 @@ void resort(oze *e)
 }
 
 #define GET_OZE(arg_t, create) \
-    (oze *)rehHTGet(c->db, c->arg_t[1], ORI_RPQ_TABLE_SUFFIX, c->arg_t[2], create, ozeNew)
+    (oze *)rehHTGet(c->db, c->arg_t[1], ORI_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)ozeNew)
 
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
 {

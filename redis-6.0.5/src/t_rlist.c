@@ -127,7 +127,7 @@ rle *rleNew()
 }
 
 #define GET_RLE(db, tname, key, create) \
-    (rle *)rehHTGet(db, tname, NULL, key, create, rleNew)
+    (rle *)rehHTGet(db, tname, NULL, key, create, (rehNew_func_t)rleNew)
 
 // doesn't free t, doesn't own t
 static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)

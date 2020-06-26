@@ -22,19 +22,19 @@ typedef struct RWF_RPQ_element
     double acquired;
 } rwfze;
 
-reh *rwfzeNew()
+rwfze *rwfzeNew()
 {
     rwfze *e = zmalloc(sizeof(rwfze));
     REH_INIT(e);
     e->innate = 0;
     e->acquired = 0;
-    return (reh *) e;
+    return e;
 }
 
 #define SCORE(e) ((e)->innate+(e)->acquired)
 
 #define GET_RWFZE(arg_t, create) \
-    (rwfze *)rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew)
+    (rwfze *)rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)rwfzeNew)
 
 // This doesn't free t.
 static void removeFunc(client *c, rwfze *e, vc *t)

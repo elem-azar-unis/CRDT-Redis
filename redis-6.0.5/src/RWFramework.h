@@ -143,18 +143,21 @@ robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create);
  * const char *suffix : the suffix of the container metadata
  * robj *key : the key of the element
  * int create : 1 (or 0) if you want to create the container and the element if they don't exist (or not)
- * reh* (*p)() : The pointer to the create function of the element struct
+ * rehNew_func_t rehNew_p : The pointer to the create function of the element struct
  *
  * If define CRDT_OVERHEAD, remember to count the memory usage when creating elements by yourself.
  *
- * Note that you may wrap this function with a macro for the convenience of use. For example,
- * in remove-win CRPQ, the element type name is rwfze:
+ * Note that you can wrap this function with a macro for the convenience of use. For example,
+ * in RWF-CRPQ, the element type name is rwfze:
  *
  * #define GET_RWFZE(arg_t, create)\
- *     (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
+ *     (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)rzeNew)
  *
  * */
-reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, reh *(*create_func_ptr)());
+
+typedef reh *(*rehNew_func_t)();
+
+reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, rehNew_func_t rehNew_p);
 
 // set key(sds type) with value(value_t type) in ht(hash table type)
 #define RWFHT_SET(ht, key, value_t, value) \

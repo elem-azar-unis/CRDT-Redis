@@ -58,7 +58,7 @@ rze *rzeNew()
 }
 
 #define GET_RZE(arg_t, create) \
-    (rze *)rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
+    (rze *)rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)rzeNew)
 
 enum rz_cmd_type
 {

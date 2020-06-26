@@ -28,10 +28,10 @@ typedef struct rwf_list_element
 #undef DEFINE_A
 
 #define GET_RWFLE(arg_t, create) \
-    (rwfle *)rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, rwfleNew)
+    (rwfle *)rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, (rehNew_func_t)rwfleNew)
 
 #define GET_RWFLE_NEW(arg_t) \
-    (rwfle *)rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[3], 1, rwfleNew)
+    (rwfle *)rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[3], 1, (rehNew_func_t)rwfleNew)
 
 void acquired_update(rwfle *e, sds type, lc *t, int value)
 {
@@ -67,7 +67,7 @@ void acquired_update(rwfle *e, sds type, lc *t, int value)
 #undef AC_UPDATE_PR
 }
 
-reh *rwfleNew()
+rwfle *rwfleNew()
 {
     rwfle *e = zmalloc(sizeof(rwfle));
     REH_INIT(e);
@@ -82,7 +82,7 @@ reh *rwfleNew()
 
     e->prev = NULL;
     e->next = NULL;
-    return (reh *) e;
+    return e;
 }
 
 
