@@ -48,6 +48,9 @@ sds oz_aseToSds(oz_ase *a)
 
 oze *ozeNew()
 {
+#ifdef CRDT_OVERHEAD
+    inc_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL, 1);
+#endif
     oze *e = zmalloc(sizeof(oze));
     e->current = 0;
     e->innate = NULL;
@@ -218,28 +221,8 @@ void resort(oze *e)
     }
 }
 
-oze *ozeHTGet(redisDb *db, robj *tname, robj *key, int create)
-{
-    robj *ht = getInnerHT(db, tname, ORI_RPQ_TABLE_SUFFIX, create);
-    if (ht == NULL)return NULL;
-    robj *value = hashTypeGetValueObject(ht, key->ptr);
-    oze *e;
-    if (value == NULL)
-    {
-        if (!create)return NULL;
-        e = ozeNew();
-        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(oze *)), HASH_SET_TAKE_VALUE);
-#ifdef CRDT_OVERHEAD
-        inc_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL, 1);
-#endif
-    }
-    else
-    {
-        e = *(oze **) (value->ptr);
-        decrRefCount(value);
-    }
-    return e;
-}
+#define GET_OZE(arg_t, create) \
+    (oze *)rehHTGet(c->db, c->arg_t[1], ORI_RPQ_TABLE_SUFFIX, c->arg_t[2], create, ozeNew)
 
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
 {
@@ -269,7 +252,7 @@ void ozaddCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
-            oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 1);
+            oze *e = GET_OZE(argv, 1);
             if (LOOKUP(e))
             {
                 addReply(c, shared.ele_exist);
@@ -283,7 +266,7 @@ void ozaddCommand(client *c)
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             lc *t = sdsToLc(c->rargv[4]->ptr);
-            oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            oze *e = GET_OZE(rargv, 1);
             if (update_innate_value(e, t, v))
             {
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
@@ -304,7 +287,7 @@ void ozincrbyCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
-            oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            oze *e = GET_OZE(argv, 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -321,7 +304,7 @@ void ozincrbyCommand(client *c)
         CRDT_EFFECT
             double v;
             getDoubleFromObject(c->rargv[3], &v);
-            oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            oze *e = GET_OZE(rargv, 1);
             int changed = 0;
             for (int i = 4; i < c->rargc; i++)
             {
@@ -347,7 +330,7 @@ void ozremCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
-            oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            oze *e = GET_OZE(argv, 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -362,7 +345,7 @@ void ozremCommand(client *c)
                 RARGV_ADD_SDS(lcToSds(a->t));
             }
         CRDT_EFFECT
-            oze *e = ozeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            oze *e = GET_OZE(rargv, 1);
             for (int i = 3; i < c->rargc; i++)
             {
                 lc *t = sdsToLc(c->rargv[i]->ptr);
@@ -493,7 +476,7 @@ void ozmaxCommand(client *c)
 #ifdef CRDT_ELE_STATUS
 void ozestatusCommand(client *c)
 {
-    oze *e = ozeHTGet(c->db, c->argv[1], c->argv[2], 0);
+    oze *e = GET_OZE(argv, 0);
     if (e == NULL)
     {
         addReply(c, shared.emptyarray);
@@ -572,7 +555,7 @@ void ozoverheadCommand(client *c)
     addReplyLongLong(c, size);
 }
 
-#else
+#elif 0
 
 void ozoverheadCommand(client *c)
 {

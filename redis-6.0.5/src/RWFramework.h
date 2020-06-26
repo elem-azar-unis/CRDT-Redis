@@ -59,11 +59,11 @@ typedef struct RWF_element_header
 #define PID(h) (((reh *)(h))->pid)
 #define CURRENT(h) (((reh *)(h))->current)
 
-#define REH_INIT(h)                \
-    do                             \
-    {                              \
+#define REH_INIT(h)            \
+    do                         \
+    {                          \
         CURRENT(h) = vc_new(); \
-        PID(h) = -1;               \
+        PID(h) = -1;           \
     } while (0)
 
 #define REH_RMV_FUNC(h, t)        \
@@ -145,26 +145,16 @@ robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create);
  * int create : 1 (or 0) if you want to create the container and the element if they don't exist (or not)
  * reh* (*p)() : The pointer to the create function of the element struct
  *
- * If define CRDT_OVERHEAD, count the memory usage when creating elements.
+ * If define CRDT_OVERHEAD, remember to count the memory usage when creating elements by yourself.
  *
  * Note that you may wrap this function with a macro for the convenience of use. For example,
  * in remove-win CRPQ, the element type name is rwfze:
  *
- * #ifndef CRDT_OVERHEAD
- * #define GET_RZE(arg_t, create)\
- * (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
- * #else
- * #define RZE_HT_GET(arg_t,create)\
- * (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew, cur_db, cur_tname, SUF_RZETOTAL)
- * #endif
+ * #define GET_RWFZE(arg_t, create)\
+ *     (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
  *
  * */
-reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, reh *(*p)()
-#ifdef CRDT_OVERHEAD
-                                                                                       ,
-              redisDb *cur_db, sds cur_tname, const char *ovhd_suf
-#endif
-);
+reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, reh *(*create_func_ptr)());
 
 // set key(sds type) with value(value_t type) in ht(hash table type)
 #define RWFHT_SET(ht, key, value_t, value) \

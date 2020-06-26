@@ -98,6 +98,8 @@ long get_ovhd_count(redisDb* db,sds tname,const char* suf);
 void ozoverheadCommand(client *c);
 void rzoverheadCommand(client *c);
 void rwfzoverheadCommand(client *c);
+void rloverheadCommand(client *c);
+void rwfloverheadCommand(client *c);
 #endif
 
 #ifdef CRDT_OPCOUNT

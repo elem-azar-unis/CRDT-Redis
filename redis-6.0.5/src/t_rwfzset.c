@@ -33,13 +33,8 @@ reh *rwfzeNew()
 
 #define SCORE(e) ((e)->innate+(e)->acquired)
 
-#ifndef CRDT_OVERHEAD
-#define GET_RZE(arg_t, create)\
-(rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew)
-#else
-#define GET_RZE(arg_t,create)\
-(rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew, cur_db, cur_tname, SUF_RWFZETOTAL)
-#endif
+#define GET_RWFZE(arg_t, create) \
+    (rwfze *)rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rwfzeNew)
 
 // This doesn't free t.
 static void removeFunc(client *c, rwfze *e, vc *t)
@@ -65,14 +60,14 @@ void rwfzaddCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
-            rwfze *e = GET_RZE(argv, 1);
+            rwfze *e = GET_RWFZE(argv, 1);
             PREPARE_PRECOND_ADD(e);
             ADD_CR_NON_RMV(e);
         CRDT_EFFECT
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = CR_GET_LAST;
-            rwfze *e = GET_RZE(rargv, 1);
+            rwfze *e = GET_RWFZE(rargv, 1);
             removeFunc(c, e, t);
             if (insertCheck((reh *) e, t))
             {
@@ -96,14 +91,14 @@ void rwfzincrbyCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
-            rwfze *e = GET_RZE(argv, 0);
+            rwfze *e = GET_RWFZE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
             ADD_CR_NON_RMV(e);
         CRDT_EFFECT
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = CR_GET_LAST;
-            rwfze *e = GET_RZE(rargv, 1);
+            rwfze *e = GET_RWFZE(rargv, 1);
             removeFunc(c, e, t);
             if (updateCheck((reh *) e, t))
             {
@@ -125,11 +120,11 @@ void rwfzremCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
-            rwfze *e = GET_RZE(argv, 0);
+            rwfze *e = GET_RWFZE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
             ADD_CR_RMV(e);
         CRDT_EFFECT
-            rwfze *e = GET_RZE(rargv, 1);
+            rwfze *e = GET_RWFZE(rargv, 1);
             vc *t = CR_GET_LAST;
             removeFunc(c, e, t);
             vc_delete(t);
@@ -242,7 +237,7 @@ void rwfzmaxCommand(client *c)
 #ifdef CRDT_ELE_STATUS
 void rwfzestatusCommand(client *c)
 {
-    rwfze *e = GET_RZE(argv, 0);
+    rwfze *e = GET_RWFZE(argv, 0);
     if (e == NULL)
     {
         addReply(c, shared.emptyarray);
@@ -298,7 +293,7 @@ void rwfzoverheadCommand(client *c)
     addReplyLongLong(c, size);
 }
 
-#else
+#elif 0
 
 void rwfzoverheadCommand(client *c)
 {

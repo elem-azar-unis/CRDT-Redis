@@ -28,10 +28,10 @@ typedef struct rwf_list_element
 #undef DEFINE_A
 
 #define GET_RWFLE(arg_t, create) \
-(rwfle *) rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, rwfleNew)
+    (rwfle *)rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, rwfleNew)
 
 #define GET_RWFLE_NEW(arg_t) \
-(rwfle *) rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[3], 1, rwfleNew)
+    (rwfle *)rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[3], 1, rwfleNew)
 
 void acquired_update(rwfle *e, sds type, lc *t, int value)
 {
@@ -299,5 +299,11 @@ void rwfllistCommand(client *c)
 void rwflopcountCommand(client *c)
 {
     addReplyLongLong(c, get_op_count());
+}
+#endif
+
+#ifdef CRDT_OVERHEAD
+void rwfloverheadCommand(client *c)
+{
 }
 #endif

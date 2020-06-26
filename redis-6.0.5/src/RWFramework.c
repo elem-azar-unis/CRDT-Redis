@@ -20,24 +20,17 @@ robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create)
     return ht;
 }
 
-reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, reh *(*p)()
-#ifdef CRDT_OVERHEAD
-        ,redisDb *cur_db, sds cur_tname, const char *ovhd_suf
-#endif
-)
+reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, reh *(*create_func_ptr)())
 {
     robj *ht = getInnerHT(db, tname, suffix, create);
-    if (ht == NULL)return NULL;
+    if (ht == NULL) return NULL;
     robj *value = hashTypeGetValueObject(ht, key->ptr);
     reh *e;
     if (value == NULL)
     {
-        if (!create)return NULL;
-        e = (*p)();
+        if (!create) return NULL;
+        e = (*create_func_ptr)();
         RWFHT_SET(ht, key->ptr, reh*, e);
-#ifdef CRDT_OVERHEAD
-        inc_ovhd_count(cur_db, cur_tname, ovhd_suf, 1);
-#endif
     }
     else
     {

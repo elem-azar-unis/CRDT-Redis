@@ -109,6 +109,9 @@ typedef struct rw_list_element
 
 rle *rleNew()
 {
+#ifdef CRDT_OVERHEAD
+    inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
+#endif
     rle *e = zmalloc(sizeof(rle));
     e->oid = NULL;
     e->pos_id = NULL;
@@ -123,28 +126,8 @@ rle *rleNew()
     return e;
 }
 
-rle *rleHTGet(redisDb *db, robj *tname, robj *key, int create)
-{
-    robj *ht = getInnerHT(db, tname, NULL, create);
-    if (ht == NULL)return NULL;
-    robj *value = hashTypeGetValueObject(ht, key->ptr);
-    rle *e;
-    if (value == NULL)
-    {
-        if (!create)return NULL;
-        e = rleNew();
-        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rle *)), HASH_SET_TAKE_VALUE);
-#ifdef CRDT_OVERHEAD
-        inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
-#endif
-    }
-    else
-    {
-        e = *(rle **) (value->ptr);
-        decrRefCount(value);
-    }
-    return e;
-}
+#define GET_RLE(db, tname, key, create) \
+    (rle *)rehHTGet(db, tname, NULL, key, create, rleNew)
 
 // doesn't free t, doesn't own t
 static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
@@ -152,7 +135,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     vc_update(getCurrent(ht), t);
     server.dirty++;
 
-    rle *e = rleHTGet(db, argv[0], argv[2], 1);
+    rle *e = GET_RLE(db, argv[0], argv[2], 1);
     int pre_insert = LOOKUP(e);
     // The element is newly inserted.
     if (e->oid == NULL)
@@ -173,7 +156,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         }
         else
         {
-            rle *pre = rleHTGet(db, argv[0], argv[1], 0);
+            rle *pre = GET_RLE(db, argv[0], argv[1], 0);
             rle *p, *q;
             if (pre != NULL)
                 p = pre;
@@ -228,7 +211,7 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     vc_update(getCurrent(ht), t);
     server.dirty++;
 
-    rle *e = rleHTGet(db, argv[0], argv[1], 1);
+    rle *e = GET_RLE(db, argv[0], argv[1], 1);
     sds type = argv[2]->ptr;
     sdstolower(type);
     long long value;
@@ -281,7 +264,7 @@ static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     vc_update(getCurrent(ht), t);
     server.dirty++;
 
-    rle *e = rleHTGet(db, argv[0], argv[1], 1);
+    rle *e = GET_RLE(db, argv[0], argv[1], 1);
     int pre_rmv = LOOKUP(e);
     vc *r = vc_dup(t);
     listAddNodeTail(e->rset, r);
@@ -362,7 +345,7 @@ void rlinsertCommand(client *c)
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 9);
             for (int i = 5; i < 9; ++i)
                 CHECK_ARG_TYPE_INT(c->argv[i]);
-            rle *pre = rleHTGet(c->db, c->argv[1], c->argv[2], 0);
+            rle *pre = GET_RLE(c->db, c->argv[1], c->argv[2], 0);
             if (pre == NULL)
             {
                 sdstolower(c->argv[2]->ptr);
@@ -373,7 +356,7 @@ void rlinsertCommand(client *c)
                     return;
                 }
             }
-            rle *e = rleHTGet(c->db, c->argv[1], c->argv[3], 1);
+            rle *e = GET_RLE(c->db, c->argv[1], c->argv[3], 1);
             if (LOOKUP(e))
             {
                 addReply(c, shared.ele_exist);
@@ -422,7 +405,7 @@ void rlupdateCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 5);
             CHECK_ARG_TYPE_INT(c->argv[4]);
-            rle *e = rleHTGet(c->db, c->argv[1], c->argv[2], 0);
+            rle *e = GET_RLE(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -452,7 +435,7 @@ void rlremCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 3);
-            rle *e = rleHTGet(c->db, c->argv[1], c->argv[2], 0);
+            rle *e = GET_RLE(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -510,5 +493,12 @@ void rllistCommand(client *c)
 void rlopcountCommand(client *c)
 {
     addReplyLongLong(c, get_op_count());
+}
+#endif
+
+#ifdef CRDT_OVERHEAD
+void rloverheadCommand(client *c)
+{
+    
 }
 #endif

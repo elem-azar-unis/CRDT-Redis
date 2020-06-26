@@ -1133,6 +1133,14 @@ struct redisCommand redisCommandTable[] = {
     {"rwfzoverhead", rwfzoverheadCommand, 2,
      "read-only fast",
      0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rloverhead", rloverheadCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
+
+    {"rwfloverhead", rwfloverheadCommand, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
 #endif
 
 #ifdef CRDT_OPCOUNT

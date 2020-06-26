@@ -45,6 +45,9 @@ typedef struct RW_RPQ_element
 
 rze *rzeNew()
 {
+#ifdef CRDT_OVERHEAD
+    inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
+#endif
     rze *e = zmalloc(sizeof(rze));
     e->current = vc_new();
     e->value = NULL;
@@ -54,28 +57,8 @@ rze *rzeNew()
     return e;
 }
 
-rze *rzeHTGet(redisDb *db, robj *tname, robj *key, int create)
-{
-    robj *ht = getInnerHT(db, tname, RW_RPQ_TABLE_SUFFIX, create);
-    if (ht == NULL)return NULL;
-    robj *value = hashTypeGetValueObject(ht, key->ptr);
-    rze *e;
-    if (value == NULL)
-    {
-        if (!create)return NULL;
-        e = rzeNew();
-        hashTypeSet(ht, key->ptr, sdsnewlen(&e, sizeof(rze *)), HASH_SET_TAKE_VALUE);
-#ifdef CRDT_OVERHEAD
-        inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
-#endif
-    }
-    else
-    {
-        e = *(rze **) (value->ptr);
-        decrRefCount(value);
-    }
-    return e;
-}
+#define GET_RZE(arg_t, create) \
+    (rze *)rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, rzeNew)
 
 enum rz_cmd_type
 {
@@ -370,7 +353,7 @@ void rzaddCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
-            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 1);
+            rze *e = GET_RZE(argv, 1);
             if (LOOKUP(e))
             {
                 addReply(c, shared.ele_exist);
@@ -381,7 +364,7 @@ void rzaddCommand(client *c)
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = sdsToVC(c->rargv[4]->ptr);
-            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            rze *e = GET_RZE(rargv, 1);
             if (vc_causally_ready(e->current, t))
             {
                 insertFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
@@ -405,7 +388,7 @@ void rzincrbyCommand(client *c)
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
-            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            rze *e = GET_RZE(argv, 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -416,7 +399,7 @@ void rzincrbyCommand(client *c)
             double v;
             getDoubleFromObject(c->rargv[3], &v);
             vc *t = sdsToVC(c->rargv[4]->ptr);
-            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            rze *e = GET_RZE(rargv, 1);
             if (vc_causally_ready(e->current, t))
             {
                 increaseFunc(e, c->db, c->rargv[1], c->rargv[2], v, t);
@@ -439,7 +422,7 @@ void rzremCommand(client *c)
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
-            rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+            rze *e = GET_RZE(argv, 0);
             if (e == NULL || !LOOKUP(e))
             {
                 addReply(c, shared.ele_nexist);
@@ -448,7 +431,7 @@ void rzremCommand(client *c)
             RARGV_ADD_SDS(vc_now(e->current));
         CRDT_EFFECT
             vc *t = sdsToVC(c->rargv[3]->ptr);
-            rze *e = rzeHTGet(c->db, c->rargv[1], c->rargv[2], 1);
+            rze *e = GET_RZE(rargv, 1);
             if (vc_causally_ready(e->current, t))
             {
                 removeFunc(e, c->db, c->rargv[1], c->rargv[2], t);
@@ -569,7 +552,7 @@ void rzmaxCommand(client *c)
 #ifdef CRDT_ELE_STATUS
 void rzestatusCommand(client *c)
 {
-    rze *e = rzeHTGet(c->db, c->argv[1], c->argv[2], 0);
+    rze *e = GET_RZE(argv, 0);
     if (e == NULL)
     {
         addReply(c, shared.emptyarray);
@@ -649,7 +632,7 @@ void rzoverheadCommand(client *c)
     addReplyLongLong(c, size);
 }
 
-#else
+#elif 0
 
 void rzoverheadCommand(client *c)
 {
