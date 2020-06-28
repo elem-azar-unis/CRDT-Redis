@@ -11,7 +11,7 @@
 #define RLE_RSE_SIZE (VC_SIZE + sizeof(listNode))
 #define RLE_OPS_SIZE (sizeof(rl_cmd) + sizeof(listNode) + VC_SIZE)
 
-#define RLE_SIZE_ADDITIONAL(e) (sdslen(e->oid) + sdslen(e->content) LEID_SIZE(e->pos_id))
+#define RLE_SIZE_ADDITIONAL(e) (sdslen(e->oid) + sdslen(e->content) + LEID_SIZE(e->pos_id))
 #define RLE_SIZE_ESSENTIAL(e) (2 * sizeof(sds) + sdslen(e->oid) + sdslen(e->content) + 2 * sizeof(rle *) + (1 + LIST_PR_NORMAL_NUM) * sizeof(int))
 
 #endif
