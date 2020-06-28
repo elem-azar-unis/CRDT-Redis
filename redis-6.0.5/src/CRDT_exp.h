@@ -95,7 +95,7 @@ long get_ovhd_count(redisDb* db,sds tname,const char* suf);
 */
 
 static long __mem_ovhd = 0;
-static inline void ovhd_inc(int inc)
+static inline void ovhd_inc(long inc)
 {
     __mem_ovhd += inc;
 }
