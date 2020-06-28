@@ -7,8 +7,8 @@
 #include "list_basics.h"
 #include "lamport_clock.h"
 
-#define DEFINE_NPR(p) int p;
-#define DEFINE_A(p) lc *p##_t;
+#define DEFINE_NORMAL(p) int p;
+#define PROPERTY_LC(p) lc *p##_t;
 typedef struct rwf_list_element
 {
     reh header;
@@ -17,15 +17,15 @@ typedef struct rwf_list_element
     lc *current;
     sds content;
 
-    FORALL(DEFINE_A)
-    FORALL_NPR(DEFINE_NPR)
+    FORALL(PROPERTY_LC)
+    FORALL_NORMAL(DEFINE_NORMAL)
     int property;
 
     struct rwf_list_element *prev;
     struct rwf_list_element *next;
 } rwfle;
-#undef DEFINE_NPR
-#undef DEFINE_A
+#undef DEFINE_NORMAL
+#undef PROPERTY_LC
 
 #ifdef CRDT_OVERHEAD
 
@@ -42,7 +42,7 @@ static int rwfle_overhead(rwfle* e)
     if (e->T##_t != NULL) \
         ovhd += sizeof(lc);
 
-    FORALL(TS_OVHD);                                            // FORALL(DEFINE_A)
+    FORALL(TS_OVHD);                                            // FORALL(PROPERTY_LC)
 
 #undef TS_OVHD
 
@@ -51,9 +51,9 @@ static int rwfle_overhead(rwfle* e)
         ovhd += 2 * sizeof(sds);
         ovhd += e->oid == NULL ? 0 : sdslen(e->oid);            // sds oid;
         ovhd += e->content == NULL ? 0 : sdslen(e->content);    // sds content;
-#define NPR_OVHD(T) ovhd += sizeof(int);
-        FORALL_NPR(NPR_OVHD);                                   // FORALL_NPR(DEFINE_NPR)
-#undef NPR_OVHD
+#define NORMAL_OVHD(T) ovhd += sizeof(int);
+        FORALL_NORMAL(NORMAL_OVHD);                             // FORALL_NORMAL(DEFINE_NORMAL)
+#undef NORMAL_OVHD
         ovhd += sizeof(int);                                    // int property;
         ovhd += 2 * sizeof(rwfle *);                            // rwfle *prev, *next;
     }
@@ -70,7 +70,7 @@ static int rwfle_overhead(rwfle* e)
 void acquired_update(rwfle *e, sds type, lc *t, int value)
 {
     sdstolower(type);
-#define AC_UPDATE_NPR(T)\
+#define AC_UPDATE_NORMAL(T)\
     if(strcmp(type,#T)==0)\
     {\
         if((e->T##_t)==NULL || lc_cmp(e->T##_t,t)<=0)\
@@ -81,9 +81,9 @@ void acquired_update(rwfle *e, sds type, lc *t, int value)
         }\
         return;\
     }
-    FORALL_NPR(AC_UPDATE_NPR);
-#undef AC_UPDATE_NPR
-#define AC_UPDATE_PR(T)\
+    FORALL_NORMAL(AC_UPDATE_NORMAL);
+#undef AC_UPDATE_NORMAL
+#define AC_UPDATE_BITMAP(T)\
     if(strcmp(type,#T)==0)\
     {\
         if((e->T##_t)==NULL || lc_cmp(e->T##_t,t)<=0)\
@@ -97,8 +97,8 @@ void acquired_update(rwfle *e, sds type, lc *t, int value)
         }\
         return;\
     }
-    FORALL_PR(AC_UPDATE_PR);
-#undef AC_UPDATE_PR
+    FORALL_BITMAP(AC_UPDATE_BITMAP);
+#undef AC_UPDATE_BITMAP
 }
 
 rwfle *rwfleNew()
@@ -235,10 +235,10 @@ void rwflinsertCommand(client *c)
                 }
 
 
-#define IN_UPDATE_NPR(T)\
+#define IN_UPDATE_NORMAL(T)\
     if(e->T##_t==NULL) e->T=T;
 
-#define IN_UPDATE_PR(T)\
+#define IN_UPDATE_BITMAP(T)\
     if(e->T##_t==NULL)\
     {\
         if((property & __##T)==0)\
@@ -250,11 +250,11 @@ void rwflinsertCommand(client *c)
                 getLongLongFromObject(c->rargv[5], &font);
                 getLongLongFromObject(c->rargv[6], &size);
                 getLongLongFromObject(c->rargv[7], &color);
-                FORALL_NPR(IN_UPDATE_NPR);
+                FORALL_NORMAL(IN_UPDATE_NORMAL);
                 getLongLongFromObject(c->rargv[8], &property);
-                FORALL_PR(IN_UPDATE_PR);
-#undef IN_UPDATE_NPR
-#undef IN_UPDATE_PR
+                FORALL_BITMAP(IN_UPDATE_BITMAP);
+#undef IN_UPDATE_NORMAL
+#undef IN_UPDATE_BITMAP
                 server.dirty++;
             }
             vc_delete(t);
@@ -342,7 +342,7 @@ void rwfllistCommand(client *c)
             addReplyBulkCBuffer(c, e->oid, sdslen(e->oid));
             addReplyBulkCBuffer(c, e->content, sdslen(e->content));
 #define TMP_ACTION(p) addReplyBulkLongLong(c, e->p);
-            FORALL_NPR(TMP_ACTION);
+            FORALL_NORMAL(TMP_ACTION);
 #undef TMP_ACTION
             addReplyBulkLongLong(c, e->property);
         }

@@ -5,17 +5,17 @@
 #include "RWFramework.h"
 #include "list_basics.h"
 
-#define DEFINE_NPR(p) int p;
-#define DEFINE_A(p) vc *p##_t;
+#define DEFINE_NORMAL(p) int p;
+#define PROPERTY_VC(p) vc *p##_t;
 typedef struct rlist_aset_element
 {
     vc *t;
-    FORALL(DEFINE_A)
-    FORALL_NPR(DEFINE_NPR)
+    FORALL(PROPERTY_VC)
+    FORALL_NORMAL(DEFINE_NORMAL)
     int property;
 } rl_ase;
-#undef DEFINE_NPR
-#undef DEFINE_A
+#undef DEFINE_NORMAL
+#undef PROPERTY_VC
 
 rl_ase *rl_aseNew(vc *t)
 {
@@ -181,7 +181,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     getLongLongFromObject(argv[4], &font);
     getLongLongFromObject(argv[5], &size);
     getLongLongFromObject(argv[6], &color);
-    FORALL_NPR(TMP_ACTION);
+    FORALL_NORMAL(TMP_ACTION);
     getLongLongFromObject(argv[7], &property);
     a->property = property;
 #undef TMP_ACTION
@@ -226,7 +226,7 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         if (vc_cmp(a->t, t) == VC_LESS)
             do
             {
-#define UPD_NPR(T)\
+#define UPD_NORMAL(T)\
     if(strcmp(type,#T)==0)\
     {\
         if(vc_cmp(a->T##_t, t) <0)\
@@ -237,9 +237,9 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         }\
         break;\
     }
-                FORALL_NPR(UPD_NPR);
-#undef UPD_NPR
-#define UPD_PR(T)\
+                FORALL_NORMAL(UPD_NORMAL);
+#undef UPD_NORMAL
+#define UPD_BITMAP(T)\
     if(strcmp(type,#T)==0)\
     {\
         if(vc_cmp(a->T##_t, t) <0)\
@@ -253,8 +253,8 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         }\
         break;\
     }
-                FORALL_PR(UPD_PR);
-#undef UPD_PR
+                FORALL_BITMAP(UPD_BITMAP);
+#undef UPD_BITMAP
             } while (0);
     }
 }
@@ -481,7 +481,7 @@ void rllistCommand(client *c)
             addReplyBulkCBuffer(c, e->oid, sdslen(e->oid));
             addReplyBulkCBuffer(c, e->content, sdslen(e->content));
 #define TMP_ACTION(p) addReplyBulkLongLong(c, e->value->p);
-            FORALL_NPR(TMP_ACTION);
+            FORALL_NORMAL(TMP_ACTION);
 #undef TMP_ACTION
             addReplyBulkLongLong(c, e->value->property);
         }

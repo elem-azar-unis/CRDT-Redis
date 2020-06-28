@@ -9,18 +9,20 @@
 #include "RWFramework.h"
 #include "server.h"
 
-#define FORALL_NPR(ACTION) \
+#define FORALL_NORMAL(ACTION) \
     ACTION(font)           \
     ACTION(size)           \
     ACTION(color)
 
-#define FORALL_PR(ACTION) \
+#define FORALL_BITMAP(ACTION) \
     ACTION(bold)          \
     ACTION(italic)        \
     ACTION(underline)
 
-#define FORALL(ACTION) FORALL_NPR(ACTION) \
-FORALL_PR(ACTION)
+#define FORALL(ACTION) FORALL_NORMAL(ACTION) \
+FORALL_BITMAP(ACTION)
+
+#define LIST_PR_NUM 6
 
 enum property_type
 {
