@@ -15,7 +15,7 @@
  *
  * For the header, put it at the top of your actual struct to 'inherit' it.
  * e.g.
- * typedef struct RW_RPQ_element
+ * typedef struct RWF_RPQ_element
  * {
  *     reh header;
  *     double innate;
@@ -27,7 +27,7 @@
  * rwfze *rwfzeNew()
  * {
  *     rwfze *e = zmalloc(sizeof(rwfze));
- *     REH_INIT((reh *) e);
+ *     REH_INIT(e);
  *     e->innate = 0;
  *     e->acquired = 0;
  *     return e;
@@ -35,11 +35,11 @@
  *
  * And add the remove macro to your actual element remove effect function.
  * e.g.
- * void removeFunc(client *c, rwfze *e, vc *t)
+ * static void removeFunc(client *c, rwfze *e, vc *t)
  * {
- *     if (removeCheck(e, t))
+ *     if (removeCheck((reh *)e, t))
  *     {
- *         REH_RMV_FUNC(e,t);
+ *         REH_RMV_FUNC(e, t);
  *         e->acquired = 0;
  *         e->innate = 0;
  *         robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
@@ -54,6 +54,10 @@ typedef struct RWF_element_header
     int pid;
     vc *current;
 } reh;
+
+#ifdef CRDT_OVERHEAD
+#define REH_SIZE_ADDITIONAL VC_SIZE
+#endif
 
 // The access macro for fields in header.
 #define PID(h) (((reh *)(h))->pid)

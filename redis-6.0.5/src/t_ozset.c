@@ -8,11 +8,18 @@
 #include "lamport_clock.h"
 
 #ifdef CRDT_OVERHEAD
+/*
 #define SUF_OZETOTAL "ozetotal"
 #define SUF_ASET "ozaset"
 #define SUF_RSET "ozrset"
 static redisDb *cur_db = NULL;
 static sds cur_tname = NULL;
+*/
+
+#define OZE_SIZE (sizeof(oze) + 2 * sizeof(list))
+#define OZE_ASE_SIZE (sizeof(oz_ase) + sizeof(lc) + sizeof(listNode))
+#define OZE_RSE_SIZE (sizeof(lc) + sizeof(listNode))
+
 #endif
 
 #define ORI_RPQ_TABLE_SUFFIX "_ozets_"
@@ -37,10 +44,6 @@ typedef struct ORI_RPQ_element
     list *rset;
 } oze;
 
-#define OZESIZE(e) (sizeof(oze) + 2 * sizeof(list) \
-                    + listLength((e)->aset) * (sizeof(oz_ase) + sizeof(lc) + sizeof(listNode)) \
-                    + listLength((e)->rset) * (sizeof(lc) + sizeof(listNode)))
-
 sds oz_aseToSds(oz_ase *a)
 {
     return sdscatprintf(sdsempty(), "(%d,%d),%f,%f,%f", a->t->x, a->t->id, a->x, a->inc, a->count);
@@ -49,7 +52,8 @@ sds oz_aseToSds(oz_ase *a)
 oze *ozeNew()
 {
 #ifdef CRDT_OVERHEAD
-    inc_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL, 1);
+    // inc_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL, 1);
+    ovhd_inc(OZE_SIZE);
 #endif
     oze *e = zmalloc(sizeof(oze));
     e->current = 0;
@@ -60,6 +64,7 @@ oze *ozeNew()
     return e;
 }
 
+/*
 #ifdef CRDT_OVERHEAD
 
 robj *_get_ovhd_count(redisDb *db, sds tname, const char *suf)
@@ -89,7 +94,7 @@ long get_ovhd_count(redisDb *db, sds tname, const char *suf)
 }
 
 #endif
-
+*/
 
 oz_ase *asetGet(oze *e, lc *t, int delete)
 {
@@ -105,7 +110,8 @@ oz_ase *asetGet(oze *e, lc *t, int delete)
             {
                 listDelNode(e->aset, ln);
 #ifdef CRDT_OVERHEAD
-                inc_ovhd_count(cur_db, cur_tname, SUF_ASET, -1);
+                // inc_ovhd_count(cur_db, cur_tname, SUF_ASET, -1);
+                ovhd_inc(-OZE_ASE_SIZE);
 #endif
             }
             return a;
@@ -128,7 +134,8 @@ lc *rsetGet(oze *e, lc *t, int delete)
             {
                 listDelNode(e->rset, ln);
 #ifdef CRDT_OVERHEAD
-                inc_ovhd_count(cur_db, cur_tname, SUF_RSET, -1);
+                // inc_ovhd_count(cur_db, cur_tname, SUF_RSET, -1);
+                ovhd_inc(-OZE_RSE_SIZE);
 #endif
             }
             return a;
@@ -146,7 +153,8 @@ oz_ase *add_ase(oze *e, lc *t)
     a->count = 0;
     listAddNodeTail(e->aset, a);
 #ifdef CRDT_OVERHEAD
-    inc_ovhd_count(cur_db, cur_tname, SUF_ASET, 1);
+    // inc_ovhd_count(cur_db, cur_tname, SUF_ASET, 1);
+    ovhd_inc(OZE_ASE_SIZE);
 #endif
     return a;
 }
@@ -190,7 +198,9 @@ void remove_tag(oze *e, lc *t)
     lc *nt = lc_dup(t);
     listAddNodeTail(e->rset, nt);
 #ifdef CRDT_OVERHEAD
-    inc_ovhd_count(cur_db, cur_tname, SUF_RSET, 1);
+    // inc_ovhd_count(cur_db, cur_tname, SUF_RSET, 1);
+    ovhd_inc(OZE_RSE_SIZE);
+
 #endif
     oz_ase *a;
     if ((a = asetGet(e, t, 1)) != NULL)
@@ -245,9 +255,11 @@ robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
 
 void ozaddCommand(client *c)
 {
+/*
 #ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
+*/
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
@@ -280,9 +292,11 @@ void ozaddCommand(client *c)
 
 void ozincrbyCommand(client *c)
 {
+/*
 #ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
+*/
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
@@ -324,9 +338,11 @@ void ozincrbyCommand(client *c)
 
 void ozremCommand(client *c)
 {
+/*
 #ifdef CRDT_OVERHEAD
     PRE_SET;
 #endif
+*/
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
@@ -522,7 +538,7 @@ void ozestatusCommand(client *c)
 #ifdef CRDT_OPCOUNT
 void ozopcountCommand(client *c)
 {
-    addReplyLongLong(c, get_op_count());
+    addReplyLongLong(c, op_count_get());
 }
 #endif
 
@@ -548,14 +564,18 @@ void ozopcountCommand(client *c)
 
 void ozoverheadCommand(client *c)
 {
+    /*
     PRE_SET;
-    long long size = get_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL) * (sizeof(oze) + 2 * sizeof(list))
-                     + get_ovhd_count(cur_db, cur_tname, SUF_ASET) * (sizeof(oz_ase) + sizeof(lc) + sizeof(listNode))
-                     + get_ovhd_count(cur_db, cur_tname, SUF_RSET) * (sizeof(lc) + sizeof(listNode));
-    addReplyLongLong(c, size);
+    long long size = get_ovhd_count(cur_db, cur_tname, SUF_OZETOTAL) * OZE_SIZE
+                     + get_ovhd_count(cur_db, cur_tname, SUF_ASET) * OZE_ASE_SIZE
+                     + get_ovhd_count(cur_db, cur_tname, SUF_RSET) * OZE_RSE_SIZE;
+     */
+    addReplyLongLong(c, ovhd_get());
 }
 
 #elif 0
+
+#define OZESIZE(e) (OZE_SIZE + listLength((e)->aset) * OZE_ASE_SIZE + listLength((e)->rset) * OZE_RSE_SIZE)
 
 void ozoverheadCommand(client *c)
 {

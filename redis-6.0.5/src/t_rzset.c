@@ -6,17 +6,13 @@
 #include "CRDT.h"
 #include "RWFramework.h"
 
-#ifdef CRDT_OVERHEAD
-static long rze_count=0;
-#endif
-
 #define RW_RPQ_TABLE_SUFFIX "_rzets_"
 #define LOOKUP(e) (listLength((e)->aset) != 0 && listLength((e)->rset) == 0)
 #define SCORE(e) ((e)->value->x + (e)->value->inc)
-#define RZESIZE(e) (sizeof(rze) + 3 * sizeof(list) + VC_SIZE(e->current) \
-                    + listLength((e)->aset) * (sizeof(rz_ase) + sizeof(listNode) + VC_SIZE(e->current)) \
-                    + listLength((e)->rset) * (VC_SIZE(e->current) + sizeof(listNode))\
-                    + listLength((e)->ops) * (sizeof(rz_cmd) + sizeof(listNode) + VC_SIZE(e->current)))
+#define RZESIZE(e) (sizeof(rze) + 3 * sizeof(list) + VC_SIZE \
+                    + listLength((e)->aset) * (sizeof(rz_ase) + sizeof(listNode) + VC_SIZE) \
+                    + listLength((e)->rset) * (VC_SIZE + sizeof(listNode))\
+                    + listLength((e)->ops) * (sizeof(rz_cmd) + sizeof(listNode) + VC_SIZE))
 
 typedef struct rzset_aset_element
 {
@@ -346,9 +342,6 @@ void notifyLoop(rze *e, redisDb *db)
 
 void rzaddCommand(client *c)
 {
-#ifdef CRDT_OVERHEAD
-    PRE_SET;
-#endif
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
@@ -381,9 +374,6 @@ void rzaddCommand(client *c)
 
 void rzincrbyCommand(client *c)
 {
-#ifdef CRDT_OVERHEAD
-    PRE_SET;
-#endif
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
@@ -416,9 +406,6 @@ void rzincrbyCommand(client *c)
 
 void rzremCommand(client *c)
 {
-#ifdef CRDT_OVERHEAD
-    PRE_SET;
-#endif
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
@@ -600,7 +587,7 @@ void rzestatusCommand(client *c)
 #ifdef CRDT_OPCOUNT
 void rzopcountCommand(client *c)
 {
-    addReplyLongLong(c, get_op_count());
+    addReplyLongLong(c, op_count_get());
 }
 #endif
 
@@ -626,10 +613,7 @@ void rzopcountCommand(client *c)
 
 void rzoverheadCommand(client *c)
 {
-    PRE_SET;
-    long long size = get_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL) *
-                     (sizeof(rze) + sizeof(vc) + server.p2p_count * sizeof(int));
-    addReplyLongLong(c, size);
+    addReplyLongLong(c, ovhd_get());
 }
 
 #elif 0

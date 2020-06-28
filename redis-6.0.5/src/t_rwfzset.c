@@ -7,13 +7,10 @@
 #include "RWFramework.h"
 
 #ifdef CRDT_OVERHEAD
-#define SUF_RWFZETOTAL "rwfzetotal"
-static redisDb *cur_db = NULL;
-static sds cur_tname = NULL;
+#define RWFZE_SIZE (sizeof(rwfze) + REH_SIZE_ADDITIONAL)
 #endif
 
 #define RWF_RPQ_TABLE_SUFFIX "_rwfzets_"
-#define RWFZESIZE(e) (sizeof(rwfze) + sizeof(vc) + CURRENT(e)->size * sizeof(int))
 
 typedef struct RWF_RPQ_element
 {
@@ -53,9 +50,6 @@ static void removeFunc(client *c, rwfze *e, vc *t)
 
 void rwfzaddCommand(client *c)
 {
-#ifdef CRDT_OVERHEAD
-    PRE_SET;
-#endif
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
@@ -84,9 +78,6 @@ void rwfzaddCommand(client *c)
 
 void rwfzincrbyCommand(client *c)
 {
-#ifdef CRDT_OVERHEAD
-    PRE_SET;
-#endif
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
@@ -114,9 +105,6 @@ void rwfzincrbyCommand(client *c)
 
 void rwfzremCommand(client *c)
 {
-#ifdef CRDT_OVERHEAD
-    PRE_SET;
-#endif
     CRDT_BEGIN
         CRDT_PREPARE
             CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
@@ -261,7 +249,7 @@ void rwfzestatusCommand(client *c)
 #ifdef CRDT_OPCOUNT
 void rwfzopcountCommand(client *c)
 {
-    addReplyLongLong(c, get_op_count());
+    addReplyLongLong(c, op_count_get());
 }
 #endif
 
@@ -287,10 +275,7 @@ void rwfzopcountCommand(client *c)
 
 void rwfzoverheadCommand(client *c)
 {
-    PRE_SET;
-    long long size = get_ovhd_count(cur_db, cur_tname, SUF_RWFZETOTAL) *
-                     (sizeof(rwfze) + sizeof(vc) + server.p2p_count * sizeof(int));
-    addReplyLongLong(c, size);
+    addReplyLongLong(c, ovhd_get());
 }
 
 #elif 0
@@ -320,8 +305,7 @@ void rwfzoverheadCommand(client *c)
     {
         sds value = hashTypeCurrentObjectNewSds(hi, OBJ_HASH_VALUE);
         rwfze *e = *(rwfze **) value;
-        //size += rzeSize(e);
-        size += RWFZESIZE(e);
+        size += RWFZE_SIZE;
         sdsfree(value);
     }
     hashTypeReleaseIterator(hi);
@@ -332,7 +316,7 @@ void rwfzoverheadCommand(client *c)
         // Not implemented. We show the overhead calculation method:
         // size += (size of the ziplist structure itself) + (size of keys and values);
         // Iterate the ziplist to get each rwfze* e;
-        // size += rzeSize(e);
+        // size += RWFZE_SIZE;
     }
     else if (ht->encoding == OBJ_ENCODING_HT)
     {
@@ -348,7 +332,7 @@ void rwfzoverheadCommand(client *c)
             sds value = dictGetVal(de);
             size += sdsAllocSize(key) + sdsAllocSize(value);
             rwfze *e = *(rwfze **) value;
-            size += rzeSize(e);
+            size += RWFZE_SIZE;
         }
         dictReleaseIterator(di);
     }

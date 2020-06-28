@@ -90,10 +90,19 @@ void CRDT_log(const char *fmt, ...)
 do{\
    cur_db=c->db;cur_tname=c->argv[1]->ptr;\
 }while(0)
-robj* _get_ovhd_count(redisDb* db,sds tname,const char* suf);
 void inc_ovhd_count(redisDb* db,sds tname,const char* suf,long i);
 long get_ovhd_count(redisDb* db,sds tname,const char* suf);
 */
+
+static long __mem_ovhd = 0;
+static inline void ovhd_inc(int inc)
+{
+    __mem_ovhd += inc;
+}
+static inline long ovhd_get()
+{
+    return __mem_ovhd;
+}
 
 void ozoverheadCommand(client *c);
 void rzoverheadCommand(client *c);
@@ -106,7 +115,7 @@ void rwfloverheadCommand(client *c);
 
 static int __op_count = 0;
 #define OPCOUNT_ISTR __op_count++;
-static inline int get_op_count()
+static inline int op_count_get()
 {
     return __op_count;
 }

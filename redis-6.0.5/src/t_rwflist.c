@@ -298,12 +298,13 @@ void rwfllistCommand(client *c)
 #ifdef CRDT_OPCOUNT
 void rwflopcountCommand(client *c)
 {
-    addReplyLongLong(c, get_op_count());
+    addReplyLongLong(c, op_count_get());
 }
 #endif
 
 #ifdef CRDT_OVERHEAD
 void rwfloverheadCommand(client *c)
 {
+    addReplyLongLong(c, ovhd_get());
 }
 #endif
