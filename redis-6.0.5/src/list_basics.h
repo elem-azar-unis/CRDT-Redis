@@ -97,4 +97,10 @@ int getLen(robj *ht);
 
 void incrbyLen(robj *ht, int inc);
 
+#ifdef CRDT_OVERHEAD
+
+#define LEID_SIZE(id) (id == NULL ? 0 : (sizeof(leid) + id->num * sizeof(position)))
+
+#endif
+
 #endif //REDIS_4_0_8_LIST_BASICS_H

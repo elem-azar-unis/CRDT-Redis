@@ -27,6 +27,40 @@ typedef struct rwf_list_element
 #undef DEFINE_NPR
 #undef DEFINE_A
 
+#ifdef CRDT_OVERHEAD
+
+#define RWFLE_SIZE_NEW (sizeof(rwfle) + sizeof(lc) + REH_SIZE_ADDITIONAL)
+
+static int rwfle_overhead(rwfle* e)
+{
+    int ovhd = sizeof(reh) + REH_SIZE_ADDITIONAL;               // reh header;
+    ovhd += sizeof(leid *) + LEID_SIZE(e->pos_id);              // leid *pos_id;
+    ovhd += sizeof(lc *) + sizeof(lc);                          // lc *current;
+
+#define TS_OVHD(T)        \
+    ovhd += sizeof(lc *); \
+    if (e->T##_t != NULL) \
+        ovhd += sizeof(lc);
+
+    FORALL(TS_OVHD);                                            // FORALL(DEFINE_A)
+
+#undef TS_OVHD
+
+    if(!EXISTS(e))
+    {
+        ovhd += 2 * sizeof(sds);
+        ovhd += e->oid == NULL ? 0 : sdslen(e->oid);            // sds oid;
+        ovhd += e->content == NULL ? 0 : sdslen(e->content);    // sds content;
+#define NPR_OVHD(T) ovhd += sizeof(int);
+        FORALL_NPR(NPR_OVHD);                                   // FORALL_NPR(DEFINE_NPR)
+#undef NPR_OVHD
+        ovhd += sizeof(int);                                    // int property;
+        ovhd += 2 * sizeof(rwfle *);                            // rwfle *prev, *next;
+    }
+}
+
+#endif
+
 #define GET_RWFLE(arg_t, create) \
     (rwfle *)rehHTGet(c->db, c->arg_t[1], NULL, c->arg_t[2], create, (rehNew_func_t)rwfleNew)
 
@@ -69,6 +103,9 @@ void acquired_update(rwfle *e, sds type, lc *t, int value)
 
 rwfle *rwfleNew()
 {
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RWFLE_SIZE_NEW);
+#endif
     rwfle *e = zmalloc(sizeof(rwfle));
     REH_INIT(e);
     e->oid = NULL;
@@ -150,6 +187,9 @@ void rwflinsertCommand(client *c)
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
             rwfle *e = GET_RWFLE_NEW(rargv);
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(-rwfle_overhead(e));
+#endif
             removeFunc(c, e, t);
             if (insertCheck((reh *) e, t))
             {
@@ -218,6 +258,9 @@ void rwflinsertCommand(client *c)
                 server.dirty++;
             }
             vc_delete(t);
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(rwfle_overhead(e));
+#endif
     CRDT_END
 }
 
@@ -236,6 +279,9 @@ void rwflupdateCommand(client *c)
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
             rwfle *e = GET_RWFLE(rargv, 1);
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(-rwfle_overhead(e));
+#endif
             lc *lt = sdsToLc(c->rargv[5]->ptr);
             long long value;
             getLongLongFromObject(c->rargv[4], &value);
@@ -247,6 +293,9 @@ void rwflupdateCommand(client *c)
             }
             vc_delete(t);
             lc_delete(lt);
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(rwfle_overhead(e));
+#endif
     CRDT_END
 }
 
@@ -260,9 +309,15 @@ void rwflremCommand(client *c)
             ADD_CR_RMV(e);
         CRDT_EFFECT
             rwfle *e = GET_RWFLE(rargv, 1);
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(-rwfle_overhead(e));
+#endif
             vc *t = CR_GET_LAST;
             removeFunc(c, e, t);
             vc_delete(t);
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(rwfle_overhead(e));
+#endif
     CRDT_END
 }
 

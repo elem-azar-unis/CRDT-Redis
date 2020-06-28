@@ -21,6 +21,9 @@ typedef struct RWF_RPQ_element
 
 rwfze *rwfzeNew()
 {
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RWFZE_SIZE);
+#endif
     rwfze *e = zmalloc(sizeof(rwfze));
     REH_INIT(e);
     e->innate = 0;
