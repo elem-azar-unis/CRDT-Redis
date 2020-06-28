@@ -57,6 +57,8 @@ static int rwfle_overhead(rwfle* e)
         ovhd += sizeof(int);                                    // int property;
         ovhd += 2 * sizeof(rwfle *);                            // rwfle *prev, *next;
     }
+
+    return ovhd;
 }
 
 #endif
