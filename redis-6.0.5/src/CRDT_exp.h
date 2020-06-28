@@ -64,7 +64,7 @@ static inline long currentTime()
         fflush(__CRDT_log);                                         \
     } while (0)
 
-void CRDT_log(const char *fmt, ...)
+static void CRDT_log(const char *fmt, ...)
 {
     va_list ap;
     char msg[LOG_MAX_LEN];

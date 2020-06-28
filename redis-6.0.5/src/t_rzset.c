@@ -6,13 +6,18 @@
 #include "CRDT.h"
 #include "RWFramework.h"
 
+#ifdef CRDT_OVERHEAD
+
+#define RZE_SIZE (sizeof(rze) + 3 * sizeof(list) + VC_SIZE)
+#define RZE_ASE_SIZE (sizeof(rz_ase) + sizeof(listNode) + VC_SIZE)
+#define RZE_RSE_SIZE (VC_SIZE + sizeof(listNode))
+#define RZE_OPS_SIZE (sizeof(rz_cmd) + sizeof(listNode) + VC_SIZE)
+
+#endif
+
 #define RW_RPQ_TABLE_SUFFIX "_rzets_"
 #define LOOKUP(e) (listLength((e)->aset) != 0 && listLength((e)->rset) == 0)
 #define SCORE(e) ((e)->value->x + (e)->value->inc)
-#define RZESIZE(e) (sizeof(rze) + 3 * sizeof(list) + VC_SIZE \
-                    + listLength((e)->aset) * (sizeof(rz_ase) + sizeof(listNode) + VC_SIZE) \
-                    + listLength((e)->rset) * (VC_SIZE + sizeof(listNode))\
-                    + listLength((e)->ops) * (sizeof(rz_cmd) + sizeof(listNode) + VC_SIZE))
 
 typedef struct rzset_aset_element
 {
@@ -42,7 +47,7 @@ typedef struct RW_RPQ_element
 rze *rzeNew()
 {
 #ifdef CRDT_OVERHEAD
-    inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
+    ovhd_inc(RZE_SIZE);
 #endif
     rze *e = zmalloc(sizeof(rze));
     e->current = vc_new();
@@ -80,6 +85,9 @@ sds rz_cmdToSds(rz_cmd *cmd)
 // get the ownership of t
 rz_cmd *rz_cmdNew(enum rz_cmd_type type, double value, vc *t)
 {
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RZE_OPS_SIZE);
+#endif
     rz_cmd *cmd = zmalloc(sizeof(rz_cmd));
     cmd->type = type;
     cmd->value = value;
@@ -89,6 +97,9 @@ rz_cmd *rz_cmdNew(enum rz_cmd_type type, double value, vc *t)
 
 void rz_cmdDelete(rz_cmd *cmd)
 {
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(-RZE_OPS_SIZE);
+#endif
     vc_delete(cmd->t);
     zfree(cmd);
 }
@@ -101,6 +112,9 @@ static void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value
     a->x = value;
     a->inc = 0;
     listAddNodeTail(e->aset, a);
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RZE_ASE_SIZE);
+#endif
 
     listNode *ln;
     listIter li;
@@ -110,6 +124,9 @@ static void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value
         vc *r = ln->value;
         if (vc_cmp(r, t) == VC_LESS)
         {
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(-RZE_RSE_SIZE);
+#endif
             listDelNode(e->rset, ln);
             vc_delete(r);
         }
@@ -153,6 +170,9 @@ static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
 {
     vc *r = vc_dup(t);
     listAddNodeTail(e->rset, r);
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RZE_RSE_SIZE);
+#endif
 
     listNode *ln;
     listIter li;
@@ -162,6 +182,9 @@ static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
         rz_ase *a = ln->value;
         if (vc_cmp(a->t, t) == VC_LESS)
         {
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(-RZE_ASE_SIZE);
+#endif
             listDelNode(e->aset, ln);
             if (e->value == a)
                 e->value = NULL;
@@ -618,6 +641,8 @@ void rzoverheadCommand(client *c)
 
 #elif 0
 
+#define RZESIZE(e) (RZE_SIZE + listLength((e)->aset) * RZE_ASE_SIZE + listLength((e)->rset) * RZE_RSE_SIZE + listLength((e)->ops) * RZE_OPS_SIZE)
+
 void rzoverheadCommand(client *c)
 {
     robj *htname = createObject(OBJ_STRING, sdscat(sdsdup(c->argv[1]->ptr), RW_RPQ_TABLE_SUFFIX));
@@ -643,7 +668,6 @@ void rzoverheadCommand(client *c)
     {
         sds value = hashTypeCurrentObjectNewSds(hi, OBJ_HASH_VALUE);
         rze *e = *(rze **) value;
-        //size += rzeSize(e);
         size += RZESIZE(e);
         sdsfree(value);
     }
@@ -655,7 +679,7 @@ void rzoverheadCommand(client *c)
         // Not implemented. We show the overhead calculation method:
         // size += (size of the ziplist structure itself) + (size of keys and values);
         // Iterate the ziplist to get each rze* e;
-        // size += rzeSize(e);
+        // size += RZESIZE(e);
     }
     else if (ht->encoding == OBJ_ENCODING_HT)
     {
@@ -671,7 +695,7 @@ void rzoverheadCommand(client *c)
             sds value = dictGetVal(de);
             size += sdsAllocSize(key) + sdsAllocSize(value);
             rze *e = *(rze **) value;
-            size += rzeSize(e);
+            size += RZESIZE(e);
         }
         dictReleaseIterator(di);
     }
