@@ -23,6 +23,7 @@
 FORALL_BITMAP(ACTION)
 
 #define LIST_PR_NUM 6
+#define LIST_PR_NORMAL_NUM 3
 
 enum property_type
 {
@@ -97,7 +98,7 @@ vc *getCurrent(robj *ht);
 
 int getLen(robj *ht);
 
-void incrbyLen(robj *ht, int inc);
+void incrLen(robj *ht, int inc);
 
 #ifdef CRDT_OVERHEAD
 

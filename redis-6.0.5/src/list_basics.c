@@ -154,7 +154,7 @@ int getLen(robj *ht)
     }
 }
 
-void incrbyLen(robj *ht, int inc)
+void incrLen(robj *ht, int inc)
 {
     sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);

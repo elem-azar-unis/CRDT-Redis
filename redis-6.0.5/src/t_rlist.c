@@ -4,6 +4,17 @@
 #include "server.h"
 #include "RWFramework.h"
 #include "list_basics.h"
+#ifdef CRDT_OVERHEAD
+
+#define RLE_SIZE (sizeof(rle) + 2 * sizeof(list))
+#define RLE_ASE_SIZE (sizeof(rl_ase) + sizeof(listNode) + (1 + LIST_PR_NUM) * VC_SIZE)
+#define RLE_RSE_SIZE (VC_SIZE + sizeof(listNode))
+#define RLE_OPS_SIZE (sizeof(rl_cmd) + sizeof(listNode) + VC_SIZE)
+
+#define RLE_SIZE_ADDITIONAL(e) (sdslen(e->oid) + sdslen(e->content) LEID_SIZE(e->pos_id))
+#define RLE_SIZE_ESSENTIAL(e) (2 * sizeof(sds) + sdslen(e->oid) + sdslen(e->content) + 2 * sizeof(rle *) + (1 + LIST_PR_NORMAL_NUM) * sizeof(int))
+
+#endif
 
 #define DEFINE_NORMAL(p) int p;
 #define PROPERTY_VC(p) vc *p##_t;
@@ -24,6 +35,9 @@ rl_ase *rl_aseNew(vc *t)
 #define TMP_ACTION(p) a->p##_t = vc_dup(t);
     FORALL(TMP_ACTION);
 #undef TMP_ACTION
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RLE_ASE_SIZE);
+#endif
     return a;
 }
 
@@ -34,6 +48,9 @@ void rl_aseDelete(rl_ase *a)
     FORALL(TMP_ACTION);
 #undef TMP_ACTION
     zfree(a);
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(-RLE_ASE_SIZE);
+#endif
 }
 
 enum rl_cmd_type
@@ -56,19 +73,33 @@ rl_cmd *rl_cmdNew(enum rl_cmd_type type, client *c, vc *t)
     cmd->t = t;
     cmd->argc = c->rargc - 2;
     cmd->argv = zmalloc(sizeof(robj *) * cmd->argc);
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RLE_OPS_SIZE + (sizeof(robj *) + sizeof(robj)) * cmd->argc);
+#endif
     for (int i = 0; i < cmd->argc; ++i)
     {
         cmd->argv[i] = c->rargv[i + 1];
         incrRefCount(cmd->argv[i]);
+#ifdef CRDT_OVERHEAD
+        ovhd_inc(sdslen((sds)(cmd->argv[i]->ptr)));
+#endif
     }
     return cmd;
 }
 
 void rl_cmdDelete(rl_cmd *cmd)
 {
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(-(RLE_OPS_SIZE + (sizeof(robj *) + sizeof(robj)) * cmd->argc));
+#endif
     vc_delete(cmd->t);
     for (int i = 0; i < cmd->argc; ++i)
+    {
+#ifdef CRDT_OVERHEAD
+        ovhd_inc(-sdslen((sds)(cmd->argv[i]->ptr)));
+#endif
         decrRefCount(cmd->argv[i]);
+    }
     zfree(cmd->argv);
     zfree(cmd);
 }
@@ -82,6 +113,9 @@ list *getOps(robj *ht)
     {
         e = listCreate();
         RWFHT_SET(ht, hname, list*, e);
+#ifdef CRDT_OVERHEAD
+        ovhd_inc(sizeof(list));
+#endif
     }
     else
     {
@@ -110,7 +144,7 @@ typedef struct rw_list_element
 rle *rleNew()
 {
 #ifdef CRDT_OVERHEAD
-    inc_ovhd_count(cur_db, cur_tname, SUF_RZETOTAL, 1);
+    ovhd_inc(RLE_SIZE);
 #endif
     rle *e = zmalloc(sizeof(rle));
     e->oid = NULL;
@@ -143,6 +177,9 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         e->oid = sdsdup(argv[2]->ptr);
         e->content = sdsdup(argv[3]->ptr);
         e->pos_id = sdsToLeid(argv[8]->ptr);
+#ifdef CRDT_OVERHEAD
+        ovhd_inc(RLE_SIZE_ADDITIONAL(e));
+#endif
         rle *head = getHead(ht);
         if (head == NULL)
         {
@@ -197,13 +234,21 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         {
             listDelNode(e->rset, ln);
             vc_delete(r);
+#ifdef CRDT_OVERHEAD
+            ovhd_inc(-RLE_RSE_SIZE);
+#endif
         }
     }
     if (e->value == NULL || e->value->t->id < t->id)
         e->value = a;
 
     if (pre_insert == 0 && LOOKUP(e))
-        incrbyLen(ht, 1);
+    {    
+        incrLen(ht, 1);
+#ifdef CRDT_OVERHEAD
+        ovhd_inc(-RLE_SIZE_ESSENTIAL(e));
+#endif
+    }
 }
 
 static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
@@ -268,6 +313,9 @@ static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     int pre_rmv = LOOKUP(e);
     vc *r = vc_dup(t);
     listAddNodeTail(e->rset, r);
+#ifdef CRDT_OVERHEAD
+    ovhd_inc(RLE_RSE_SIZE);
+#endif
 
     listNode *ln;
     listIter li;
@@ -296,7 +344,12 @@ static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     }
 
     if (pre_rmv == 1 && !LOOKUP(e))
-        incrbyLen(ht, -1);
+    {    
+        incrLen(ht, -1);
+#ifdef CRDT_OVERHEAD
+        ovhd_inc(RLE_SIZE_ESSENTIAL(e));
+#endif
+    }
 }
 
 static void notifyLoop(redisDb *db, robj *ht)

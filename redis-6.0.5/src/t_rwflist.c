@@ -51,10 +51,10 @@ static int rwfle_overhead(rwfle* e)
         ovhd += 2 * sizeof(sds);
         ovhd += e->oid == NULL ? 0 : sdslen(e->oid);            // sds oid;
         ovhd += e->content == NULL ? 0 : sdslen(e->content);    // sds content;
-#define NORMAL_OVHD(T) ovhd += sizeof(int);
-        FORALL_NORMAL(NORMAL_OVHD);                             // FORALL_NORMAL(DEFINE_NORMAL)
-#undef NORMAL_OVHD
-        ovhd += sizeof(int);                                    // int property;
+
+        ovhd += (1 + LIST_PR_NORMAL_NUM) * sizeof(int);         // FORALL_NORMAL(DEFINE_NORMAL)
+                                                                // int property;
+
         ovhd += 2 * sizeof(rwfle *);                            // rwfle *prev, *next;
     }
 
@@ -131,7 +131,7 @@ static void removeFunc(client *c, rwfle *e, vc *t)
     if (removeCheck((reh *) e, t))
     {
         robj *ht = GET_LIST_HT(rargv, 0);
-        if (EXISTS(e)) incrbyLen(ht, -1);
+        if (EXISTS(e)) incrLen(ht, -1);
         REH_RMV_FUNC(e, t);
 #define RMV_LC(p)            \
     if ((e->p##_t) != NULL)  \
@@ -196,7 +196,7 @@ void rwflinsertCommand(client *c)
             if (insertCheck((reh *) e, t))
             {
                 robj *ht = GET_LIST_HT(rargv, 1);
-                if (!EXISTS(e)) incrbyLen(ht, 1);
+                if (!EXISTS(e)) incrLen(ht, 1);
                 PID(e) = t->id;
                 // The element is newly inserted.
                 if (e->oid == NULL)
