@@ -41,6 +41,7 @@ class redis_client
 {
 private:
     redisContext *c;
+
 public:
     redis_client(const char *ip, int port)
     {
@@ -82,7 +83,7 @@ public:
     virtual void exec(redis_client &c) = 0;
 };
 
-template<class T>
+template <class T>
 class generator
 {
 protected:
@@ -93,6 +94,7 @@ protected:
         int cur = 0;
         unordered_set<T> h;
         mutex mtx;
+
     public:
         void add(T &name)
         {
@@ -124,11 +126,10 @@ protected:
         {
             lock_guard<mutex> lk(mtx);
             cur = (cur + 1) % SPLIT_NUM;
-            for (auto &n:v[cur])
+            for (auto &n : v[cur])
                 h.erase(h.find(n));
             v[cur].clear();
         }
-
     };
 
 private:
@@ -148,7 +149,7 @@ protected:
             while (running)
             {
                 this_thread::sleep_for(chrono::microseconds(SLP_TIME_MICRO));
-                for (auto &r:records)
+                for (auto &r : records)
                     r->inc_rem();
             }
         });
@@ -202,7 +203,7 @@ public:
     virtual void write_file() = 0;
 };
 
-template<class T>
+template <class T>
 class rdt_exp
 {
 private:
@@ -213,7 +214,7 @@ private:
         for (int delay = rdt_exp_setting.delay_e.start;
              delay <= rdt_exp_setting.delay_e.end;
              delay += rdt_exp_setting.delay_e.step)
-            for (auto type:rdt_types)
+            for (auto type : rdt_types)
                 delay_fix(delay, round, type);
     }
 
@@ -222,9 +223,8 @@ private:
         for (int replica = rdt_exp_setting.replica_e.start;
              replica <= rdt_exp_setting.replica_e.end;
              replica += rdt_exp_setting.replica_e.step)
-            for (auto type:rdt_types)
+            for (auto type : rdt_types)
                 replica_fix(replica, round, type);
-
     }
 
     void test_speed(int round)
@@ -232,9 +232,8 @@ private:
         for (int speed = rdt_exp_setting.speed_e.start;
              speed <= rdt_exp_setting.speed_e.end;
              speed += rdt_exp_setting.speed_e.step)
-            for (auto type:rdt_types)
+            for (auto type : rdt_types)
                 speed_fix(speed, round, type);
-
     }
 
 protected:
@@ -247,12 +246,15 @@ protected:
 
     explicit rdt_exp(exp_setting::default_setting &rdt_st) : rdt_exp_setting(rdt_st) {}
 
-    ~rdt_exp() { for (auto p:rdt_patterns) delete[] p; }
+    ~rdt_exp()
+    {
+        for (auto p : rdt_patterns)
+            delete[] p;
+    }
 
     virtual void exp_impl(T type, const char *pattern) = 0;
 
 public:
-
     void delay_fix(int delay, int round, T type)
     {
         exp_setting::set_default(&rdt_exp_setting);
@@ -283,10 +285,10 @@ public:
 
         exp_setting::set_default(&rdt_exp_setting);
 
-        for (auto p:rdt_patterns)
+        for (auto p : rdt_patterns)
         {
             exp_setting::set_pattern(p);
-            for (auto t:rdt_types)
+            for (auto t : rdt_types)
                 exp_impl(t, p);
         }
 
@@ -302,7 +304,6 @@ public:
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
         printf("total time: %f seconds\n", time);
     }
-
 };
 
 #endif //BENCH_UTIL_H

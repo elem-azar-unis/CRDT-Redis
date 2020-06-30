@@ -11,7 +11,6 @@
 #include "rpq_cmd.h"
 #include "rpq_log.h"
 
-
 class rpq_generator : public generator<int>
 {
 private:
@@ -49,8 +48,6 @@ public:
     }
 
     void gen_and_exec(redis_client &c) override;
-
 };
-
 
 #endif //BENCH_RPQ_GENERATOR_H

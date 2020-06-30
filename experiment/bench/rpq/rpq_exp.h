@@ -25,5 +25,4 @@ public:
     }
 };
 
-
 #endif //BENCH_RPQ_EXP_H
