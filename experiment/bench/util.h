@@ -5,6 +5,7 @@
 #ifndef BENCH_UTIL_H
 #define BENCH_UTIL_H
 
+#include <cstring>
 #include <unordered_set>
 #include <mutex>
 #include <thread>
@@ -178,7 +179,6 @@ private:
 protected:
     char dir[64]{};
 
-public:
     rdt_log(const char *CRDT_name, const char *type)
     {
         sprintf(dir, "../result/%s", CRDT_name);
@@ -198,7 +198,111 @@ public:
         bench_mkdir(dir);
     }
 
+public:
     virtual void write_file() = 0;
+};
+
+template<class T>
+class rdt_exp
+{
+private:
+    exp_setting::default_setting &rdt_exp_setting;
+
+    void test_delay(int round)
+    {
+        for (int delay = rdt_exp_setting.delay_e.start;
+             delay <= rdt_exp_setting.delay_e.end;
+             delay += rdt_exp_setting.delay_e.step)
+            for (auto type:rdt_types)
+                delay_fix(delay, round, type);
+    }
+
+    void test_replica(int round)
+    {
+        for (int replica = rdt_exp_setting.replica_e.start;
+             replica <= rdt_exp_setting.replica_e.end;
+             replica += rdt_exp_setting.replica_e.step)
+            for (auto type:rdt_types)
+                replica_fix(replica, round, type);
+
+    }
+
+    void test_speed(int round)
+    {
+        for (int speed = rdt_exp_setting.speed_e.start;
+             speed <= rdt_exp_setting.speed_e.end;
+             speed += rdt_exp_setting.speed_e.step)
+            for (auto type:rdt_types)
+                speed_fix(speed, round, type);
+
+    }
+
+protected:
+    vector<T> rdt_types;
+    vector<char *> rdt_patterns;
+
+    void add_type(T type) { rdt_types.emplace_back(type); }
+
+    void add_pattern(const char *pattern) { rdt_patterns.emplace_back(strdup(pattern)); }
+
+    explicit rdt_exp(exp_setting::default_setting &rdt_st) : rdt_exp_setting(rdt_st) {}
+
+    ~rdt_exp() { for (auto p:rdt_patterns) delete[] p; }
+
+    virtual void exp_impl(T type, const char *pattern) = 0;
+
+public:
+
+    void delay_fix(int delay, int round, T type)
+    {
+        exp_setting::set_default(&rdt_exp_setting);
+        exp_setting::set_delay(round, delay, delay / 5);
+        exp_impl(type, nullptr);
+        exp_setting::set_default(nullptr);
+    }
+
+    void replica_fix(int s_p_c, int round, T type)
+    {
+        exp_setting::set_default(&rdt_exp_setting);
+        exp_setting::set_replica(round, 3, s_p_c);
+        exp_impl(type, nullptr);
+        exp_setting::set_default(nullptr);
+    }
+
+    void speed_fix(int speed, int round, T type)
+    {
+        exp_setting::set_default(&rdt_exp_setting);
+        exp_setting::set_speed(round, speed);
+        exp_impl(type, nullptr);
+        exp_setting::set_default(nullptr);
+    }
+
+    void exp_start_all(int rounds)
+    {
+        auto start = chrono::steady_clock::now();
+
+        exp_setting::set_default(&rdt_exp_setting);
+
+        for (auto p:rdt_patterns)
+        {
+            exp_setting::set_pattern(p);
+            for (auto t:rdt_types)
+                exp_impl(t, p);
+        }
+
+        for (int i = 0; i < rounds; i++)
+        {
+            test_delay(i);
+            test_replica(i);
+            test_speed(i);
+        }
+
+        exp_setting::set_default(nullptr);
+        auto end = chrono::steady_clock::now();
+        auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
+        printf("total time: %f seconds\n", time);
+    }
+
 };
 
 #endif //BENCH_UTIL_H

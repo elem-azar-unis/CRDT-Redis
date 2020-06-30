@@ -7,38 +7,22 @@
 
 #include "rpq_basics.h"
 #include "../exp_setting.h"
+#include "../util.h"
 
-class rpq_exp
+class rpq_exp : public rdt_exp<rpq_type>
 {
 private:
     static exp_setting::default_setting rpq_setting;
 
-    class setting_setter
-    {
-    public:
-        setting_setter() { exp_setting::set_default(&rpq_setting); }
-
-        ~setting_setter() { exp_setting::set_default(nullptr); }
-    };
-
-    static void test_dis(rpq_type zt);
-
-    static void test_delay(int round);
-
-    static void test_replica(int round);
-
-    static void test_speed(int round);
+    void exp_impl(rpq_type type, const char *pattern) override;
 
 public:
-
-    static void delay_fix(int delay, int round, rpq_type type);
-
-    static void replica_fix(int s_p_c, int round, rpq_type type);
-
-    static void speed_fix(int speed, int round, rpq_type type);
-
-    static void exp_start_all(int rounds);
-
+    rpq_exp() : rdt_exp<rpq_type>(rpq_setting)
+    {
+        add_type(rpq_type::r);
+        add_type(rpq_type::rwf);
+        add_pattern("ardominant");
+    }
 };
 
 

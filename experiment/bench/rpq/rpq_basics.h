@@ -9,21 +9,19 @@ constexpr int MAX_ELE = 200000;
 constexpr int MAX_INIT = 100;
 constexpr int MAX_INCR = 50;
 
-constexpr double PR_ADD = 0.41;
-constexpr double PR_INC = 0.2;
-constexpr double PR_REM = 0.39;
+struct op_gen_pattern
+{
+    double PR_ADD;
+    double PR_INC;
+    double PR_REM;
 
-constexpr double PR_ADD_CA = 0.15;
-constexpr double PR_ADD_CR = 0.05;
-constexpr double PR_REM_CA = 0.1;
-constexpr double PR_REM_CR = 0.1;
+    double PR_ADD_CA;
+    double PR_ADD_CR;
+    double PR_REM_CA;
+    double PR_REM_CR;
+};
 
-constexpr double PA = PR_ADD;
-constexpr double PI = PR_ADD + PR_INC;
-constexpr double PAA = PR_ADD_CA;
-constexpr double PAR = PR_ADD_CA + PR_ADD_CR;
-constexpr double PRA = PR_REM_CA;
-constexpr double PRR = PR_REM_CA + PR_REM_CR;
+extern op_gen_pattern pt_dft, pt_ard;
 
 enum class rpq_op_type
 {
