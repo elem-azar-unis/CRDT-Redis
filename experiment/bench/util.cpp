@@ -8,12 +8,14 @@
 
 char exp_env::sudo_pwd[32];
 
-int exp_setting::delay = 50;
-int exp_setting::delay_low = 10;
-int exp_setting::total_clusters = 3;
-int exp_setting::server_per_cluster = 3;
-int exp_setting::total_ops = 20000000;
-int exp_setting::op_per_sec = 10000;
+exp_setting::default_setting *exp_setting::default_p = nullptr;
+
+int exp_setting::delay;
+int exp_setting::delay_low;
+int exp_setting::total_clusters;
+int exp_setting::server_per_cluster;
+int exp_setting::total_ops;
+int exp_setting::op_per_sec;
 
 exp_setting::exp_type exp_setting::type;
 const char *exp_setting::pattern_name;

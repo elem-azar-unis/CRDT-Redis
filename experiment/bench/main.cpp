@@ -1,11 +1,8 @@
 #include <cstdio>
 #include <cstring>
 
-#include "exp_setting.h"
 #include "exp_env.h"
-#include "exp_runner.h"
-
-#include "rpq/rpq_generator.h"
+#include "rpq/rpq_exp.h"
 
 using namespace std;
 
@@ -170,100 +167,6 @@ void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 }
 */
 
-void rpq_test_dis(rpq_type zt)
-{
-    rpq_log qlog(zt);
-    rpq_generator gen(zt, qlog);
-    rpq_cmd read_max(zt, rpq_op_type::max, -1, -1, qlog);
-    rpq_cmd ovhd(zt, rpq_op_type::overhead, -1, -1, qlog);
-    rpq_cmd opcount(zt, rpq_op_type::opcount, -1, -1, qlog);
-
-    exp_runner<int> runner(qlog, gen);
-    runner.set_cmd_opcount(opcount);
-    runner.set_cmd_ovhd(ovhd);
-    runner.set_cmd_read(read_max);
-    runner.run();
-}
-
-void delay_fix(int delay, int round, rpq_type type)
-{
-    exp_setting::set_delay(round, delay, delay / 5);
-    /*
-    char cmd[64];
-    sprintf(cmd, "python3 ../redis_test/connection.py %d %d %d %d", delay, delay / 5, delay / 5, delay / 25);
-    system(cmd);
-    */
-    rpq_test_dis(type);
-}
-
-
-void test_delay(int round)
-{
-    for (int d = 20; d <= 380; d += 40)
-    {
-        delay_fix(d, round, rpq_type::o);
-        delay_fix(d, round, rpq_type::rwf);
-    }
-}
-
-void replica_fix(int s_p_c, int round, rpq_type type)
-{
-    exp_setting::set_replica(round, 3, s_p_c);
-    /*
-    char cmd[64];
-    sprintf(cmd, "python3 ../redis_test/connection.py %d", s_p_c);
-    system(cmd);
-    */
-    rpq_test_dis(type);
-}
-
-void test_replica(int round)
-{
-    for (int replica:{1, 2, 3, 4, 5})
-    {
-        replica_fix(replica, round, rpq_type::o);
-        replica_fix(replica, round, rpq_type::rwf);
-    }
-}
-
-void speed_fix(int speed, int round, rpq_type type)
-{
-    // system("python3 ../redis_test/connection.py");
-    exp_setting::set_speed(round, speed);
-    rpq_test_dis(type);
-}
-
-void test_speed(int round)
-{
-    for (int i = 500; i <= 10000; i += 100)
-    {
-        speed_fix(i, round, rpq_type::o);
-        speed_fix(i, round, rpq_type::rwf);
-    }
-}
-
-void rpq_experiment()
-{
-    auto start = chrono::steady_clock::now();
-
-    exp_setting::set_pattern("ardominant");
-    // system("python3 ../redis_test/connection.py");
-    rpq_test_dis(rpq_type::o);
-    // system("python3 ../redis_test/connection.py");
-    rpq_test_dis(rpq_type::rwf);
-
-    for (int i = 0; i < 30; i++)
-    {
-        test_delay(i);
-        test_replica(i);
-        test_speed(i);
-    }
-
-    auto end = chrono::steady_clock::now();
-    auto time = chrono::duration_cast<chrono::duration<double> >(end - start).count();
-    printf("total time: %f seconds\n", time);
-}
-
 int main(int argc, char *argv[])
 {
     //time_max();
@@ -282,7 +185,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rpq_experiment();
+    rpq_exp::exp_start_all(30);
 
     return 0;
 }
