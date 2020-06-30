@@ -5,6 +5,7 @@
 #ifndef BENCH_EXP_ENV_H
 #define BENCH_EXP_ENV_H
 
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <chrono>
