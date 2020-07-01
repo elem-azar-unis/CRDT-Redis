@@ -14,7 +14,7 @@ exp_setting::default_setting rpq_exp::rpq_setting{
     .op_per_sec = 10000,
     .speed_e{.start = 500, .end = 10000, .step = 100},
     .replica_e{.start = 1, .end = 5, .step = 1},
-    .delay_e{.start = 20, .end = 380, .step = 1}};
+    .delay_e{.start = 20, .end = 380, .step = 40}};
 
 void rpq_exp::exp_impl(rpq_type type, const char *pattern)
 {

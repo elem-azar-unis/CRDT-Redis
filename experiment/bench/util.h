@@ -278,19 +278,22 @@ public:
         exp_impl(type, nullptr);
         exp_setting::set_default(nullptr);
     }
+    
+    void pattern_fix(const char* pattern, T type)
+    {
+        exp_setting::set_default(&rdt_exp_setting);
+        exp_setting::set_pattern(pattern);
+        exp_impl(type, pattern);
+        exp_setting::set_default(nullptr);
+    }
 
     void exp_start_all(int rounds)
     {
         auto start = chrono::steady_clock::now();
 
-        exp_setting::set_default(&rdt_exp_setting);
-
         for (auto p : rdt_patterns)
-        {
-            exp_setting::set_pattern(p);
             for (auto t : rdt_types)
-                exp_impl(t, p);
-        }
+                pattern_fix(p, t);
 
         for (int i = 0; i < rounds; i++)
         {
@@ -299,7 +302,6 @@ public:
             test_speed(i);
         }
 
-        exp_setting::set_default(nullptr);
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
         printf("total time: %f seconds\n", time);

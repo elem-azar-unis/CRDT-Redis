@@ -4,20 +4,20 @@
 
 #include "list_log.h"
 
-constexpr int BOLD = 1 << 0;
-constexpr int ITALIC = 1 << 1;
-constexpr int UNDERLINE = 1 << 2;
+constexpr int BOLD = 1u << 0u;
+constexpr int ITALIC = 1u << 1u;
+constexpr int UNDERLINE = 1u << 2u;
 
 double list_log::diff(const list_log::element &e, const redisReply *r)
 {
-    if (e.content != r->element[1]->str)return 1;
-    if (e.font != atoi(r->element[2]->str))return 0.5;
-    if (e.size != atoi(r->element[3]->str))return 0.5;
-    if (e.color != atoi(r->element[4]->str))return 0.5;
-    int p = atoi(r->element[5]->str);
-    if (e.bold != (bool) (p & BOLD))return 0.5;
-    if (e.italic != (bool) (p & ITALIC))return 0.5;
-    if (e.underline != (bool) (p & UNDERLINE))return 0.5;
+    if (e.content != r->element[1]->str) return 1;
+    if (e.font != atoi(r->element[2]->str)) return 0.5; // NOLINT
+    if (e.size != atoi(r->element[3]->str)) return 0.5; // NOLINT
+    if (e.color != atoi(r->element[4]->str)) return 0.5; // NOLINT
+    int p = atoi(r->element[5]->str); // NOLINT
+    if (e.bold != (bool) (p & BOLD)) return 0.5; // NOLINT
+    if (e.italic != (bool) (p & ITALIC)) return 0.5; // NOLINT
+    if (e.underline != (bool) (p & UNDERLINE)) return 0.5; // NOLINT
     return 0;
 }
 

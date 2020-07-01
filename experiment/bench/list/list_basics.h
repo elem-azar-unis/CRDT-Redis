@@ -7,7 +7,7 @@
 
 constexpr int MAX_FONT_SIZE = 100;
 constexpr int TOTAL_FONT_TYPE = 10;
-constexpr int MAX_COLOR = 1 << 25;
+constexpr int MAX_COLOR = 1u << 25u;
 
 
 #endif //BENCH_LIST_BASICS_H
