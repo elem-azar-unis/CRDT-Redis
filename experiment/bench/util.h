@@ -7,6 +7,9 @@
 
 #include <cstring>
 #include <unordered_set>
+#include <tuple>
+#include <unordered_map>
+
 #include <mutex>
 #include <thread>
 #include <condition_variable>
@@ -25,7 +28,23 @@
 
 #endif
 
-using namespace std;
+using std::unique_ptr;
+using std::vector;
+using std::unordered_set;
+using std::shared_ptr;
+using std::tuple;
+using std::get;
+using std::unordered_map;
+
+using std::mutex;
+using std::lock_guard;
+
+using std::thread;
+using std::this_thread::sleep_for;
+using std::chrono::microseconds;
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
+using std::chrono::duration;
 
 int intRand(int min, int max);
 
@@ -83,7 +102,7 @@ public:
     virtual void exec(redis_client &c) = 0;
 };
 
-template <class T>
+template<class T>
 class generator
 {
 protected:
@@ -148,7 +167,7 @@ protected:
         maintainer = thread([this] {
             while (running)
             {
-                this_thread::sleep_for(chrono::microseconds(SLP_TIME_MICRO));
+                sleep_for(microseconds(SLP_TIME_MICRO));
                 for (auto &r : records)
                     r->inc_rem();
             }
@@ -203,7 +222,7 @@ public:
     virtual void write_file() = 0;
 };
 
-template <class T>
+template<class T>
 class rdt_exp
 {
 private:
@@ -278,8 +297,8 @@ public:
         exp_impl(type, nullptr);
         exp_setting::set_default(nullptr);
     }
-    
-    void pattern_fix(const char* pattern, T type)
+
+    void pattern_fix(const char *pattern, T type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_pattern(pattern);
@@ -289,7 +308,7 @@ public:
 
     void exp_start_all(int rounds)
     {
-        auto start = chrono::steady_clock::now();
+        auto start = steady_clock::now();
 
         for (auto p : rdt_patterns)
             for (auto t : rdt_types)
@@ -302,8 +321,8 @@ public:
             test_speed(i);
         }
 
-        auto end = chrono::steady_clock::now();
-        auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
+        auto end = steady_clock::now();
+        auto time = duration_cast<duration<double> >(end - start).count();
         printf("total time: %f seconds\n", time);
     }
 };

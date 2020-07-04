@@ -4,8 +4,6 @@
 #include "exp_env.h"
 #include "rpq/rpq_exp.h"
 
-using namespace std;
-
 /*
 const char *ips[3] = {"192.168.188.135",
                       "192.168.188.136",
