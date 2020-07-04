@@ -8,12 +8,13 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <tuple>
+#include <unordered_map>
 #include <mutex>
 
 #include "../util.h"
 
-using std::string;
-using std::list;
+using namespace std;
 
 class list_log : public rdt_log
 {

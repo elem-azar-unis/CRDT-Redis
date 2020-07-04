@@ -7,11 +7,14 @@
 
 
 #include <vector>
+#include <tuple>
+#include <unordered_map>
 #include <mutex>
 
 #include "../util.h"
 #include "rpq_basics.h"
 
+using namespace std;
 
 class rpq_log : public rdt_log
 {

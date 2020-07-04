@@ -22,15 +22,7 @@
 
 #endif
 
-using std::condition_variable;
-using std::unique_lock;
-using std::this_thread::sleep_until;
-using std::this_thread::sleep_for;
-using std::chrono::seconds;
-using std::chrono::steady_clock;
-using std::chrono::duration;
-using std::chrono::duration_cast;
-
+using namespace std;
 //extern const char *ips[3];
 
 template<class T>
@@ -108,21 +100,21 @@ public:
     {
         exp_env e;
 
-        auto start = steady_clock::now();
+        auto start = chrono::steady_clock::now();
 
         for (int i = 0; i < TOTAL_SERVERS; ++i)
             conn_one_server_timed(IP_SERVER, BASE_PORT + i);
 
         thread timer([this] {
-            auto start_time = steady_clock::now();
+            auto start_time = chrono::steady_clock::now();
             for (int times = 0; times < OP_PER_THREAD; ++times)
             {
                 for (auto &t:tasks)
                 {
                     t->add();
                 }
-                auto tar_time = start_time + duration<double>((times + 1) * INTERVAL_TIME);
-                sleep_until(tar_time);
+                auto tar_time = start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
+                this_thread::sleep_until(tar_time);
                 /*
                 gettimeofday(&tn, nullptr);
                 auto slp_time =
@@ -143,7 +135,7 @@ public:
                 redis_client cl(IP_SERVER, BASE_PORT);
                 while (rb)
                 {
-                    sleep_for(seconds(TIME_MAX));
+                    this_thread::sleep_for(chrono::seconds(TIME_MAX));
                     read_cmd->exec(cl);
                 }
             });
@@ -156,7 +148,7 @@ public:
                 redis_client cl(IP_SERVER, BASE_PORT + 1);
                 while (ob)
                 {
-                    sleep_for(seconds(TIME_OVERHEAD));
+                    this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
                     ovhd_cmd->exec(cl);
                 }
                 if (opcount_cmd != nullptr)
@@ -168,8 +160,8 @@ public:
         for (auto &t:thds)
             t.join();
 
-        auto end = steady_clock::now();
-        auto time = duration_cast<duration<double> >(end - start).count();
+        auto end = chrono::steady_clock::now();
+        auto time = chrono::duration_cast<chrono::duration<double> >(end - start).count();
         printf("%f seconds, %f op/s\n", time, exp_setting::total_ops / time);
 
         printf("ending.\n");
