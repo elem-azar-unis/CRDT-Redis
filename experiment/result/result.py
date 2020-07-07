@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import statistics
 
+data_skiped = 0
 err_sp = 1e10
 
 
@@ -9,17 +10,20 @@ def freq(li):
 
 
 def read(ztype, server, op, delay, low_delay, directory='.'):
-    d = "{dir}/{t}:{s},{o},({d},{ld})".format(dir=directory, t=ztype, s=server, o=op, d=delay, ld=low_delay)
+    d = "{dir}/{t}:{s},{o},({d},{ld})".format(dir=directory,
+                                              t=ztype, s=server, o=op, d=delay, ld=low_delay)
     ovhd = []
     rmax = []
     for line in open(d + "/s.ovhd"):
         tmp = [float(x) for x in line.split(' ')]
         if tmp[0] > err_sp or tmp[1] > err_sp:
+            data_skiped += 1
             continue
         ovhd.append(tmp[1] / tmp[0])
     for line in open(d + "/s.max"):
         tmp = [float(x) for x in line.split(' ')]
         if tmp[1] > err_sp or tmp[3] > err_sp:
+            data_skiped += 1
             continue
         rmax.append(abs(tmp[1] - tmp[3]))
     return rmax, ovhd
@@ -116,7 +120,8 @@ def _cmp_generic(exp_settings, directory, x_paras=None, plot_func=None):
         rms.append(m)
         ros.append(o)
 
-    om_avg, rm_avg, om_count, rm_count, oo_max, ro_max = preliminary_dispose(oms, oos, rms, ros)
+    om_avg, rm_avg, om_count, rm_count, oo_max, ro_max = preliminary_dispose(
+        oms, oos, rms, ros)
 
     if plot_func is not None and x_paras is not None:
         plot_func(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, x_paras)
@@ -157,7 +162,8 @@ def cmp_generic(x_paras, dirs, exp_settings, plot_func):
 
 
 def cmp_delay(rounds):
-    delays = ["{hd}ms,\n{ld}ms".format(hd=20 + x * 40, ld=4 + x * 8) for x in range(10)]
+    delays = ["{hd}ms,\n{ld}ms".format(
+        hd=20 + x * 40, ld=4 + x * 8) for x in range(10)]
     dirs = ["delay/{}".format(x) for x in range(rounds)]
     exp_settings = [[9, 10000, 20 + x * 40, 4 + x * 8] for x in range(10)]
     return cmp_generic(delays, dirs, exp_settings, delay_plot)
@@ -176,7 +182,8 @@ def delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
 
     # plt.subplot(1, 3, 2)
     plt.subplot(1, 2, 2)
-    plot_bar(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
+    plot_bar(om_count, rm_count, name, xlable,
+             'frequency of read_max being wrong')
 
     # plt.subplot(1, 3, 3)
     # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
@@ -185,7 +192,8 @@ def delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     plt.savefig("{}.pdf".format(pname), format='pdf')
     plt.show()
 
-    rtn = (oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    rtn = (oo_max, ro_max, name, xlable,
+           'average max overhead per element: bytes')
     return rtn
 
 
@@ -209,7 +217,8 @@ def replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
 
     # plt.subplot(1, 3, 2)
     plt.subplot(1, 2, 2)
-    plot_bar(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
+    plot_bar(om_count, rm_count, name, xlable,
+             'frequency of read_max being wrong')
 
     # plt.subplot(1, 3, 3)
     # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
@@ -218,7 +227,8 @@ def replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     plt.savefig("{}.pdf".format(pname), format='pdf')
     plt.show()
 
-    rtn = (oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    rtn = (oo_max, ro_max, name, xlable,
+           'average max overhead per element: bytes')
     return rtn
 
 
@@ -248,7 +258,8 @@ def speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     # plt.subplot(1, 3, 2)
     plt.subplot(1, 2, 2)
     # plot_bar(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
-    plot_line(om_count, rm_count, name, xlable, 'frequency of read_max being wrong')
+    plot_line(om_count, rm_count, name, xlable,
+              'frequency of read_max being wrong')
 
     # plt.subplot(1, 3, 3)
     # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes', s_name=s_name)
@@ -257,7 +268,8 @@ def speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     plt.savefig("{}.pdf".format(pname), format='pdf')
     plt.show()
 
-    rtn = (oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
+    rtn = (oo_max, ro_max, name, xlable,
+           'average max overhead per element: bytes')
     return rtn, s_name
 
 
@@ -283,3 +295,5 @@ plt.figure(figsize=(6, 4))
 plot_bar(*rp)
 plt.savefig("ovhd_r.pdf", format='pdf')
 plt.show()
+
+print("Data skipped: ", data_skiped)
