@@ -194,7 +194,7 @@ protected:
         sprintf(dir, "%s/%d", dir, exp_setting::round_num);
         bench_mkdir(dir);
 
-        sprintf(dir, "%s/%s:%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS,
+        sprintf(dir, "%s/%s_%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS,
                 exp_setting::op_per_sec, exp_setting::delay, exp_setting::delay_low);
         bench_mkdir(dir);
     }

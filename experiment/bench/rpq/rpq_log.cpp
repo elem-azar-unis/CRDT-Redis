@@ -123,17 +123,17 @@ void rpq_log::write_file()
 {
     char f[64];
 
-    sprintf(f, "%s/s.ovhd", dir);
+    sprintf(f, "%s/ovhd.csv", dir);
     FILE *ovhd = fopen(f, "w");
     for (auto &o:overhead_log)
-        fprintf(ovhd, "%d %d\n", get<0>(o), get<1>(o));
+        fprintf(ovhd, "%d,%d\n", get<0>(o), get<1>(o));
     fflush(ovhd);
     fclose(ovhd);
 
-    sprintf(f, "%s/s.max", dir);
+    sprintf(f, "%s/max.csv", dir);
     FILE *max = fopen(f, "w");
     for (auto &o:max_log)
-        fprintf(max, "%d %f %d %f\n", get<0>(o), get<1>(o), get<2>(o), get<3>(o));
+        fprintf(max, "%d,%f,%d,%f\n", get<0>(o), get<1>(o), get<2>(o), get<3>(o));
     fflush(max);
     fclose(max);
 }

@@ -1,28 +1,36 @@
 import matplotlib.pyplot as plt
+import matplotlib
 import statistics
 
 data_skiped = 0
 err_sp = 1e10
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['savefig.bbox'] = 'tight'
+matplotlib.rcParams['savefig.pad_inches'] = 0.01
+matplotlib.rcParams['legend.loc'] = 'best'
+matplotlib.rcParams['xtick.labelsize'] = 8
+matplotlib.rcParams['ytick.labelsize'] = 8
+
 
 def freq(li):
-    return len([x for x in li if x != 0])
+    return len([x for x in li if x != 0]) / len(li)
 
 
 def read(ztype, server, op, delay, low_delay, root_dir='.'):
-    d = "{dir}/{t}:{s},{o},({d},{ld})".format(dir=root_dir,
+    d = "{dir}/{t}_{s},{o},({d},{ld})".format(dir=root_dir,
                                               t=ztype, s=server, o=op, d=delay, ld=low_delay)
     global data_skiped
     ovhd = []
     rmax = []
-    for line in open(d + "/s.ovhd"):
-        tmp = [float(x) for x in line.split(' ')]
+    for line in open(d + "/ovhd.csv"):
+        tmp = [float(x) for x in line.split(',')]
         if tmp[0] > err_sp or tmp[1] > err_sp:
             data_skiped += 1
             continue
         ovhd.append(tmp[1] / tmp[0])
-    for line in open(d + "/s.max"):
-        tmp = [float(x) for x in line.split(' ')]
+    for line in open(d + "/max.csv"):
+        tmp = [float(x) for x in line.split(',')]
         if tmp[1] > err_sp or tmp[3] > err_sp:
             data_skiped += 1
             continue
@@ -43,7 +51,7 @@ def cmp_or(name, directory, server=9, op=10000, delay=50, low_delay=10):
     y2o = ormax[:lmax]
     y2r = rrmax[:lmax]
 
-    plt.figure(figsize=(11, 4))
+    fig = plt.figure(figsize=(11, 4))
 
     plt.subplot(1, 2, 1)
     plot_line(y2o, y2r, x2, xlable, 'read max diff')
@@ -52,8 +60,8 @@ def cmp_or(name, directory, server=9, op=10000, delay=50, low_delay=10):
     plot_line(y1o, y1r, x1, xlable, 'overhead: byte')
 
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(name), format='pdf')
-    plt.show()
+    plt.savefig("{}.pdf".format(name))
+    plt.close(fig)
 
     print(name)
     print("add-win", statistics.mean(y2o), freq(y2o))
@@ -94,7 +102,7 @@ def plot_bar(o_data, r_data, name, x_lable, y_lable, s_name=None):
     l2 = plt.bar(index2, r_data, bar_width, tick_label=s_name)
     plt.xlabel(x_lable)
     plt.ylabel(y_lable)
-    plt.legend(handles=[l1, l2, ], labels=['Add-Win', 'Rmv-Win'], loc='best')
+    plt.legend(handles=[l1, l2, ], labels=['Add-Win', 'Rmv-Win'])
     plt.xticks(index)
 
 
@@ -103,7 +111,7 @@ def plot_line(o_data, r_data, name, x_lable, y_lable):
     plt.plot(name, r_data, linestyle="-", label="Rmv-Win")
     plt.xlabel(x_lable)
     plt.ylabel(y_lable)
-    plt.legend(loc='upper left')
+    plt.legend()
 
 
 def _cmp_generic(exp_settings, directory, x_paras=None, plot_func=None):
@@ -185,8 +193,8 @@ def delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     xlable = 'latency: between DC, within DC'
     pname = 'delay'
 
-    # plt.figure(figsize=(18, 4))
-    plt.figure(figsize=(11, 4))
+    # fig = plt.figure(figsize=(18, 4))
+    fig = plt.figure(figsize=(11, 4))
 
     # plt.subplot(1, 3, 1)
     plt.subplot(1, 2, 1)
@@ -201,8 +209,8 @@ def delay_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
 
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(pname), format='pdf')
-    plt.show()
+    plt.savefig("{}.pdf".format(pname))
+    plt.close(fig)
 
     rtn = (oo_max, ro_max, name, xlable,
            'average max overhead per element: bytes')
@@ -220,8 +228,8 @@ def replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     xlable = 'num of replicas'
     pname = 'replica'
 
-    # plt.figure(figsize=(16, 4))
-    plt.figure(figsize=(11, 4))
+    # fig = plt.figure(figsize=(16, 4))
+    fig = plt.figure(figsize=(11, 4))
 
     # plt.subplot(1, 3, 1)
     plt.subplot(1, 2, 1)
@@ -236,8 +244,8 @@ def replica_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes')
 
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(pname), format='pdf')
-    plt.show()
+    plt.savefig("{}.pdf".format(pname))
+    plt.close(fig)
 
     rtn = (oo_max, ro_max, name, xlable,
            'average max overhead per element: bytes')
@@ -259,8 +267,8 @@ def speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
         if (i - 500) % 10 != 0:
             s_name[i] = ''
 
-    # plt.figure(figsize=(16, 4))
-    plt.figure(figsize=(11, 4))
+    # fig = plt.figure(figsize=(16, 4))
+    fig = plt.figure(figsize=(11, 4))
 
     # plt.subplot(1, 3, 1)
     plt.subplot(1, 2, 1)
@@ -277,8 +285,8 @@ def speed_plot(om_avg, rm_avg, om_count, rm_count, oo_max, ro_max, name):
     # plot_bar(oo_max, ro_max, name, xlable, 'average max overhead per element: bytes', s_name=s_name)
 
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(pname), format='pdf')
-    plt.show()
+    plt.savefig("{}.pdf".format(pname))
+    plt.close(fig)
 
     rtn = (oo_max, ro_max, name, xlable,
            'average max overhead per element: bytes')
@@ -291,7 +299,7 @@ sp, sn = cmp_speed(30)
 rp = cmp_replica(30)
 dl = cmp_delay(30)
 
-plt.figure(figsize=(11, 4))
+fig = plt.figure(figsize=(11, 4))
 
 plt.subplot(1, 2, 1)
 plot_bar(*sp, s_name=sn)
@@ -300,12 +308,12 @@ plt.subplot(1, 2, 2)
 plot_bar(*dl)
 
 plt.tight_layout()
-plt.savefig("ovhd_sd.pdf", format='pdf')
-plt.show()
+plt.savefig("ovhd_sd.pdf")
+plt.close(fig)
 
-plt.figure(figsize=(6, 4))
+fig = plt.figure(figsize=(6, 4))
 plot_bar(*rp)
-plt.savefig("ovhd_r.pdf", format='pdf')
-plt.show()
+plt.savefig("ovhd_r.pdf")
+plt.close(fig)
 
 print("Data skipped: ", data_skiped)
