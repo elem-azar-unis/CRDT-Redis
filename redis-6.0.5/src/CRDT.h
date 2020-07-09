@@ -2,8 +2,8 @@
 // Created by user on 19-10-30.
 //
 
-#ifndef REDIS_4_0_8_CRDT_H
-#define REDIS_4_0_8_CRDT_H
+#ifndef REDIS_CRDT_H
+#define REDIS_CRDT_H
 
 #include "CRDT_exp.h"
 
@@ -165,4 +165,4 @@ typedef struct prepare_rargv_vector
     return;                                \
     }
 
-#endif //REDIS_4_0_8_CRDT_H
+#endif //REDIS_CRDT_H

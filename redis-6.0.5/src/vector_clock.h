@@ -2,8 +2,8 @@
 // Created by user on 18-6-21.
 //
 
-#ifndef REDIS_4_0_8_VECTOR_CLOCK_H
-#define REDIS_4_0_8_VECTOR_CLOCK_H
+#ifndef REDIS_VECTOR_CLOCK_H
+#define REDIS_VECTOR_CLOCK_H
 #include "sds.h"
 
 typedef struct vector_clock
@@ -57,4 +57,4 @@ static inline sds vc_now(vc *c)
     return rtn;
 }
 
-#endif //REDIS_4_0_8_VECTOR_CLOCK_H
+#endif //REDIS_VECTOR_CLOCK_H

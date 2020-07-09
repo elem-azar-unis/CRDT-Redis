@@ -2,8 +2,8 @@
 // Created by user on 19-10-30.
 //
 
-#ifndef REDIS_4_0_8_LAMPORT_CLOCK_H
-#define REDIS_4_0_8_LAMPORT_CLOCK_H
+#ifndef REDIS_LAMPORT_CLOCK_H
+#define REDIS_LAMPORT_CLOCK_H
 
 #include "vector_clock.h"
 
@@ -93,4 +93,4 @@ static inline sds lc_now(lc *t)
     return rtn;
 }
 
-#endif //REDIS_4_0_8_LAMPORT_CLOCK_H
+#endif //REDIS_LAMPORT_CLOCK_H

@@ -2,8 +2,8 @@
 // Created by admin on 2020/5/7.
 //
 
-#ifndef REDIS_4_0_8_LIST_BASICS_H
-#define REDIS_4_0_8_LIST_BASICS_H
+#ifndef REDIS_LIST_BASICS_H
+#define REDIS_LIST_BASICS_H
 
 #include "CRDT.h"
 #include "RWFramework.h"
@@ -106,4 +106,4 @@ void incrLen(robj *ht, int inc);
 
 #endif
 
-#endif //REDIS_4_0_8_LIST_BASICS_H
+#endif //REDIS_LIST_BASICS_H

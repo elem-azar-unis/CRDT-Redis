@@ -23,18 +23,20 @@ def read(ztype, server, op, delay, low_delay, root_dir='.'):
     global data_skiped
     ovhd = []
     rmax = []
-    for line in open(d + "/ovhd.csv"):
-        tmp = [float(x) for x in line.split(',')]
-        if tmp[0] > err_sp or tmp[1] > err_sp:
-            data_skiped += 1
-            continue
-        ovhd.append(tmp[1] / tmp[0])
-    for line in open(d + "/max.csv"):
-        tmp = [float(x) for x in line.split(',')]
-        if tmp[1] > err_sp or tmp[3] > err_sp:
-            data_skiped += 1
-            continue
-        rmax.append(abs(tmp[1] - tmp[3]))
+    with open(d + "/ovhd.csv", "r") as file:
+        for line in file.readlines():
+            tmp = [float(x) for x in line.split(',')]
+            if tmp[0] > err_sp or tmp[1] > err_sp:
+                data_skiped += 1
+                continue
+            ovhd.append(tmp[1] / tmp[0])
+    with open(d + "/max.csv", "r") as file:
+        for line in file.readlines():
+            tmp = [float(x) for x in line.split(',')]
+            if tmp[1] > err_sp or tmp[3] > err_sp:
+                data_skiped += 1
+                continue
+            rmax.append(abs(tmp[1] - tmp[3]))
     return rmax, ovhd
 
 
