@@ -14,8 +14,11 @@ For more detail of our implementation, please read the *Performance measurements
 
 Our modified Redis is in folder *redis-6.0.5*. Please build it in the default mode:
 
-    cd redis-6.0.5
-    sudo make install
+```
+cd redis-6.0.5
+make
+sudo make install
+```
 
 ## Test
 
@@ -33,21 +36,29 @@ Here we show an example to test our implementation using all the 5 Redis server 
 
 Firstly go to the *experiment/redis_test*, **start** the Redis server instances and **construct P2P replication** among them.
 
-    cd experiment/redis_test
-    ./server.sh
-    ./construct_replication.sh
+```
+cd experiment/redis_test
+./server.sh
+./construct_replication.sh
+```
 
 Now you can start redis clients to connect to Redis servers and do CRPQ read/write operations. Here shows **start a client** to connect one Redis server.
 
-    ./client.sh <server_port>
+```
+./client.sh <server_port>
+```
 
 When you've finished testing, you may **close** the Redis server instances.
 
-    ./shutdown.sh
+```
+./shutdown.sh
+```
 
 Finally, you can **remove** the Redis database files (.rdb files) and log files (.log files).
 
-    ./clean.sh
+```
+./clean.sh
+```
 
 To further redo the experiment of our work our please check [here](experiment/Readme.md).
 
