@@ -12,9 +12,8 @@ cmake-build-debug
 bench_start
 ozlog
 rzlog
-*.max
-*.ovhd
-#result
+*.csv
+result.zip
 
 #----------idea----------
 *.iml
