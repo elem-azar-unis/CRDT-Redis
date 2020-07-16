@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import statistics
 
-data_skiped = 0
+data_skipped = 0
 err_sp = 1e10
 
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -20,21 +20,21 @@ def freq(li):
 def read(ztype, server, op, delay, low_delay, root_dir='.'):
     d = "{dir}/{t}_{s},{o},({d},{ld})".format(dir=root_dir,
                                               t=ztype, s=server, o=op, d=delay, ld=low_delay)
-    global data_skiped
+    global data_skipped
     ovhd = []
     rmax = []
     with open(d + "/ovhd.csv", "r") as file:
         for line in file.readlines():
             tmp = [float(x) for x in line.split(',')]
             if tmp[0] > err_sp or tmp[1] > err_sp:
-                data_skiped += 1
+                data_skipped += 1
                 continue
             ovhd.append(tmp[1] / tmp[0])
     with open(d + "/max.csv", "r") as file:
         for line in file.readlines():
             tmp = [float(x) for x in line.split(',')]
             if tmp[1] > err_sp or tmp[3] > err_sp:
-                data_skiped += 1
+                data_skipped += 1
                 continue
             rmax.append(abs(tmp[1] - tmp[3]))
     return rmax, ovhd
@@ -142,12 +142,12 @@ def _cmp_generic(exp_settings, directory, x_paras=None, plot_func=None):
 
 
 def cmp_generic(x_paras, dirs, exp_settings, plot_func, low, high):
-    om_avg_collect = [[] for i in range(len(x_paras))]
-    rm_avg_collect = [[] for i in range(len(x_paras))]
-    om_count_collect = [[] for i in range(len(x_paras))]
-    rm_count_collect = [[] for i in range(len(x_paras))]
-    oo_max_collect = [[] for i in range(len(x_paras))]
-    ro_max_collect = [[] for i in range(len(x_paras))]
+    om_avg_collect = [[] for _ in range(len(x_paras))]
+    rm_avg_collect = [[] for _ in range(len(x_paras))]
+    om_count_collect = [[] for _ in range(len(x_paras))]
+    rm_count_collect = [[] for _ in range(len(x_paras))]
+    oo_max_collect = [[] for _ in range(len(x_paras))]
+    ro_max_collect = [[] for _ in range(len(x_paras))]
 
     for setting in exp_settings:
         setting.append("")
@@ -301,7 +301,7 @@ sp, sn = cmp_speed(30)
 rp = cmp_replica(30)
 dl = cmp_delay(30)
 
-fig = plt.figure(figsize=(11, 4))
+figure = plt.figure(figsize=(11, 4))
 
 plt.subplot(1, 2, 1)
 plot_bar(*sp, s_name=sn)
@@ -311,11 +311,11 @@ plot_bar(*dl)
 
 plt.tight_layout()
 plt.savefig("ovhd_sd.pdf")
-plt.close(fig)
+plt.close(figure)
 
-fig = plt.figure(figsize=(6, 4))
+figure = plt.figure(figsize=(6, 4))
 plot_bar(*rp)
 plt.savefig("ovhd_r.pdf")
-plt.close(fig)
+plt.close(figure)
 
-print("Data skipped: ", data_skiped)
+print("Data skipped: ", data_skipped)
