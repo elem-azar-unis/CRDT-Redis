@@ -5,6 +5,7 @@
 #ifndef BENCH_LIST_BASICS_H
 #define BENCH_LIST_BASICS_H
 
+// TODO conflicts?
 struct list_op_gen_pattern
 {
     double PR_ADD;
@@ -12,6 +13,7 @@ struct list_op_gen_pattern
     double PR_REM;
 };
 
+// TODO pattern?
 extern list_op_gen_pattern list_pt_dft;
 
 constexpr int MAX_FONT_SIZE = 100;
