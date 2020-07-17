@@ -48,9 +48,8 @@ void rpq_log::add(int k, double v)
     lock_guard<mutex> lk(mtx);
     if (map.find(k) == map.end())
     {
-        shared_ptr<element> e(new element(k, v));
-        map[k] = e;
-        heap.emplace_back(e);
+        heap.emplace_back(new element(k, v));
+        map[k] = heap.back().get();
         shift_up(static_cast<int>(heap.size() - 1));
     }
 }
