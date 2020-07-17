@@ -48,9 +48,8 @@ void rpq_log::add(int k, double v)
     lock_guard<mutex> lk(mtx);
     if (map.find(k) == map.end())
     {
-        shared_ptr<element> e(new element(k, v));
-        map[k] = e;
-        heap.emplace_back(e);
+        map[k] = make_unique<element>(k, v);
+        heap.emplace_back(map[k].get());
         shift_up(static_cast<int>(heap.size() - 1));
     }
 }
@@ -61,7 +60,7 @@ void rpq_log::inc(int k, double i)
     lock_guard<mutex> lk(mtx);
     if (map.find(k) != map.end())
     {
-        auto e = map[k];
+        auto &e = map[k];
         e->value += i;
         if (i > 0)
             shift_up(e->index);

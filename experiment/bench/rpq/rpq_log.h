@@ -42,8 +42,8 @@ private:
         bool operator!=(const element &e) const { return value != e.value; }
     };
 
-    unordered_map<int, shared_ptr<element> > map;
-    vector<shared_ptr<element> > heap;
+    unordered_map<int, unique_ptr<element> > map;
+    vector<element *> heap;
     // kread, vread, kactural, vactural
     vector<tuple<int, double, int, double> > max_log;
     // num, ovhd
