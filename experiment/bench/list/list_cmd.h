@@ -42,29 +42,47 @@ public:
         if (bold) property |= BOLD;    //NOLINT
         if (italic) property |= ITALIC;    //NOLINT
         if (underline) property |= UNDERLINE;    //NOLINT
-        //TODO
+        char cmd[256];
+        sprintf(cmd, "%s %s %s %s %d %d %d %d",
+                cmd_head, prev.c_str(), id.c_str(), content.c_str(),
+                font, size, color, property);
+        auto r = c.exec(cmd);
+        list.insert(prev, id, content, font, size, color, bold, italic, underline);
     }
 };
 
 class list_update_cmd : public list_cmd
 {
+private:
+    string id, upd_type;
+    int value;
 public:
-    list_update_cmd(list_type type, list_log &list) : list_cmd(type, list, "update") {}
+    list_update_cmd(list_type type, list_log &list, string &id, string &upd_type, int value) :
+            list_cmd(type, list, "update"), id(id), upd_type(upd_type), value(value) {}
 
     void exec(redis_client &c) override
     {
-        //TODO
+        char cmd[128];
+        sprintf(cmd, "%s %s %s %d", cmd_head, id.c_str(), upd_type.c_str(), value);
+        auto r = c.exec(cmd);
+        list.update(id, upd_type, value);
     }
 };
 
 class list_remove_cmd : public list_cmd
 {
+private:
+    string id;
 public:
-    list_remove_cmd(list_type type, list_log &list) : list_cmd(type, list, "rem") {}
+    list_remove_cmd(list_type type, list_log &list, string &id) :
+            list_cmd(type, list, "rem"), id(id) {}
 
     void exec(redis_client &c) override
     {
-        //TODO
+        char cmd[128];
+        sprintf(cmd, "%s %s", cmd_head, id.c_str());
+        auto r = c.exec(cmd);
+        list.remove(id);
     }
 };
 

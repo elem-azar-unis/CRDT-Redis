@@ -53,7 +53,7 @@ public:
     void insert(string &prev, string &name, string &content,
                 int font, int size, int color, bool bold, bool italic, bool underline);
 
-    void update(string &name, const char *upd_type, int value);
+    void update(string &name, string &upd_type, int value);
 
     void remove(string &name);
 

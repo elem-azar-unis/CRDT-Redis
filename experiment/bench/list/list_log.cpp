@@ -84,30 +84,30 @@ void list_log::insert(string &prev, string &name, string &content,
     lock_guard<mutex> lk(mtx);
     if (ele_map.find(prev) == ele_map.end() || ele_map.find(name) != ele_map.end()) return;
     auto it_next = prev.empty() ? document.begin() : ele_map[prev];
-    if (it_next != document.begin())it_next++;
-    unique_ptr<element> e(new element(content, font, size, color, bold, italic, underline));
-    document.insert(it_next, move(e));
+    if (it_next != document.begin()) it_next++;
+    document.emplace(it_next, new element(content, font, size,
+                                          color, bold, italic, underline));
     it_next--;
     ele_map[name] = it_next;
 }
 
-void list_log::update(string &name, const char *upd_type, int value)
+void list_log::update(string &name, string &upd_type, int value)
 {
     lock_guard<mutex> lk(mtx);
     if (ele_map.find(name) != ele_map.end())
     {
         auto &e = *ele_map[name];
-        if (strcmp(upd_type, "font") == 0)
+        if (upd_type == "font")
             e->font = value;
-        else if (strcmp(upd_type, "size") == 0)
+        else if (upd_type == "size")
             e->size = value;
-        else if (strcmp(upd_type, "color") == 0)
+        else if (upd_type == "color")
             e->color = value;
-        else if (strcmp(upd_type, "bold") == 0)
+        else if (upd_type == "bold")
             e->bold = value;
-        else if (strcmp(upd_type, "italic") == 0)
+        else if (upd_type == "italic")
             e->italic = value;
-        else if (strcmp(upd_type, "underline") == 0)
+        else if (upd_type == "underline")
             e->underline = value;
     }
 }
@@ -126,7 +126,7 @@ void list_log::remove(string &name)
 string list_log::random_get()
 {
     lock_guard<mutex> lk(mtx);
-    if (ele_map.empty())return string();
+    if (ele_map.empty()) return string();
     auto random_it = next(begin(ele_map), intRand(ele_map.size()));
     return random_it->first;
 }
