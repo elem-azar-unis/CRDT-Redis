@@ -11,7 +11,7 @@
 #define PRA (pattern->PR_REM_CA)
 #define PRR (pattern->PR_REM_CA + pattern->PR_REM_CR)
 
-op_gen_pattern pt_dft{
+rpq_op_gen_pattern rpq_pt_dft{
     .PR_ADD = 0.41,
     .PR_INC = 0.2,
     .PR_REM = 0.39,
@@ -21,7 +21,7 @@ op_gen_pattern pt_dft{
     .PR_REM_CA = 0.1,
     .PR_REM_CR = 0.1};
 
-op_gen_pattern pt_ard{
+rpq_op_gen_pattern rpq_pt_ard{
     .PR_ADD = 0.11,
     .PR_INC = 0.8,
     .PR_REM = 0.09,

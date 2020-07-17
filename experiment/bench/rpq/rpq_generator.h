@@ -14,7 +14,7 @@
 class rpq_generator : public generator<int>
 {
 private:
-    op_gen_pattern *pattern;
+    rpq_op_gen_pattern *pattern;
     record_for_collision add, rem;
     rpq_log &ele;
     rpq_type zt;
@@ -42,9 +42,9 @@ public:
         start_maintaining_records();
 
         if (p == nullptr)
-            pattern = &pt_dft;
+            pattern = &rpq_pt_dft;
         else if (strcmp(p, "ardominant") == 0)
-            pattern = &pt_ard;
+            pattern = &rpq_pt_ard;
     }
 
     void gen_and_exec(redis_client &c) override;

@@ -9,7 +9,7 @@ constexpr int MAX_ELE = 200000;
 constexpr int MAX_INIT = 100;
 constexpr int MAX_INCR = 50;
 
-struct op_gen_pattern
+struct rpq_op_gen_pattern
 {
     double PR_ADD;
     double PR_INC;
@@ -21,7 +21,7 @@ struct op_gen_pattern
     double PR_REM_CR;
 };
 
-extern op_gen_pattern pt_dft, pt_ard;
+extern rpq_op_gen_pattern rpq_pt_dft, rpq_pt_ard;
 
 enum class rpq_op_type
 {

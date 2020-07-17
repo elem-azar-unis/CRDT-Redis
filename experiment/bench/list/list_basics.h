@@ -5,6 +5,15 @@
 #ifndef BENCH_LIST_BASICS_H
 #define BENCH_LIST_BASICS_H
 
+struct list_op_gen_pattern
+{
+    double PR_ADD;
+    double PR_UPD;
+    double PR_REM;
+};
+
+extern list_op_gen_pattern list_pt_dft;
+
 constexpr int MAX_FONT_SIZE = 100;
 constexpr int TOTAL_FONT_TYPE = 10;
 constexpr int MAX_COLOR = 1u << 25u;

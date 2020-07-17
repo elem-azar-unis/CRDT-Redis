@@ -6,6 +6,7 @@
 #define BENCH_UTIL_H
 
 #include <cstring>
+#include <string>
 #include <unordered_set>
 #include <mutex>
 #include <thread>
@@ -29,11 +30,24 @@ using namespace std;
 
 int intRand(int min, int max);
 
-int intRand(int max);
+static inline int intRand(int max)
+{
+    return intRand(0, max - 1);
+}
+
+static inline bool boolRand()
+{
+    return intRand(0, 1);
+}
+
+string strRand();
 
 double doubleRand(double min, double max);
 
-double decide();
+static inline double decide()
+{
+    return doubleRand(0.0, 1.0);
+}
 
 using redisReply_ptr = unique_ptr<redisReply, decltype(freeReplyObject) *>;
 
@@ -83,7 +97,7 @@ public:
     virtual void exec(redis_client &c) = 0;
 };
 
-template <class T>
+template<class T>
 class generator
 {
 protected:
@@ -161,7 +175,8 @@ public:
     ~generator()
     {
         running = false;
-        maintainer.join();
+        if (maintainer.joinable())
+            maintainer.join();
     }
 };
 
@@ -203,7 +218,7 @@ public:
     virtual void write_file() = 0;
 };
 
-template <class T>
+template<class T>
 class rdt_exp
 {
 private:
@@ -278,8 +293,8 @@ public:
         exp_impl(type, nullptr);
         exp_setting::set_default(nullptr);
     }
-    
-    void pattern_fix(const char* pattern, T type)
+
+    void pattern_fix(const char *pattern, T type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_pattern(pattern);

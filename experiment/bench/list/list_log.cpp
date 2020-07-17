@@ -126,7 +126,9 @@ void list_log::remove(string &name)
 string list_log::random_get()
 {
     lock_guard<mutex> lk(mtx);
-    if (ele_map.empty()) return string();
-    auto random_it = next(begin(ele_map), intRand(ele_map.size()));
+    if (ele_map.empty()) return string("null");
+    int pos = intRand(ele_map.size() + 1); // NOLINT
+    if (pos == ele_map.size()) return string("null");
+    auto random_it = next(begin(ele_map), pos);
     return random_it->first;
 }

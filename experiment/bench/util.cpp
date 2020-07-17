@@ -33,9 +33,18 @@ int intRand(int min, int max)
     return distribution(*rand_gen);
 }
 
-int intRand(int max)
+string strRand()
 {
-    return intRand(0, max - 1);
+    static const char charset[] =
+            "0123456789"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            "abcdefghijklmnopqrstuvwxyz";
+    char str[16];
+    int len = intRand(16);
+    for (int i = 0; i < len; ++i)
+        str[i] = charset[intRand(sizeof(charset))];
+    str[len] = '\0';
+    return string(str);
 }
 
 double doubleRand(double min, double max)
@@ -44,9 +53,4 @@ double doubleRand(double min, double max)
     if (!rand_gen) rand_gen = new mt19937(clock() + hash<thread::id>()(this_thread::get_id()));
     uniform_real_distribution<double> distribution(min, max);
     return distribution(*rand_gen);
-}
-
-double decide()
-{
-    return doubleRand(0.0, 1.0);
 }
