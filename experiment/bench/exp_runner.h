@@ -66,7 +66,7 @@ private:
         for (int i = 0; i < THREAD_PER_SERVER; ++i)
         {
             tasks.emplace_back(new task_queue());
-            auto &task = tasks.back();
+            auto task = tasks.back().get();
             thds.emplace_back([this, ip, port, task] {
                 redis_client c(ip, port);
                 for (int times = 0; times < OP_PER_THREAD; ++times)
