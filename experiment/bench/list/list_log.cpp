@@ -65,14 +65,14 @@ void list_log::write_file()
 
     sprintf(f, "%s/ovhd.csv", dir);
     FILE *ovhd = fopen(f, "w");
-    for (auto &o:overhead_log)
+    for (auto &o : overhead_log)
         fprintf(ovhd, "%d,%d\n", get<0>(o), get<1>(o));
     fflush(ovhd);
     fclose(ovhd);
 
     sprintf(f, "%s/distance.csv", dir);
     FILE *distance = fopen(f, "w");
-    for (auto &o:distance_log)
+    for (auto &o : distance_log)
         fprintf(distance, "%d,%f\n", get<0>(o), get<1>(o));
     fflush(distance);
     fclose(distance);

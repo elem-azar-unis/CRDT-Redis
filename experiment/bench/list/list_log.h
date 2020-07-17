@@ -34,13 +34,13 @@ private:
 
     static double diff(const element &e, const redisReply *r);
 
-    unordered_map<string, list<unique_ptr<element> >::iterator> ele_map;
-    list<unique_ptr<element> > document;
+    unordered_map<string, list<unique_ptr<element>>::iterator> ele_map;
+    list<unique_ptr<element>> document;
 
     // len, distance
-    vector<tuple<int, double> > distance_log;
+    vector<tuple<int, double>> distance_log;
     // num, overhead
-    vector<tuple<int, int> > overhead_log;
+    vector<tuple<int, int>> overhead_log;
 
     mutex mtx, dis_mtx, ovhd_mtx;
 
@@ -63,6 +63,5 @@ public:
 
     void write_file() override;
 };
-
 
 #endif //BENCH_LIST_LOG_H

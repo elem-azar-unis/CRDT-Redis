@@ -24,5 +24,4 @@ public:
     void exec(redis_client &c) override;
 };
 
-
 #endif //BENCH_RPQ_CMD_H

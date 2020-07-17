@@ -19,7 +19,7 @@
 constexpr int BASE_PORT = 6379;
 
 #define SUDO_PREFIX "echo %s | sudo -S "
-#define CMD_SUFFIX " 1>/dev/null"   // or " 1>/dev/null 2>&1"
+#define CMD_SUFFIX " 1>/dev/null" // or " 1>/dev/null 2>&1"
 
 class exp_env
 {
@@ -154,6 +154,5 @@ public:
         printf("cleaned\n\n");
     }
 };
-
 
 #endif //BENCH_EXP_ENV_H

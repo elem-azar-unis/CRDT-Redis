@@ -25,5 +25,4 @@ public:
     }
 };
 
-
 #endif //BENCH_LIST_EXP_H

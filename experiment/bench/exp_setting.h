@@ -75,17 +75,17 @@ public:
         {
             switch (type)
             {
-                case exp_type::speed:
-                    printf("speed: %dop/s", op_per_sec);
-                    break;
-                case exp_type::replica:
-                    printf("replica: %dx%d", total_clusters, server_per_cluster);
-                    break;
-                case exp_type::delay:
-                    printf("delay: (%dms,%dms)", delay, delay_low);
-                    break;
-                case exp_type::pattern:
-                    break;
+            case exp_type::speed:
+                printf("speed: %dop/s", op_per_sec);
+                break;
+            case exp_type::replica:
+                printf("replica: %dx%d", total_clusters, server_per_cluster);
+                break;
+            case exp_type::delay:
+                printf("delay: (%dms,%dms)", delay, delay_low);
+                break;
+            case exp_type::pattern:
+                break;
             }
             printf(", round %d", round_num);
         }

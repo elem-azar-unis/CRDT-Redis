@@ -107,7 +107,7 @@ private:
     };
 
 protected:
-    template<class T>
+    template <class T>
     class record_for_collision : public c_record
     {
     private:
@@ -225,7 +225,7 @@ public:
     virtual void write_file() = 0;
 };
 
-template<class T>
+template <class T>
 class rdt_exp
 {
 private:

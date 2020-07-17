@@ -11,7 +11,6 @@
 #include "list_cmd.h"
 #include "list_log.h"
 
-
 class list_generator : public generator
 {
 private:
@@ -43,8 +42,7 @@ private:
     // TODO record_for_collision<string> add;
 
 public:
-    list_generator(list_type type, list_log &list, const char *p) :
-            type(type), list(list)
+    list_generator(list_type type, list_log &list, const char *p) : type(type), list(list)
     {
         // TODO add_record(add); start_maintaining_records();
 
@@ -55,6 +53,5 @@ public:
 
     void gen_and_exec(redis_client &c) override;
 };
-
 
 #endif //BENCH_LIST_GENERATOR_H

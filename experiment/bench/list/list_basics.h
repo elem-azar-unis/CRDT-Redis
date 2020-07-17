@@ -24,8 +24,8 @@ constexpr int BOLD = 1u << 0u;
 constexpr int ITALIC = 1u << 1u;
 constexpr int UNDERLINE = 1u << 2u;
 
-#define LIST_TYPE_CODEC(ACTION)     \
-    ACTION(r)                       \
+#define LIST_TYPE_CODEC(ACTION) \
+    ACTION(r)                   \
     ACTION(rwf)
 
 #define DEFINE_ACTION(_name) _name,

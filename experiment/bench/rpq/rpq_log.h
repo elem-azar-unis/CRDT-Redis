@@ -5,7 +5,6 @@
 #ifndef BENCH_QUEUELOG_H
 #define BENCH_QUEUELOG_H
 
-
 #include <vector>
 #include <tuple>
 #include <unordered_map>
@@ -19,7 +18,6 @@ using namespace std;
 class rpq_log : public rdt_log
 {
 private:
-
     class element
     {
     public:
@@ -42,12 +40,12 @@ private:
         bool operator!=(const element &e) const { return value != e.value; }
     };
 
-    unordered_map<int, unique_ptr<element> > map;
+    unordered_map<int, unique_ptr<element>> map;
     vector<element *> heap;
     // kread, vread, kactural, vactural
-    vector<tuple<int, double, int, double> > max_log;
+    vector<tuple<int, double, int, double>> max_log;
     // num, ovhd
-    vector<tuple<int, int> > overhead_log;
+    vector<tuple<int, int>> overhead_log;
 
     mutex mtx, max_mtx, ovhd_mtx;
 
@@ -72,7 +70,6 @@ public:
     void overhead(int o);
 
     void write_file() override;
-
 };
 
 #endif //BENCH_QUEUELOG_H

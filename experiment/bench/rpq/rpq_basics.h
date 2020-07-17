@@ -28,9 +28,9 @@ enum class rpq_op_type
     add, incrby, rem, max, overhead, opcount
 };
 
-#define RPQ_TYPE_CODEC(ACTION)      \
-    ACTION(o)                       \
-    ACTION(r)                       \
+#define RPQ_TYPE_CODEC(ACTION) \
+    ACTION(o)                  \
+    ACTION(r)                  \
     ACTION(rwf)
 
 #define DEFINE_ACTION(_name) _name,

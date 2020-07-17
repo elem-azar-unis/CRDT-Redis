@@ -36,9 +36,9 @@ int intRand(int min, int max)
 string strRand()
 {
     static const char charset[] =
-            "0123456789"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "abcdefghijklmnopqrstuvwxyz";
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
     char str[16];
     int len = intRand(16);
     for (int i = 0; i < len; ++i)

@@ -33,6 +33,7 @@ private:
         int n = 0;
         mutex m;
         condition_variable cv;
+
     public:
         void worker()
         {
@@ -58,7 +59,7 @@ private:
     cmd *opcount_cmd = nullptr;
 
     vector<thread> thds;
-    vector<unique_ptr<task_queue> > tasks;
+    vector<unique_ptr<task_queue>> tasks;
 
     void conn_one_server_timed(const char *ip, int port)
     {
@@ -108,7 +109,7 @@ public:
             auto start_time = chrono::steady_clock::now();
             for (int times = 0; times < OP_PER_THREAD; ++times)
             {
-                for (auto &t:tasks)
+                for (auto &t : tasks)
                 {
                     t->add();
                 }
@@ -156,11 +157,11 @@ public:
         }
 
         timer.join();
-        for (auto &t:thds)
+        for (auto &t : thds)
             t.join();
 
         auto end = chrono::steady_clock::now();
-        auto time = chrono::duration_cast<chrono::duration<double> >(end - start).count();
+        auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
         printf("%f seconds, %f op/s\n", time, exp_setting::total_ops / time);
 
         printf("ending.\n");
@@ -177,7 +178,6 @@ public:
         }
 
         log.write_file();
-
     }
 };
 
