@@ -21,7 +21,6 @@ typedef struct rwf_list_element
     FORALL_NORMAL(DEFINE_NORMAL)
     int property;
 
-    struct rwf_list_element *prev;
     struct rwf_list_element *next;
 } rwfle;
 #undef DEFINE_NORMAL
@@ -55,7 +54,7 @@ static int rwfle_overhead(rwfle* e)
         ovhd += (1 + LIST_PR_NORMAL_NUM) * sizeof(int);         // FORALL_NORMAL(DEFINE_NORMAL)
                                                                 // int property;
 
-        ovhd += 2 * sizeof(rwfle *);                            // rwfle *prev, *next;
+        ovhd += sizeof(rwfle *);                                // rwfle *next;
     }
 
     return ovhd;
@@ -114,12 +113,12 @@ rwfle *rwfleNew()
     e->pos_id = NULL;
     e->current = lc_new(0);
     e->content = NULL;
+    e->property = 0;
 
 #define TMP_ACTION(p) e->p##_t = NULL;
     FORALL(TMP_ACTION);
 #undef TMP_ACTION
 
-    e->prev = NULL;
     e->next = NULL;
     return e;
 }
@@ -213,7 +212,6 @@ void rwflinsertCommand(client *c)
                     {
                         setHead(ht, e);
                         e->next = head;
-                        head->prev = e;
                     }
                     else
                     {
@@ -229,10 +227,7 @@ void rwflinsertCommand(client *c)
                             q = q->next;
                         }
                         p->next = e;
-                        e->prev = p;
                         e->next = q;
-                        if (q != NULL)
-                            q->prev = e;
                     }
                 }
 

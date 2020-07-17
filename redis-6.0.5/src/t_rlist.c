@@ -12,7 +12,7 @@
 #define RLE_OPS_SIZE (sizeof(rl_cmd) + sizeof(listNode) + VC_SIZE)
 
 #define RLE_SIZE_ADDITIONAL(e) (sdslen(e->oid) + sdslen(e->content) + LEID_SIZE(e->pos_id))
-#define RLE_SIZE_ESSENTIAL(e) (2 * sizeof(sds) + sdslen(e->oid) + sdslen(e->content) + 2 * sizeof(rle *) + (1 + LIST_PR_NORMAL_NUM) * sizeof(int))
+#define RLE_SIZE_ESSENTIAL(e) (2 * sizeof(sds) + sdslen(e->oid) + sdslen(e->content) + sizeof(rle *) + (1 + LIST_PR_NORMAL_NUM) * sizeof(int))
 
 #endif
 
@@ -137,7 +137,6 @@ typedef struct rw_list_element
     list *aset;
     list *rset;
 
-    struct rw_list_element *prev;
     struct rw_list_element *next;
 } rle;
 
@@ -155,7 +154,6 @@ rle *rleNew()
     e->aset = listCreate();
     e->rset = listCreate();
 
-    e->prev = NULL;
     e->next = NULL;
     return e;
 }
@@ -189,7 +187,6 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         {
             setHead(ht, e);
             e->next = head;
-            head->prev = e;
         }
         else
         {
@@ -205,10 +202,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
                 q = q->next;
             }
             p->next = e;
-            e->prev = p;
             e->next = q;
-            if (q != NULL)
-                q->prev = e;
         }
     }
 
