@@ -76,7 +76,7 @@ void rpq_log::rem(int k)
     if (map.find(k) != map.end())
     {
         int i = map[k]->index;
-        map.erase(map.find(k));
+        map.erase(k);
         heap[i] = heap.back();
         heap.erase(heap.end() - 1);
         shift_down(i);

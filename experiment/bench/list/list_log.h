@@ -6,13 +6,14 @@
 #define BENCH_LIST_LOG_H
 
 #include <string>
-#include <list>
 #include <vector>
 #include <tuple>
+#include <list>
 #include <unordered_map>
 #include <mutex>
 
 #include "../util.h"
+#include "list_basics.h"
 
 using namespace std;
 
@@ -21,23 +22,21 @@ class list_log : public rdt_log
 private:
     struct element
     {
-        string name;
         string content;
         int font, size, color;
         bool bold, italic, underline;
 
-        element *prev = nullptr, *next = nullptr;
-
-        element(char *name, char *content, int font, int size, int color,
+        element(string &content, int font, int size, int color,
                 bool bold, bool italic, bool underline) :
-                name(name), content(content), size(size), font(font), color(color),
+                content(content), size(size), font(font), color(color),
                 bold(bold), italic(italic), underline(underline) {}
     };
 
     static double diff(const element &e, const redisReply *r);
 
-    unordered_map<int, shared_ptr<element> > map;
-    list<shared_ptr<element> > document;
+    unordered_map<string, list<unique_ptr<element> >::iterator> ele_map;
+    list<unique_ptr<element> > document;
+
     // len, distance
     vector<tuple<int, double> > distance_log;
     // num, overhead
@@ -46,11 +45,23 @@ private:
     mutex mtx, dis_mtx, ovhd_mtx;
 
 public:
-    explicit list_log(const char *type) : rdt_log("list", type) {}
+    explicit list_log(list_type type) :
+            rdt_log("list", list_type_str[static_cast<int>(type)]) {}
+
+    string random_get();
+
+    void insert(string &prev, string &name, string &content,
+                int font, int size, int color, bool bold, bool italic, bool underline);
+
+    void update(string &name, const char *upd_type, int value);
+
+    void remove(string &name);
 
     void read_list(redisReply_ptr &r);
 
     void overhead(int o);
+
+    void write_file() override;
 };
 
 

@@ -127,7 +127,7 @@ protected:
             lock_guard<mutex> lk(mtx);
             cur = (cur + 1) % SPLIT_NUM;
             for (auto &n : v[cur])
-                h.erase(h.find(n));
+                h.erase(n);
             v[cur].clear();
         }
     };
