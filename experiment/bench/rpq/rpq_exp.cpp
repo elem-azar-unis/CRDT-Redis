@@ -24,7 +24,7 @@ void rpq_exp::exp_impl(rpq_type type, const char *pattern)
     rpq_cmd ovhd(type, rpq_op_type::overhead, -1, -1, qlog);
     rpq_cmd opcount(type, rpq_op_type::opcount, -1, -1, qlog);
 
-    exp_runner<int> runner(qlog, gen);
+    exp_runner runner(qlog, gen);
     runner.set_cmd_opcount(opcount);
     runner.set_cmd_ovhd(ovhd);
     runner.set_cmd_read(read_max);

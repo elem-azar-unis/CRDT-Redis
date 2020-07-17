@@ -25,7 +25,7 @@ void list_exp::exp_impl(list_type type, const char *pattern)
     list_ovhd_cmd ovhd(type, list);
     list_read_cmd read(type, list);
 
-    exp_runner<string> runner(list, gen);
+    exp_runner runner(list, gen);
     runner.set_cmd_opcount(opcount);
     runner.set_cmd_ovhd(ovhd);
     runner.set_cmd_read(read);

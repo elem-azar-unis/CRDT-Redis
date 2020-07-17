@@ -25,7 +25,6 @@
 using namespace std;
 //extern const char *ips[3];
 
-template<class T>
 class exp_runner
 {
 private:
@@ -53,7 +52,7 @@ private:
     };
 
     rdt_log &log;
-    generator<T> &gen;
+    generator &gen;
     cmd *read_cmd = nullptr;
     cmd *ovhd_cmd = nullptr;
     cmd *opcount_cmd = nullptr;
@@ -79,7 +78,7 @@ private:
     }
 
 public:
-    exp_runner(rdt_log &log, generator<T> &gen) : gen(gen), log(log) {}
+    exp_runner(rdt_log &log, generator &gen) : gen(gen), log(log) {}
 
     void set_cmd_read(cmd &readCmd)
     {

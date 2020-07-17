@@ -11,11 +11,11 @@
 #include "rpq_cmd.h"
 #include "rpq_log.h"
 
-class rpq_generator : public generator<int>
+class rpq_generator : public generator
 {
 private:
     rpq_op_gen_pattern *pattern;
-    record_for_collision add, rem;
+    record_for_collision<int> add, rem;
     rpq_log &ele;
     rpq_type zt;
 

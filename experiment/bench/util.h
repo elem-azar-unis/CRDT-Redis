@@ -97,11 +97,18 @@ public:
     virtual void exec(redis_client &c) = 0;
 };
 
-template<class T>
 class generator
 {
+private:
+    class c_record
+    {
+    public:
+        virtual void inc_rem() = 0;
+    };
+
 protected:
-    class record_for_collision
+    template<class T>
+    class record_for_collision : public c_record
     {
     private:
         vector<T> v[SPLIT_NUM];
@@ -136,7 +143,7 @@ protected:
             return r;
         }
 
-        void inc_rem()
+        void inc_rem() override
         {
             lock_guard<mutex> lk(mtx);
             cur = (cur + 1) % SPLIT_NUM;
@@ -147,12 +154,12 @@ protected:
     };
 
 private:
-    vector<record_for_collision *> records;
+    vector<c_record *> records;
     thread maintainer;
     volatile bool running = true;
 
 protected:
-    void add_record(record_for_collision &r)
+    void add_record(c_record &r)
     {
         records.emplace_back(&r);
     }

@@ -185,8 +185,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rpq_exp rpqExp;
-    rpqExp.exp_start_all(30);
+    rpq_exp().exp_start_all(30);
 
     return 0;
 }

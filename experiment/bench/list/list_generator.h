@@ -12,7 +12,7 @@
 #include "list_log.h"
 
 
-class list_generator : public generator<string>
+class list_generator : public generator
 {
 private:
     class id_gen
@@ -40,7 +40,7 @@ private:
     list_op_gen_pattern *pattern;
     list_log &list;
     list_type type;
-    // TODO record_for_collision add;
+    // TODO record_for_collision<string> add;
 
 public:
     list_generator(list_type type, list_log &list, const char *p) :
