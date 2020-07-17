@@ -59,7 +59,7 @@ private:
     cmd *opcount_cmd = nullptr;
 
     vector<thread> thds;
-    vector<shared_ptr<task_queue> > tasks;
+    vector<unique_ptr<task_queue> > tasks;
 
     void conn_one_server_timed(const char *ip, int port)
     {

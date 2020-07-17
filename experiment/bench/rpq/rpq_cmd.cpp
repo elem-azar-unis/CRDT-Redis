@@ -10,28 +10,29 @@ const char *rpq_type_str[] = {RPQ_TYPE_CODEC(DEFINE_ACTION)};
 
 void rpq_cmd::exec(redis_client &c)
 {
-    char name[128];
-    sprintf(name, "%srpq", rpq_type_str[static_cast<int>(zt)]);
+    const char* type_str = rpq_type_str[static_cast<int>(zt)];
+    char name[32];
+    sprintf(name, "%srpq", type_str);
     char tmp[256];
     switch (t)
     {
         case rpq_op_type::add:
-            sprintf(tmp, "%szadd %s %d %f", rpq_type_str[static_cast<int>(zt)], name, e, d);
+            sprintf(tmp, "%szadd %s %d %f", type_str, name, e, d);
             break;
         case rpq_op_type::incrby:
-            sprintf(tmp, "%szincrby %s %d %f", rpq_type_str[static_cast<int>(zt)], name, e, d);
+            sprintf(tmp, "%szincrby %s %d %f", type_str, name, e, d);
             break;
         case rpq_op_type::rem:
-            sprintf(tmp, "%szrem %s %d", rpq_type_str[static_cast<int>(zt)], name, e);
+            sprintf(tmp, "%szrem %s %d", type_str, name, e);
             break;
         case rpq_op_type::max:
-            sprintf(tmp, "%szmax %s", rpq_type_str[static_cast<int>(zt)], name);
+            sprintf(tmp, "%szmax %s", type_str, name);
             break;
         case rpq_op_type::overhead:
-            sprintf(tmp, "%szoverhead %s", rpq_type_str[static_cast<int>(zt)], name);
+            sprintf(tmp, "%szoverhead %s", type_str, name);
             break;
         case rpq_op_type::opcount:
-            sprintf(tmp, "%szopcount", rpq_type_str[static_cast<int>(zt)]);
+            sprintf(tmp, "%szopcount", type_str);
             break;
     }
     auto r = c.exec(tmp);

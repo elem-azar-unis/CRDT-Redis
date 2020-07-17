@@ -19,10 +19,7 @@ private:
     rpq_log &ele;
 
 public:
-
     rpq_cmd(rpq_type zt, rpq_op_type t, int e, double d, rpq_log &em) : zt(zt), t(t), e(e), d(d), ele(em) {}
-
-    rpq_cmd(const rpq_cmd &c) = default;
 
     void exec(redis_client &c) override;
 };
