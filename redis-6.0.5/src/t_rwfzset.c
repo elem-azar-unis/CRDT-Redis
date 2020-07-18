@@ -2,9 +2,9 @@
 // Created by user on 18-10-6.
 //
 
-#include "server.h"
 #include "CRDT.h"
 #include "RWFramework.h"
+#include "server.h"
 
 #ifdef CRDT_OVERHEAD
 #define RWFZE_SIZE (sizeof(rwfze) + REH_SIZE_ADDITIONAL)
@@ -31,15 +31,16 @@ rwfze *rwfzeNew()
     return e;
 }
 
-#define SCORE(e) ((e)->innate+(e)->acquired)
+#define SCORE(e) ((e)->innate + (e)->acquired)
 
-#define GET_RWFZE(arg_t, create) \
-    (rwfze *)rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)rwfzeNew)
+#define GET_RWFZE(arg_t, create)                                                     \
+    (rwfze *)rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, \
+                      (rehNew_func_t)rwfzeNew)
 
 // This doesn't free t.
 static void removeFunc(client *c, rwfze *e, vc *t)
 {
-    if (removeCheck((reh *) e, t))
+    if (removeCheck((reh *)e, t))
     {
         REH_RMV_FUNC(e, t);
         e->acquired = 0;
@@ -49,7 +50,6 @@ static void removeFunc(client *c, rwfze *e, vc *t)
         server.dirty++;
     }
 }
-
 
 void rwfzaddCommand(client *c)
 {
@@ -66,7 +66,7 @@ void rwfzaddCommand(client *c)
             vc *t = CR_GET_LAST;
             rwfze *e = GET_RWFZE(rargv, 1);
             removeFunc(c, e, t);
-            if (insertCheck((reh *) e, t))
+            if (insertCheck((reh *)e, t))
             {
                 PID(e) = t->id;
                 e->innate = v;
@@ -94,7 +94,7 @@ void rwfzincrbyCommand(client *c)
             vc *t = CR_GET_LAST;
             rwfze *e = GET_RWFZE(rargv, 1);
             removeFunc(c, e, t);
-            if (updateCheck((reh *) e, t))
+            if (updateCheck((reh *)e, t))
             {
                 e->acquired += v;
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
@@ -128,14 +128,11 @@ void rwfzscoreCommand(client *c)
     robj *zobj;
     double score;
 
-    if ((zobj = lookupKeyReadOrReply(c, key, shared.null[c->resp])) == NULL ||
-        checkType(c, zobj, OBJ_ZSET))
+    if ((zobj = lookupKeyReadOrReply(c, key, shared.null[c->resp])) == NULL
+        || checkType(c, zobj, OBJ_ZSET))
         return;
 
-    if (zsetScore(zobj, c->argv[2]->ptr, &score) == C_ERR)
-    {
-        addReply(c, shared.null[c->resp]);
-    }
+    if (zsetScore(zobj, c->argv[2]->ptr, &score) == C_ERR) { addReply(c, shared.null[c->resp]); }
     else
     {
         addReplyDouble(c, score);
@@ -153,9 +150,7 @@ void rwfzmaxCommand(client *c)
         addReply(c, shared.emptyarray);
 
 #ifdef CRDT_LOG
-        CRDT_log("%s %s, NONE",
-                 (char *)(c->argv[0]->ptr),
-                 (char *)(c->argv[1]->ptr));
+        CRDT_log("%s %s, NONE", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr));
 #endif
 
         return;
@@ -182,9 +177,7 @@ void rwfzmaxCommand(client *c)
 
 #ifdef CRDT_LOG
         if (vstr == NULL)
-            CRDT_log("%s %s, %ld: %f",
-                     (char *)(c->argv[0]->ptr),
-                     (char *)(c->argv[1]->ptr),
+            CRDT_log("%s %s, %ld: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr),
                      (long)vlong, zzlGetScore(sptr));
         else
         {
@@ -192,14 +185,11 @@ void rwfzmaxCommand(client *c)
             for (unsigned int i = 0; i < vlen; ++i)
                 temp[i] = vstr[i];
             temp[vlen] = '\0';
-            CRDT_log("%s %s, %s: %f",
-                     (char *)(c->argv[0]->ptr),
-                     (char *)(c->argv[1]->ptr),
-                     temp, zzlGetScore(sptr));
+            CRDT_log("%s %s, %s: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr), temp,
+                     zzlGetScore(sptr));
             zfree(temp);
         }
 #endif
-
     }
     else if (zobj->encoding == OBJ_ENCODING_SKIPLIST)
     {
@@ -212,12 +202,9 @@ void rwfzmaxCommand(client *c)
         addReplyDouble(c, ln->score);
 
 #ifdef CRDT_LOG
-        CRDT_log("%s %s, %s: %f",
-                 (char *)(c->argv[0]->ptr),
-                 (char *)(c->argv[1]->ptr),
-                 ele, ln->score);
+        CRDT_log("%s %s, %s: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr), ele,
+                 ln->score);
 #endif
-
     }
     else
     {
@@ -235,8 +222,8 @@ void rwfzestatusCommand(client *c)
         return;
     }
 
-    //unsigned long len = 6 + listLength(e->ops);
-    //addReplyArrayLen(c, len);
+    // unsigned long len = 6 + listLength(e->ops);
+    // addReplyArrayLen(c, len);
     addReplyArrayLen(c, 5);
 
     addReplyBulkSds(c, sdscatprintf(sdsempty(), "innate:%f", e->innate));
@@ -245,15 +232,11 @@ void rwfzestatusCommand(client *c)
 
     addReplyBulkSds(c, sdsnew("current:"));
     addReplyBulkSds(c, vcToSds(CURRENT(e)));
-
 }
 #endif
 
 #ifdef CRDT_OPCOUNT
-void rwfzopcountCommand(client *c)
-{
-    addReplyLongLong(c, op_count_get());
-}
+void rwfzopcountCommand(client *c) { addReplyLongLong(c, op_count_get()); }
 #endif
 
 /* Actually the hash set used here to store rwfze structures is not necessary.
@@ -276,10 +259,7 @@ void rwfzopcountCommand(client *c)
  * */
 #ifdef CRDT_OVERHEAD
 
-void rwfzoverheadCommand(client *c)
-{
-    addReplyLongLong(c, ovhd_get());
-}
+void rwfzoverheadCommand(client *c) { addReplyLongLong(c, ovhd_get()); }
 
 #elif 0
 
@@ -307,7 +287,7 @@ void rwfzoverheadCommand(client *c)
     while (hashTypeNext(hi) != C_ERR)
     {
         sds value = hashTypeCurrentObjectNewSds(hi, OBJ_HASH_VALUE);
-        rwfze *e = *(rwfze **) value;
+        rwfze *e = *(rwfze **)value;
         size += RWFZE_SIZE;
         sdsfree(value);
     }
@@ -324,7 +304,8 @@ void rwfzoverheadCommand(client *c)
     else if (ht->encoding == OBJ_ENCODING_HT)
     {
         dict *d = ht->ptr;
-        size += sizeof(dict) + sizeof(dictType) + (d->ht[0].size + d->ht[1].size) * sizeof(dictEntry *)
+        size += sizeof(dict) + sizeof(dictType) + (d->ht[0].size + d->ht[1].size) * sizeof(dictEntry
+    *)
                 + (d->ht[0].used + d->ht[1].used) * sizeof(dictEntry);
 
         dictIterator *di = dictGetIterator(d);

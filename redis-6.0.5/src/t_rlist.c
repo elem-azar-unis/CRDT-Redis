@@ -1,9 +1,9 @@
 //
 // Created by user on 20-04-12.
 //
-#include "server.h"
 #include "RWFramework.h"
 #include "list_basics.h"
+#include "server.h"
 #ifdef CRDT_OVERHEAD
 
 #define RLE_SIZE (sizeof(rle) + 2 * sizeof(list))
@@ -12,7 +12,9 @@
 #define RLE_OPS_SIZE (sizeof(rl_cmd) + sizeof(listNode) + VC_SIZE)
 
 #define RLE_SIZE_ADDITIONAL(e) (sdslen(e->oid) + sdslen(e->content) + LEID_SIZE(e->pos_id))
-#define RLE_SIZE_ESSENTIAL(e) (2 * sizeof(sds) + sdslen(e->oid) + sdslen(e->content) + sizeof(rle *) + (1 + LIST_PR_NORMAL_NUM) * sizeof(int))
+#define RLE_SIZE_ESSENTIAL(e)                                              \
+    (2 * sizeof(sds) + sdslen(e->oid) + sdslen(e->content) + sizeof(rle *) \
+     + (1 + LIST_PR_NORMAL_NUM) * sizeof(int))
 
 #endif
 
@@ -55,7 +57,9 @@ void rl_aseDelete(rl_ase *a)
 
 enum rl_cmd_type
 {
-    RLADD, RLUPDATE, RLREM
+    RLADD,
+    RLUPDATE,
+    RLREM
 };
 typedef struct rlist_unready_command
 {
@@ -112,14 +116,14 @@ list *getOps(robj *ht)
     if (value == NULL)
     {
         e = listCreate();
-        RWFHT_SET(ht, hname, list*, e);
+        RWFHT_SET(ht, hname, list *, e);
 #ifdef CRDT_OVERHEAD
         ovhd_inc(sizeof(list));
 #endif
     }
     else
     {
-        e = *(list **) (value->ptr);
+        e = *(list **)(value->ptr);
         decrRefCount(value);
     }
     sdsfree(hname);
@@ -179,10 +183,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         ovhd_inc(RLE_SIZE_ADDITIONAL(e));
 #endif
         rle *head = getHead(ht);
-        if (head == NULL)
-        {
-            setHead(ht, e);
-        }
+        if (head == NULL) { setHead(ht, e); }
         else if (leid_cmp(e->pos_id, head->pos_id) < 0)
         {
             setHead(ht, e);
@@ -194,7 +195,8 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
             rle *p, *q;
             if (pre != NULL)
                 p = pre;
-            else p = head;
+            else
+                p = head;
             q = p->next;
             while (q != NULL && leid_cmp(e->pos_id, q->pos_id) > 0)
             {
@@ -207,7 +209,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     }
 
     rl_ase *a = rl_aseNew(t);
-#define TMP_ACTION(T) a->T=T;
+#define TMP_ACTION(T) a->T = T;
     long long font, size, color, property;
     getLongLongFromObject(argv[4], &font);
     getLongLongFromObject(argv[5], &size);
@@ -233,11 +235,10 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 #endif
         }
     }
-    if (e->value == NULL || e->value->t->id < t->id)
-        e->value = a;
+    if (e->value == NULL || e->value->t->id < t->id) e->value = a;
 
     if (pre_insert == 0 && LOOKUP(e))
-    {    
+    {
         incrLen(ht, 1);
 #ifdef CRDT_OVERHEAD
         ovhd_inc(-RLE_SIZE_ESSENTIAL(e));
@@ -262,35 +263,34 @@ static void updateFunc(redisDb *db, robj *ht, robj **argv, vc *t)
     while ((ln = listNext(&li)))
     {
         rl_ase *a = ln->value;
-        if (vc_cmp(a->t, t) == VC_LESS)
-            do
+        if (vc_cmp(a->t, t) == VC_LESS) do
             {
-#define UPD_NORMAL(T)\
-    if(strcmp(type,#T)==0)\
-    {\
-        if(vc_cmp(a->T##_t, t) <0)\
-        {\
-            vc_update(a->T##_t,t);\
-            a->T##_t->id=t->id;\
-            a->T=value;\
-        }\
-        break;\
+#define UPD_NORMAL(T)                \
+    if (strcmp(type, #T) == 0)       \
+    {                                \
+        if (vc_cmp(a->T##_t, t) < 0) \
+        {                            \
+            vc_update(a->T##_t, t);  \
+            a->T##_t->id = t->id;    \
+            a->T = value;            \
+        }                            \
+        break;                       \
     }
                 FORALL_NORMAL(UPD_NORMAL);
 #undef UPD_NORMAL
-#define UPD_BITMAP(T)\
-    if(strcmp(type,#T)==0)\
-    {\
-        if(vc_cmp(a->T##_t, t) <0)\
-        {\
-            vc_update(a->T##_t,t);\
-            a->T##_t->id=t->id;\
-            if(value==0)\
-                a->property &=~ __##T;\
-            else\
-                a->property |= __##T;\
-        }\
-        break;\
+#define UPD_BITMAP(T)                  \
+    if (strcmp(type, #T) == 0)         \
+    {                                  \
+        if (vc_cmp(a->T##_t, t) < 0)   \
+        {                              \
+            vc_update(a->T##_t, t);    \
+            a->T##_t->id = t->id;      \
+            if (value == 0)            \
+                a->property &= ~__##T; \
+            else                       \
+                a->property |= __##T;  \
+        }                              \
+        break;                         \
     }
                 FORALL_BITMAP(UPD_BITMAP);
 #undef UPD_BITMAP
@@ -320,8 +320,7 @@ static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         if (vc_cmp(a->t, t) == VC_LESS)
         {
             listDelNode(e->aset, ln);
-            if (e->value == a)
-                e->value = NULL;
+            if (e->value == a) e->value = NULL;
             rl_aseDelete(a);
         }
     }
@@ -332,13 +331,12 @@ static void removeFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         while ((ln = listNext(&li)))
         {
             rl_ase *a = ln->value;
-            if (e->value == NULL || e->value->t->id < a->t->id)
-                e->value = a;
+            if (e->value == NULL || e->value->t->id < a->t->id) e->value = a;
         }
     }
 
     if (pre_rmv == 1 && !LOOKUP(e))
-    {    
+    {
         incrLen(ht, -1);
 #ifdef CRDT_OVERHEAD
         ovhd_inc(RLE_SIZE_ESSENTIAL(e));
@@ -398,7 +396,8 @@ void rlinsertCommand(client *c)
                 sdstolower(c->argv[2]->ptr);
                 if (strcmp(c->argv[2]->ptr, "null") != 0)
                 {
-                    sds errs = sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
+                    sds errs =
+                        sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
                     addReplySds(c, errs);
                     return;
                 }
@@ -537,15 +536,9 @@ void rllistCommand(client *c)
 }
 
 #ifdef CRDT_OPCOUNT
-void rlopcountCommand(client *c)
-{
-    addReplyLongLong(c, op_count_get());
-}
+void rlopcountCommand(client *c) { addReplyLongLong(c, op_count_get()); }
 #endif
 
 #ifdef CRDT_OVERHEAD
-void rloverheadCommand(client *c)
-{
-    addReplyLongLong(c, ovhd_get());
-}
+void rloverheadCommand(client *c) { addReplyLongLong(c, ovhd_get()); }
 #endif

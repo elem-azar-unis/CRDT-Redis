@@ -1,11 +1,11 @@
 //
 // Created by user on 19-11-10.
 //
-#include "server.h"
 #include "CRDT.h"
 #include "RWFramework.h"
-#include "list_basics.h"
 #include "lamport_clock.h"
+#include "list_basics.h"
+#include "server.h"
 
 #define DEFINE_NORMAL(p) int p;
 #define PROPERTY_LC(p) lc *p##_t;
@@ -30,31 +30,30 @@ typedef struct rwf_list_element
 
 #define RWFLE_SIZE_NEW (sizeof(rwfle) + sizeof(lc) + REH_SIZE_ADDITIONAL)
 
-static int rwfle_overhead(rwfle* e)
+static int rwfle_overhead(rwfle *e)
 {
-    int ovhd = sizeof(reh) + REH_SIZE_ADDITIONAL;               // reh header;
-    ovhd += sizeof(leid *) + LEID_SIZE(e->pos_id);              // leid *pos_id;
-    ovhd += sizeof(lc *) + sizeof(lc);                          // lc *current;
+    int ovhd = sizeof(reh) + REH_SIZE_ADDITIONAL;   // reh header;
+    ovhd += sizeof(leid *) + LEID_SIZE(e->pos_id);  // leid *pos_id;
+    ovhd += sizeof(lc *) + sizeof(lc);              // lc *current;
 
 #define TS_OVHD(T)        \
     ovhd += sizeof(lc *); \
-    if (e->T##_t != NULL) \
-        ovhd += sizeof(lc);
+    if (e->T##_t != NULL) ovhd += sizeof(lc);
 
-    FORALL(TS_OVHD);                                            // FORALL(PROPERTY_LC)
+    FORALL(TS_OVHD);  // FORALL(PROPERTY_LC)
 
 #undef TS_OVHD
 
-    if(!EXISTS(e))
+    if (!EXISTS(e))
     {
         ovhd += 2 * sizeof(sds);
-        ovhd += e->oid == NULL ? 0 : sdslen(e->oid);            // sds oid;
-        ovhd += e->content == NULL ? 0 : sdslen(e->content);    // sds content;
+        ovhd += e->oid == NULL ? 0 : sdslen(e->oid);          // sds oid;
+        ovhd += e->content == NULL ? 0 : sdslen(e->content);  // sds content;
 
-        ovhd += (1 + LIST_PR_NORMAL_NUM) * sizeof(int);         // FORALL_NORMAL(DEFINE_NORMAL)
-                                                                // int property;
+        ovhd += (1 + LIST_PR_NORMAL_NUM) * sizeof(int);  // FORALL_NORMAL(DEFINE_NORMAL)
+                                                         // int property;
 
-        ovhd += sizeof(rwfle *);                                // rwfle *next;
+        ovhd += sizeof(rwfle *);  // rwfle *next;
     }
 
     return ovhd;
@@ -71,32 +70,32 @@ static int rwfle_overhead(rwfle* e)
 void acquired_update(rwfle *e, sds type, lc *t, int value)
 {
     sdstolower(type);
-#define AC_UPDATE_NORMAL(T)\
-    if(strcmp(type,#T)==0)\
-    {\
-        if((e->T##_t)==NULL || lc_cmp(e->T##_t,t)<=0)\
-        {\
-            lc_copy(e->T##_t,t);\
-            e->T=value;\
-            lc_update(e->current, t);\
-        }\
-        return;\
+#define AC_UPDATE_NORMAL(T)                                 \
+    if (strcmp(type, #T) == 0)                              \
+    {                                                       \
+        if ((e->T##_t) == NULL || lc_cmp(e->T##_t, t) <= 0) \
+        {                                                   \
+            lc_copy(e->T##_t, t);                           \
+            e->T = value;                                   \
+            lc_update(e->current, t);                       \
+        }                                                   \
+        return;                                             \
     }
     FORALL_NORMAL(AC_UPDATE_NORMAL);
 #undef AC_UPDATE_NORMAL
-#define AC_UPDATE_BITMAP(T)\
-    if(strcmp(type,#T)==0)\
-    {\
-        if((e->T##_t)==NULL || lc_cmp(e->T##_t,t)<=0)\
-        {\
-            lc_copy(e->T##_t,t);\
-            if(value==0)\
-                e->property &=~ __##T;\
-            else\
-                e->property |= __##T;\
-            lc_update(e->current, t);\
-        }\
-        return;\
+#define AC_UPDATE_BITMAP(T)                                 \
+    if (strcmp(type, #T) == 0)                              \
+    {                                                       \
+        if ((e->T##_t) == NULL || lc_cmp(e->T##_t, t) <= 0) \
+        {                                                   \
+            lc_copy(e->T##_t, t);                           \
+            if (value == 0)                                 \
+                e->property &= ~__##T;                      \
+            else                                            \
+                e->property |= __##T;                       \
+            lc_update(e->current, t);                       \
+        }                                                   \
+        return;                                             \
     }
     FORALL_BITMAP(AC_UPDATE_BITMAP);
 #undef AC_UPDATE_BITMAP
@@ -123,11 +122,10 @@ rwfle *rwfleNew()
     return e;
 }
 
-
 // This doesn't free t.
 static void removeFunc(client *c, rwfle *e, vc *t)
 {
-    if (removeCheck((reh *) e, t))
+    if (removeCheck((reh *)e, t))
     {
         robj *ht = GET_LIST_HT(rargv, 0);
         if (EXISTS(e)) incrLen(ht, -1);
@@ -158,7 +156,8 @@ void rwflinsertCommand(client *c)
                 sdstolower(c->argv[2]->ptr);
                 if (strcmp(c->argv[2]->ptr, "null") != 0)
                 {
-                    sds errs = sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
+                    sds errs =
+                        sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
                     addReplySds(c, errs);
                     return;
                 }
@@ -192,7 +191,7 @@ void rwflinsertCommand(client *c)
             ovhd_inc(-rwfle_overhead(e));
 #endif
             removeFunc(c, e, t);
-            if (insertCheck((reh *) e, t))
+            if (insertCheck((reh *)e, t))
             {
                 robj *ht = GET_LIST_HT(rargv, 1);
                 if (!EXISTS(e)) incrLen(ht, 1);
@@ -204,10 +203,7 @@ void rwflinsertCommand(client *c)
                     e->content = sdsdup(c->rargv[4]->ptr);
                     e->pos_id = sdsToLeid(c->rargv[9]->ptr);
                     rwfle *head = getHead(ht);
-                    if (head == NULL)
-                    {
-                        setHead(ht, e);
-                    }
+                    if (head == NULL) { setHead(ht, e); }
                     else if (leid_cmp(e->pos_id, head->pos_id) < 0)
                     {
                         setHead(ht, e);
@@ -219,7 +215,8 @@ void rwflinsertCommand(client *c)
                         rwfle *p, *q;
                         if (pre != NULL)
                             p = pre;
-                        else p = head;
+                        else
+                            p = head;
                         q = p->next;
                         while (q != NULL && leid_cmp(e->pos_id, q->pos_id) > 0)
                         {
@@ -231,17 +228,16 @@ void rwflinsertCommand(client *c)
                     }
                 }
 
+#define IN_UPDATE_NORMAL(T) \
+            if (e->T##_t == NULL) e->T = T;
 
-#define IN_UPDATE_NORMAL(T)\
-    if(e->T##_t==NULL) e->T=T;
-
-#define IN_UPDATE_BITMAP(T)\
-    if(e->T##_t==NULL)\
-    {\
-        if((property & __##T)==0)\
-            e->property &=~ __##T;\
-        else\
-            e->property |= __##T;\
+#define IN_UPDATE_BITMAP(T)          \
+    if (e->T##_t == NULL)            \
+    {                                \
+        if ((property & __##T) == 0) \
+            e->property &= ~__##T;   \
+        else                         \
+            e->property |= __##T;    \
     }
                 long long font, size, color, property;
                 getLongLongFromObject(c->rargv[5], &font);
@@ -283,7 +279,7 @@ void rwflupdateCommand(client *c)
             long long value;
             getLongLongFromObject(c->rargv[4], &value);
             removeFunc(c, e, t);
-            if (updateCheck((reh *) e, t))
+            if (updateCheck((reh *)e, t))
             {
                 acquired_update(e, c->rargv[3]->ptr, lt, value);
                 server.dirty++;
@@ -348,15 +344,9 @@ void rwfllistCommand(client *c)
 }
 
 #ifdef CRDT_OPCOUNT
-void rwflopcountCommand(client *c)
-{
-    addReplyLongLong(c, op_count_get());
-}
+void rwflopcountCommand(client *c) { addReplyLongLong(c, op_count_get()); }
 #endif
 
 #ifdef CRDT_OVERHEAD
-void rwfloverheadCommand(client *c)
-{
-    addReplyLongLong(c, ovhd_get());
-}
+void rwfloverheadCommand(client *c) { addReplyLongLong(c, ovhd_get()); }
 #endif

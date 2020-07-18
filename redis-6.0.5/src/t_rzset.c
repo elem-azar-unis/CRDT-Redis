@@ -2,9 +2,9 @@
 // Created by user on 18-10-6.
 //
 
-#include "server.h"
 #include "CRDT.h"
 #include "RWFramework.h"
+#include "server.h"
 
 #ifdef CRDT_OVERHEAD
 
@@ -29,8 +29,7 @@ typedef struct rzset_aset_element
 sds rz_aseToSds(rz_ase *a)
 {
     sds vc_s = vcToSds(a->t);
-    sds s = sdscatprintf(sdsempty(), "%f %f %s",
-                         a->x, a->inc, vc_s);
+    sds s = sdscatprintf(sdsempty(), "%f %f %s", a->x, a->inc, vc_s);
     sdsfree(vc_s);
     return s;
 }
@@ -58,12 +57,15 @@ rze *rzeNew()
     return e;
 }
 
-#define GET_RZE(arg_t, create) \
-    (rze *)rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)rzeNew)
+#define GET_RZE(arg_t, create)                                                    \
+    (rze *)rehHTGet(c->db, c->arg_t[1], RW_RPQ_TABLE_SUFFIX, c->arg_t[2], create, \
+                    (rehNew_func_t)rzeNew)
 
 enum rz_cmd_type
 {
-    RZADD, RZINCBY, RZREM
+    RZADD,
+    RZINCBY,
+    RZREM
 };
 typedef struct rzset_unready_command
 {
@@ -76,8 +78,7 @@ sds rz_cmdToSds(rz_cmd *cmd)
 {
     static char *tp[] = {"RZADD", "RZINCBY", "RZREM"};
     sds vc_s = vcToSds(cmd->t);
-    sds s = sdscatprintf(sdsempty(), "%s %f %s",
-                         tp[cmd->type], cmd->value, vc_s);
+    sds s = sdscatprintf(sdsempty(), "%s %f %s", tp[cmd->type], cmd->value, vc_s);
     sdsfree(vc_s);
     return s;
 }
@@ -132,8 +133,7 @@ static void insertFunc(rze *e, redisDb *db, robj *tname, robj *key, double value
         }
     }
 
-    if (e->value == NULL || e->value->t->id < t->id)
-        e->value = a;
+    if (e->value == NULL || e->value->t->id < t->id) e->value = a;
     if (LOOKUP(e))
     {
         robj *zset = getZsetOrCreate(db, tname, key);
@@ -152,8 +152,7 @@ static void increaseFunc(rze *e, redisDb *db, robj *tname, robj *key, double val
     while ((ln = listNext(&li)))
     {
         rz_ase *a = ln->value;
-        if (vc_cmp(a->t, t) == VC_LESS)
-            a->inc += value;
+        if (vc_cmp(a->t, t) == VC_LESS) a->inc += value;
     }
 
     if (LOOKUP(e) && vc_cmp(e->value->t, t) == VC_LESS)
@@ -186,8 +185,7 @@ static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
             ovhd_inc(-RZE_ASE_SIZE);
 #endif
             listDelNode(e->aset, ln);
-            if (e->value == a)
-                e->value = NULL;
+            if (e->value == a) e->value = NULL;
             vc_delete(a->t);
             zfree(a);
         }
@@ -199,8 +197,7 @@ static void removeFunc(rze *e, redisDb *db, robj *tname, robj *key, vc *t)
         while ((ln = listNext(&li)))
         {
             rz_ase *a = ln->value;
-            if (e->value == NULL || e->value->t->id < a->t->id)
-                e->value = a;
+            if (e->value == NULL || e->value->t->id < a->t->id) e->value = a;
         }
     }
 
@@ -361,8 +358,6 @@ void notifyLoop(rze *e, redisDb *db)
 
 */
 
-
-
 void rzaddCommand(client *c)
 {
     CRDT_BEGIN
@@ -462,14 +457,11 @@ void rzscoreCommand(client *c)
     robj *zobj;
     double score;
 
-    if ((zobj = lookupKeyReadOrReply(c, key, shared.null[c->resp])) == NULL ||
-        checkType(c, zobj, OBJ_ZSET))
+    if ((zobj = lookupKeyReadOrReply(c, key, shared.null[c->resp])) == NULL
+        || checkType(c, zobj, OBJ_ZSET))
         return;
 
-    if (zsetScore(zobj, c->argv[2]->ptr, &score) == C_ERR)
-    {
-        addReply(c, shared.null[c->resp]);
-    }
+    if (zsetScore(zobj, c->argv[2]->ptr, &score) == C_ERR) { addReply(c, shared.null[c->resp]); }
     else
     {
         addReplyDouble(c, score);
@@ -487,9 +479,7 @@ void rzmaxCommand(client *c)
         addReply(c, shared.emptyarray);
 
 #ifdef CRDT_LOG
-        CRDT_log("%s %s, NONE",
-                 (char *)(c->argv[0]->ptr),
-                 (char *)(c->argv[1]->ptr));
+        CRDT_log("%s %s, NONE", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr));
 #endif
 
         return;
@@ -516,9 +506,7 @@ void rzmaxCommand(client *c)
 
 #ifdef CRDT_LOG
         if (vstr == NULL)
-            CRDT_log("%s %s, %ld: %f",
-                     (char *)(c->argv[0]->ptr),
-                     (char *)(c->argv[1]->ptr),
+            CRDT_log("%s %s, %ld: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr),
                      (long)vlong, zzlGetScore(sptr));
         else
         {
@@ -526,14 +514,11 @@ void rzmaxCommand(client *c)
             for (unsigned int i = 0; i < vlen; ++i)
                 temp[i] = vstr[i];
             temp[vlen] = '\0';
-            CRDT_log("%s %s, %s: %f",
-                     (char *)(c->argv[0]->ptr),
-                     (char *)(c->argv[1]->ptr),
-                     temp, zzlGetScore(sptr));
+            CRDT_log("%s %s, %s: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr), temp,
+                     zzlGetScore(sptr));
             zfree(temp);
         }
 #endif
-
     }
     else if (zobj->encoding == OBJ_ENCODING_SKIPLIST)
     {
@@ -544,14 +529,11 @@ void rzmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
- 
-#ifdef CRDT_LOG
-        CRDT_log("%s %s, %s: %f",
-                 (char *)(c->argv[0]->ptr),
-                 (char *)(c->argv[1]->ptr),
-                 ele, ln->score);
-#endif
 
+#ifdef CRDT_LOG
+        CRDT_log("%s %s, %s: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr), ele,
+                 ln->score);
+#endif
     }
     else
     {
@@ -608,10 +590,7 @@ void rzestatusCommand(client *c)
 #endif
 
 #ifdef CRDT_OPCOUNT
-void rzopcountCommand(client *c)
-{
-    addReplyLongLong(c, op_count_get());
-}
+void rzopcountCommand(client *c) { addReplyLongLong(c, op_count_get()); }
 #endif
 
 /* Actually the hash set used here to store rze structures is not necessary.
@@ -634,14 +613,13 @@ void rzopcountCommand(client *c)
  * */
 #ifdef CRDT_OVERHEAD
 
-void rzoverheadCommand(client *c)
-{
-    addReplyLongLong(c, ovhd_get());
-}
+void rzoverheadCommand(client *c) { addReplyLongLong(c, ovhd_get()); }
 
 #elif 0
 
-#define RZESIZE(e) (RZE_SIZE + listLength((e)->aset) * RZE_ASE_SIZE + listLength((e)->rset) * RZE_RSE_SIZE + listLength((e)->ops) * RZE_OPS_SIZE)
+#define RZESIZE(e)                                                                          \
+    (RZE_SIZE + listLength((e)->aset) * RZE_ASE_SIZE + listLength((e)->rset) * RZE_RSE_SIZE \
+     + listLength((e)->ops) * RZE_OPS_SIZE)
 
 void rzoverheadCommand(client *c)
 {
@@ -667,7 +645,7 @@ void rzoverheadCommand(client *c)
     while (hashTypeNext(hi) != C_ERR)
     {
         sds value = hashTypeCurrentObjectNewSds(hi, OBJ_HASH_VALUE);
-        rze *e = *(rze **) value;
+        rze *e = *(rze **)value;
         size += RZESIZE(e);
         sdsfree(value);
     }
@@ -684,7 +662,8 @@ void rzoverheadCommand(client *c)
     else if (ht->encoding == OBJ_ENCODING_HT)
     {
         dict *d = ht->ptr;
-        size += sizeof(dict) + sizeof(dictType) + (d->ht[0].size + d->ht[1].size) * sizeof(dictEntry *)
+        size += sizeof(dict) + sizeof(dictType) + (d->ht[0].size + d->ht[1].size) * sizeof(dictEntry
+    *)
                 + (d->ht[0].used + d->ht[1].used) * sizeof(dictEntry);
 
         dictIterator *di = dictGetIterator(d);

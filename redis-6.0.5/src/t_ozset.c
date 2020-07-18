@@ -2,10 +2,10 @@
 // Created by user on 18-9-16.
 //
 
-#include "server.h"
 #include "CRDT.h"
 #include "RWFramework.h"
 #include "lamport_clock.h"
+#include "server.h"
 
 #ifdef CRDT_OVERHEAD
 /*
@@ -24,8 +24,8 @@ static sds cur_tname = NULL;
 
 #define ORI_RPQ_TABLE_SUFFIX "_ozets_"
 #define LOOKUP(e) (listLength((e)->aset) != 0)
-#define SCORE(e) (((e)->innate == NULL ? 0 : (e)->innate->x)\
-                  + ((e)->acquired == NULL ? 0 : (e)->acquired->inc))
+#define SCORE(e) \
+    (((e)->innate == NULL ? 0 : (e)->innate->x) + ((e)->acquired == NULL ? 0 : (e)->acquired->inc))
 
 typedef struct ozset_aset_element
 {
@@ -161,7 +161,7 @@ oz_ase *add_ase(oze *e, lc *t)
 
 int update_innate_value(oze *e, lc *t, double v)
 {
-    if (rsetGet(e, t, 0) != NULL)return 0;
+    if (rsetGet(e, t, 0) != NULL) return 0;
     oz_ase *a = asetGet(e, t, 0);
     if (a == NULL) a = add_ase(e, t);
     a->x = v;
@@ -175,15 +175,14 @@ int update_innate_value(oze *e, lc *t, double v)
 
 int update_acquired_value(oze *e, lc *t, double v)
 {
-    if (rsetGet(e, t, 0) != NULL)return 0;
+    if (rsetGet(e, t, 0) != NULL) return 0;
     oz_ase *a = asetGet(e, t, 0);
     if (a == NULL) a = add_ase(e, t);
     a->inc += v;
     a->count += (v > 0) ? v : -v;
-    if (e->acquired == a)
-        return 1;
-    if (e->acquired == NULL || e->acquired->count < a->count ||
-        (e->acquired->count == a->count && lc_cmp_as_tag(e->acquired->t, a->t) < 0))
+    if (e->acquired == a) return 1;
+    if (e->acquired == NULL || e->acquired->count < a->count
+        || (e->acquired->count == a->count && lc_cmp_as_tag(e->acquired->t, a->t) < 0))
     {
         e->acquired = a;
         return 1;
@@ -194,7 +193,7 @@ int update_acquired_value(oze *e, lc *t, double v)
 // 没有整理
 void remove_tag(oze *e, lc *t)
 {
-    if (rsetGet(e, t, 0) != NULL)return;
+    if (rsetGet(e, t, 0) != NULL) return;
     lc *nt = lc_dup(t);
     listAddNodeTail(e->rset, nt);
 #ifdef CRDT_OVERHEAD
@@ -205,8 +204,8 @@ void remove_tag(oze *e, lc *t)
     oz_ase *a;
     if ((a = asetGet(e, t, 1)) != NULL)
     {
-        if (e->innate == a)e->innate = NULL;
-        if (e->acquired == a)e->acquired = NULL;
+        if (e->innate == a) e->innate = NULL;
+        if (e->acquired == a) e->acquired = NULL;
         zfree(a->t);
         zfree(a);
     }
@@ -214,7 +213,7 @@ void remove_tag(oze *e, lc *t)
 
 void resort(oze *e)
 {
-    if (e->innate != NULL && e->acquired != NULL)return;
+    if (e->innate != NULL && e->acquired != NULL) return;
 
     listNode *ln;
     listIter li;
@@ -223,27 +222,25 @@ void resort(oze *e)
     while ((ln = listNext(&li)))
     {
         oz_ase *a = ln->value;
-        if (e->innate == NULL || lc_cmp_as_tag(e->innate->t, a->t) < 0)
-            e->innate = a;
-        if (e->acquired == NULL || e->acquired->count < a->count ||
-            (e->acquired->count == a->count && lc_cmp_as_tag(e->acquired->t, a->t) < 0))
+        if (e->innate == NULL || lc_cmp_as_tag(e->innate->t, a->t) < 0) e->innate = a;
+        if (e->acquired == NULL || e->acquired->count < a->count
+            || (e->acquired->count == a->count && lc_cmp_as_tag(e->acquired->t, a->t) < 0))
             e->acquired = a;
     }
 }
 
-#define GET_OZE(arg_t, create) \
-    (oze *)rehHTGet(c->db, c->arg_t[1], ORI_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)ozeNew)
+#define GET_OZE(arg_t, create)                                                     \
+    (oze *)rehHTGet(c->db, c->arg_t[1], ORI_RPQ_TABLE_SUFFIX, c->arg_t[2], create, \
+                    (rehNew_func_t)ozeNew)
 
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name)
 {
     robj *zobj = lookupKeyWrite(db, zset_name);
     if (zobj == NULL)
     {
-        if (server.zset_max_ziplist_entries == 0 ||
-            server.zset_max_ziplist_value < sdslen(element_name->ptr))
-        {
-            zobj = createZsetObject();
-        }
+        if (server.zset_max_ziplist_entries == 0
+            || server.zset_max_ziplist_value < sdslen(element_name->ptr))
+        { zobj = createZsetObject(); }
         else
         {
             zobj = createZsetZiplistObject();
@@ -392,14 +389,11 @@ void ozscoreCommand(client *c)
     robj *zobj;
     double score;
 
-    if ((zobj = lookupKeyReadOrReply(c, key, shared.null[c->resp])) == NULL ||
-        checkType(c, zobj, OBJ_ZSET))
+    if ((zobj = lookupKeyReadOrReply(c, key, shared.null[c->resp])) == NULL
+        || checkType(c, zobj, OBJ_ZSET))
         return;
 
-    if (zsetScore(zobj, c->argv[2]->ptr, &score) == C_ERR)
-    {
-        addReply(c, shared.null[c->resp]);
-    }
+    if (zsetScore(zobj, c->argv[2]->ptr, &score) == C_ERR) { addReply(c, shared.null[c->resp]); }
     else
     {
         addReplyDouble(c, score);
@@ -417,9 +411,7 @@ void ozmaxCommand(client *c)
         addReply(c, shared.emptyarray);
 
 #ifdef CRDT_LOG
-        CRDT_log("%s %s, NONE",
-                 (char *)(c->argv[0]->ptr),
-                 (char *)(c->argv[1]->ptr));
+        CRDT_log("%s %s, NONE", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr));
 #endif
 
         return;
@@ -446,9 +438,7 @@ void ozmaxCommand(client *c)
 
 #ifdef CRDT_LOG
         if (vstr == NULL)
-            CRDT_log("%s %s, %ld: %f",
-                     (char *)(c->argv[0]->ptr),
-                     (char *)(c->argv[1]->ptr),
+            CRDT_log("%s %s, %ld: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr),
                      (long)vlong, zzlGetScore(sptr));
         else
         {
@@ -456,14 +446,11 @@ void ozmaxCommand(client *c)
             for (unsigned int i = 0; i < vlen; ++i)
                 temp[i] = vstr[i];
             temp[vlen] = '\0';
-            CRDT_log("%s %s, %s: %f",
-                     (char *)(c->argv[0]->ptr),
-                     (char *)(c->argv[1]->ptr),
-                     temp, zzlGetScore(sptr));
+            CRDT_log("%s %s, %s: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr), temp,
+                     zzlGetScore(sptr));
             zfree(temp);
         }
 #endif
-
     }
     else if (zobj->encoding == OBJ_ENCODING_SKIPLIST)
     {
@@ -474,14 +461,11 @@ void ozmaxCommand(client *c)
         sds ele = ln->ele;
         addReplyBulkCBuffer(c, ele, sdslen(ele));
         addReplyDouble(c, ln->score);
- 
-#ifdef CRDT_LOG
-        CRDT_log("%s %s, %s: %f",
-                 (char *)(c->argv[0]->ptr),
-                 (char *)(c->argv[1]->ptr),
-                 ele, ln->score);
-#endif
 
+#ifdef CRDT_LOG
+        CRDT_log("%s %s, %s: %f", (char *)(c->argv[0]->ptr), (char *)(c->argv[1]->ptr), ele,
+                 ln->score);
+#endif
     }
     else
     {
@@ -536,10 +520,7 @@ void ozestatusCommand(client *c)
 #endif
 
 #ifdef CRDT_OPCOUNT
-void ozopcountCommand(client *c)
-{
-    addReplyLongLong(c, op_count_get());
-}
+void ozopcountCommand(client *c) { addReplyLongLong(c, op_count_get()); }
 #endif
 
 /* Actually the hash set used here to store oze structures is not necessary.
@@ -575,7 +556,8 @@ void ozoverheadCommand(client *c)
 
 #elif 0
 
-#define OZESIZE(e) (OZE_SIZE + listLength((e)->aset) * OZE_ASE_SIZE + listLength((e)->rset) * OZE_RSE_SIZE)
+#define OZESIZE(e) \
+    (OZE_SIZE + listLength((e)->aset) * OZE_ASE_SIZE + listLength((e)->rset) * OZE_RSE_SIZE)
 
 void ozoverheadCommand(client *c)
 {
@@ -601,7 +583,7 @@ void ozoverheadCommand(client *c)
     while (hashTypeNext(hi) != C_ERR)
     {
         sds value = hashTypeCurrentObjectNewSds(hi, OBJ_HASH_VALUE);
-        oze *e = *(oze **) value;
+        oze *e = *(oze **)value;
         size += OZESIZE(e);
         sdsfree(value);
     }
@@ -618,7 +600,8 @@ void ozoverheadCommand(client *c)
     else if (ht->encoding == OBJ_ENCODING_HT)
     {
         dict *d = ht->ptr;
-        size += sizeof(dict) + sizeof(dictType) + (d->ht[0].size + d->ht[1].size) * sizeof(dictEntry *)
+        size += sizeof(dict) + sizeof(dictType) + (d->ht[0].size + d->ht[1].size) * sizeof(dictEntry
+    *)
                 + (d->ht[0].used + d->ht[1].used) * sizeof(dictEntry);
 
         dictIterator *di = dictGetIterator(d);
