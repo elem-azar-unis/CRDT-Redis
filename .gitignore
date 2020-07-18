@@ -9,6 +9,8 @@ CTestTestfile.cmake
 cmake-build-debug
 .vscode
 compile_commands.json
+*.lnk
+.clangd
 
 bench_start
 ozlog
