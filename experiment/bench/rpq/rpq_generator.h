@@ -19,20 +19,11 @@ private:
     rpq_log &ele;
     rpq_type zt;
 
-    static int gen_element()
-    {
-        return intRand(MAX_ELE);
-    }
+    static int gen_element() { return intRand(MAX_ELE); }
 
-    static double gen_initial()
-    {
-        return doubleRand(0, MAX_INIT);
-    }
+    static double gen_initial() { return doubleRand(0, MAX_INIT); }
 
-    static double gen_increament()
-    {
-        return doubleRand(-MAX_INCR, MAX_INCR);
-    }
+    static double gen_increament() { return doubleRand(-MAX_INCR, MAX_INCR); }
 
 public:
     rpq_generator(rpq_type zt, rpq_log &e, const char *p) : zt(zt), ele(e)
@@ -50,4 +41,4 @@ public:
     void gen_and_exec(redis_client &c) override;
 };
 
-#endif //BENCH_RPQ_GENERATOR_H
+#endif  // BENCH_RPQ_GENERATOR_H

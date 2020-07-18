@@ -5,10 +5,10 @@
 #ifndef BENCH_QUEUELOG_H
 #define BENCH_QUEUELOG_H
 
-#include <vector>
+#include <mutex>
 #include <tuple>
 #include <unordered_map>
-#include <mutex>
+#include <vector>
 
 #include "../util.h"
 #include "rpq_basics.h"
@@ -54,8 +54,7 @@ private:
     void shift_down(int s);
 
 public:
-    explicit rpq_log(rpq_type type) :
-            rdt_log("rpq", rpq_type_str[static_cast<int>(type)]) {}
+    explicit rpq_log(rpq_type type) : rdt_log("rpq", rpq_type_str[static_cast<int>(type)]) {}
 
     int random_get();
 
@@ -72,4 +71,4 @@ public:
     void write_file() override;
 };
 
-#endif //BENCH_QUEUELOG_H
+#endif  // BENCH_QUEUELOG_H

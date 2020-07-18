@@ -25,7 +25,7 @@ typedef struct prepare_rargv_vector
 {
     int size;
     int capacity;
-    void **vector; //actually here is robj** vector;
+    void **vector;  // actually here is robj** vector;
 } rvector;
 
 #define INITIAL_CAPACITY 4
@@ -89,22 +89,20 @@ typedef struct prepare_rargv_vector
 
 // Check the type of the arg, int / double
 
-#define CHECK_ARG_TYPE_INT(_obj)                                             \
-    do                                                                       \
-    {                                                                        \
-        long long __temp__;                                                  \
-        if (getLongLongFromObjectOrReply(c, _obj, &__temp__,                 \
-                                         "value is not an integer") != C_OK) \
-            return;                                                          \
+#define CHECK_ARG_TYPE_INT(_obj)                                                                 \
+    do                                                                                           \
+    {                                                                                            \
+        long long __temp__;                                                                      \
+        if (getLongLongFromObjectOrReply(c, _obj, &__temp__, "value is not an integer") != C_OK) \
+            return;                                                                              \
     } while (0)
 
-#define CHECK_ARG_TYPE_DOUBLE(_obj)                                           \
-    do                                                                        \
-    {                                                                         \
-        double __temp__;                                                      \
-        if (getDoubleFromObjectOrReply(c, _obj, &__temp__,                    \
-                                       "value is not a valid float") != C_OK) \
-            return;                                                           \
+#define CHECK_ARG_TYPE_DOUBLE(_obj)                                                               \
+    do                                                                                            \
+    {                                                                                             \
+        double __temp__;                                                                          \
+        if (getDoubleFromObjectOrReply(c, _obj, &__temp__, "value is not a valid float") != C_OK) \
+            return;                                                                               \
     } while (0)
 
 /*
@@ -120,11 +118,13 @@ typedef struct prepare_rargv_vector
  *                  2. the type of the targeted CRDT using CHECK_ARGC_AND_CONTAINER_TYPE macro
  *             // - check the precondition of the prepare phase, read the local state
  *             // - add additional parameters to broadcast using RARGV_ADD or RARGV_ADD_SDS macros
- *             // Will automatically reply an "OK" message to the client if the prepare phase ends successfully.
+ *             // Will automatically reply an "OK" message to the client if
+ *             // the prepare phase ends successfully.
  *         CRDT_EFFECT
  *             // Get the parameters from c->rargv, c->rargc is the number of paremeters.
- *             // The order of the parameters in c->rargv is: The parameters of the initial client calling
- *             // this command, then the additional parameters from the prepare phase, in tht order of calling
+ *             // The order of the parameters in c->rargv is: The parameters of the initial client
+ *             // calling this command, then the additional parameters from the prepare phase,
+ *             // in the order of calling
  *             // RARGV_ADD or RARGV_ADD_SDS macros.
  *             // Trust the correctness of these parameters. Here we do no further check.
  *
@@ -133,14 +133,13 @@ typedef struct prepare_rargv_vector
  *             // Remember to free the variables you malloc here.
  *     CRDT_END
  * }
- * 
+ *
  * */
 #define REPLICATION_MODE listLength(server.replicas) || server.p2p_count
 
 #define CRDT_BEGIN        \
     if (REPLICATION_MODE) \
     {
-
 #define CRDT_PREPARE                  \
     if (!(c->flags & CLIENT_REPLICA)) \
     {                                 \
@@ -156,13 +155,10 @@ typedef struct prepare_rargv_vector
         OPCOUNT_ISTR;       \
         LOG_ISTR_EFF;
 
-#define CRDT_END                           \
-    }                                      \
-    if (c->flags & CLIENT_REPLICA_MESSAGE) \
-    {                                      \
-        addReply(c, shared.ok);            \
-    }                                      \
-    return;                                \
+#define CRDT_END                                                       \
+    }                                                                  \
+    if (c->flags & CLIENT_REPLICA_MESSAGE) { addReply(c, shared.ok); } \
+    return;                                                            \
     }
 
-#endif //REDIS_CRDT_H
+#endif  // REDIS_CRDT_H

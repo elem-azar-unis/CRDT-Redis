@@ -5,14 +5,15 @@
 #ifndef BENCH_UTIL_H
 #define BENCH_UTIL_H
 
-#include <cstring>
-#include <string>
-#include <unordered_set>
-#include <mutex>
-#include <thread>
-#include <condition_variable>
-#include <random>
 #include <sys/stat.h>
+
+#include <condition_variable>
+#include <cstring>
+#include <mutex>
+#include <random>
+#include <string>
+#include <thread>
+#include <unordered_set>
 
 #include "constants.h"
 #include "exp_setting.h"
@@ -21,8 +22,9 @@
 #include <hiredis/hiredis.h>
 #elif defined(_WIN32)
 
-#include "../../redis-6.0.5/deps/hiredis/hiredis.h"
 #include <direct.h>
+
+#include "../../redis-6.0.5/deps/hiredis/hiredis.h"
 
 #endif
 
@@ -30,24 +32,15 @@ using namespace std;
 
 int intRand(int min, int max);
 
-static inline int intRand(int max)
-{
-    return intRand(0, max - 1);
-}
+static inline int intRand(int max) { return intRand(0, max - 1); }
 
-static inline bool boolRand()
-{
-    return intRand(0, 1);
-}
+static inline bool boolRand() { return intRand(0, 1); }
 
 string strRand();
 
 double doubleRand(double min, double max);
 
-static inline double decide()
-{
-    return doubleRand(0.0, 1.0);
-}
+static inline double decide() { return doubleRand(0.0, 1.0); }
 
 using redisReply_ptr = unique_ptr<redisReply, decltype(freeReplyObject) *>;
 
@@ -62,10 +55,7 @@ public:
         c = redisConnect(ip, port);
         if (c == nullptr || c->err)
         {
-            if (c)
-            {
-                printf("Error: %s, ip:%s, port:%d\n", c->errstr, ip, port);
-            }
+            if (c) { printf("Error: %s, ip:%s, port:%d\n", c->errstr, ip, port); }
             else
             {
                 printf("Can't allocate redis context\n");
@@ -85,10 +75,7 @@ public:
         return redisReply_ptr(r, freeReplyObject);
     }
 
-    ~redis_client()
-    {
-        redisFree(c);
-    }
+    ~redis_client() { redisFree(c); }
 };
 
 class cmd
@@ -157,10 +144,7 @@ private:
     volatile bool running = true;
 
 protected:
-    void add_record(c_record &r)
-    {
-        records.emplace_back(&r);
-    }
+    void add_record(c_record &r) { records.emplace_back(&r); }
 
     void start_maintaining_records()
     {
@@ -180,8 +164,7 @@ public:
     ~generator()
     {
         running = false;
-        if (maintainer.joinable())
-            maintainer.join();
+        if (maintainer.joinable()) maintainer.join();
     }
 };
 
@@ -214,8 +197,8 @@ protected:
         sprintf(dir, "%s/%d", dir, exp_setting::round_num);
         bench_mkdir(dir);
 
-        sprintf(dir, "%s/%s_%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS,
-                exp_setting::op_per_sec, exp_setting::delay, exp_setting::delay_low);
+        sprintf(dir, "%s/%s_%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS, exp_setting::op_per_sec,
+                exp_setting::delay, exp_setting::delay_low);
         bench_mkdir(dir);
     }
 
@@ -231,8 +214,7 @@ private:
 
     void test_delay(int round)
     {
-        for (int delay = rdt_exp_setting.delay_e.start;
-             delay <= rdt_exp_setting.delay_e.end;
+        for (int delay = rdt_exp_setting.delay_e.start; delay <= rdt_exp_setting.delay_e.end;
              delay += rdt_exp_setting.delay_e.step)
             for (auto type : rdt_types)
                 delay_fix(delay, round, type);
@@ -241,16 +223,14 @@ private:
     void test_replica(int round)
     {
         for (int replica = rdt_exp_setting.replica_e.start;
-             replica <= rdt_exp_setting.replica_e.end;
-             replica += rdt_exp_setting.replica_e.step)
+             replica <= rdt_exp_setting.replica_e.end; replica += rdt_exp_setting.replica_e.step)
             for (auto type : rdt_types)
                 replica_fix(replica, round, type);
     }
 
     void test_speed(int round)
     {
-        for (int speed = rdt_exp_setting.speed_e.start;
-             speed <= rdt_exp_setting.speed_e.end;
+        for (int speed = rdt_exp_setting.speed_e.start; speed <= rdt_exp_setting.speed_e.end;
              speed += rdt_exp_setting.speed_e.step)
             for (auto type : rdt_types)
                 speed_fix(speed, round, type);
@@ -328,4 +308,4 @@ public:
     }
 };
 
-#endif //BENCH_UTIL_H
+#endif  // BENCH_UTIL_H

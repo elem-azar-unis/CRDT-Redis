@@ -11,25 +11,23 @@
 #define PRA (pattern->PR_REM_CA)
 #define PRR (pattern->PR_REM_CA + pattern->PR_REM_CR)
 
-rpq_op_gen_pattern rpq_pt_dft{
-    .PR_ADD = 0.41,
-    .PR_INC = 0.2,
-    .PR_REM = 0.39,
+rpq_op_gen_pattern rpq_pt_dft{.PR_ADD = 0.41,
+                              .PR_INC = 0.2,
+                              .PR_REM = 0.39,
 
-    .PR_ADD_CA = 0.15,
-    .PR_ADD_CR = 0.05,
-    .PR_REM_CA = 0.1,
-    .PR_REM_CR = 0.1};
+                              .PR_ADD_CA = 0.15,
+                              .PR_ADD_CR = 0.05,
+                              .PR_REM_CA = 0.1,
+                              .PR_REM_CR = 0.1};
 
-rpq_op_gen_pattern rpq_pt_ard{
-    .PR_ADD = 0.11,
-    .PR_INC = 0.8,
-    .PR_REM = 0.09,
+rpq_op_gen_pattern rpq_pt_ard{.PR_ADD = 0.11,
+                              .PR_INC = 0.8,
+                              .PR_REM = 0.09,
 
-    .PR_ADD_CA = 0.15,
-    .PR_ADD_CR = 0.05,
-    .PR_REM_CA = 0.1,
-    .PR_REM_CR = 0.1};
+                              .PR_ADD_CA = 0.15,
+                              .PR_ADD_CR = 0.05,
+                              .PR_REM_CA = 0.1,
+                              .PR_REM_CR = 0.1};
 
 void rpq_generator::gen_and_exec(redis_client &c)
 {
@@ -54,8 +52,7 @@ void rpq_generator::gen_and_exec(redis_client &c)
         else if (conf < PAR)
         {
             e = rem.get(-1);
-            if (e == -1)
-                e = gen_element();
+            if (e == -1) e = gen_element();
             add.add(e);
         }
         else
@@ -68,7 +65,7 @@ void rpq_generator::gen_and_exec(redis_client &c)
     {
         t = rpq_op_type::incrby;
         e = ele.random_get();
-        if (e == -1)return;
+        if (e == -1) return;
         d = gen_increament();
     }
     else
@@ -82,7 +79,7 @@ void rpq_generator::gen_and_exec(redis_client &c)
             if (e == -1)
             {
                 e = ele.random_get();
-                if (e == -1)return;
+                if (e == -1) return;
             }
             rem.add(e);
         }
@@ -92,17 +89,16 @@ void rpq_generator::gen_and_exec(redis_client &c)
             if (e == -1)
             {
                 e = ele.random_get();
-                if (e == -1)return;
+                if (e == -1) return;
                 rem.add(e);
             }
         }
         else
         {
             e = ele.random_get();
-            if (e == -1)return;
+            if (e == -1) return;
             rem.add(e);
         }
     }
     rpq_cmd(zt, t, e, d, ele).exec(c);
 }
-

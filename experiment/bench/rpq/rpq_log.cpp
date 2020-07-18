@@ -9,7 +9,8 @@ void rpq_log::shift_up(int s)
     auto temp = heap[j];
     while (j > 0)
     {
-        if (*heap[i] >= *temp)break;
+        if (*heap[i] >= *temp)
+            break;
         else
         {
             heap[j] = heap[i];
@@ -28,8 +29,9 @@ void rpq_log::shift_down(int s)
     auto temp = heap[i];
     while (j <= tail)
     {
-        if (j < tail && *heap[j] <= *heap[j + 1])j++;
-        if (*temp >= *heap[j])break;
+        if (j < tail && *heap[j] <= *heap[j + 1]) j++;
+        if (*temp >= *heap[j])
+            break;
         else
         {
             heap[i] = heap[j];
@@ -55,7 +57,7 @@ void rpq_log::add(int k, double v)
 
 void rpq_log::inc(int k, double i)
 {
-    if (i == 0)return;
+    if (i == 0) return;
     lock_guard<mutex> lk(mtx);
     if (map.find(k) != map.end())
     {
@@ -140,7 +142,6 @@ int rpq_log::random_get()
 {
     lock_guard<mutex> lk(mtx);
     int r = -1;
-    if (!heap.empty())
-        r = heap[intRand(static_cast<const int>(heap.size()))]->name;
+    if (!heap.empty()) r = heap[intRand(static_cast<const int>(heap.size()))]->name;
     return r;
 }

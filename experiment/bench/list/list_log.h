@@ -5,12 +5,12 @@
 #ifndef BENCH_LIST_LOG_H
 #define BENCH_LIST_LOG_H
 
-#include <string>
-#include <vector>
-#include <tuple>
 #include <list>
-#include <unordered_map>
 #include <mutex>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
 
 #include "../util.h"
 #include "list_basics.h"
@@ -26,10 +26,16 @@ private:
         int font, size, color;
         bool bold, italic, underline;
 
-        element(string &content, int font, int size, int color,
-                bool bold, bool italic, bool underline) :
-                content(content), size(size), font(font), color(color),
-                bold(bold), italic(italic), underline(underline) {}
+        element(string &content, int font, int size, int color, bool bold, bool italic,
+                bool underline)
+            : content(content),
+              size(size),
+              font(font),
+              color(color),
+              bold(bold),
+              italic(italic),
+              underline(underline)
+        {}
     };
 
     static double diff(const element &e, const redisReply *r);
@@ -45,13 +51,12 @@ private:
     mutex mtx, dis_mtx, ovhd_mtx;
 
 public:
-    explicit list_log(list_type type) :
-            rdt_log("list", list_type_str[static_cast<int>(type)]) {}
+    explicit list_log(list_type type) : rdt_log("list", list_type_str[static_cast<int>(type)]) {}
 
     string random_get();
 
-    void insert(string &prev, string &name, string &content,
-                int font, int size, int color, bool bold, bool italic, bool underline);
+    void insert(string &prev, string &name, string &content, int font, int size, int color,
+                bool bold, bool italic, bool underline);
 
     void update(string &name, string &upd_type, int value);
 
@@ -64,4 +69,4 @@ public:
     void write_file() override;
 };
 
-#endif //BENCH_LIST_LOG_H
+#endif  // BENCH_LIST_LOG_H

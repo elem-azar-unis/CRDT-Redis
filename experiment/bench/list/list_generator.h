@@ -22,10 +22,7 @@ private:
         static int index(thread::id tid);
 
     public:
-        id_gen()
-        {
-            id = index(this_thread::get_id());
-        }
+        id_gen() { id = index(this_thread::get_id()); }
 
         string get()
         {
@@ -46,12 +43,11 @@ public:
     {
         // TODO add_record(add); start_maintaining_records();
 
-        if (p == nullptr)
-            pattern = &list_pt_dft;
+        if (p == nullptr) pattern = &list_pt_dft;
         // TODO pattern?
     }
 
     void gen_and_exec(redis_client &c) override;
 };
 
-#endif //BENCH_LIST_GENERATOR_H
+#endif  // BENCH_LIST_GENERATOR_H

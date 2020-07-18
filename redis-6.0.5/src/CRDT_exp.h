@@ -18,6 +18,7 @@
 #ifdef CRDT_LOG
 
 #include <sys/time.h>
+
 #include "vector_clock.h"
 
 static FILE *__CRDT_log = NULL;
@@ -29,13 +30,12 @@ static inline long currentTime()
     return tv.tv_sec * 1000000 + tv.tv_usec;
 }
 
-#define CHECK_FILE                                        \
-    do                                                    \
-    {                                                     \
-        char fname[32];                                   \
-        sprintf(fname, "server%d_crdt.log", CURRENT_PID); \
-        if (__CRDT_log == NULL)                           \
-            __CRDT_log = fopen(fname, "a");               \
+#define CHECK_FILE                                              \
+    do                                                          \
+    {                                                           \
+        char fname[32];                                         \
+        sprintf(fname, "server%d_crdt.log", CURRENT_PID);       \
+        if (__CRDT_log == NULL) __CRDT_log = fopen(fname, "a"); \
     } while (0)
 
 #define LOG_ISTR_PRE                                               \
@@ -95,14 +95,8 @@ long get_ovhd_count(redisDb* db,sds tname,const char* suf);
 */
 
 static long __mem_ovhd = 0;
-static inline void ovhd_inc(long inc)
-{
-    __mem_ovhd += inc;
-}
-static inline long ovhd_get()
-{
-    return __mem_ovhd;
-}
+static inline void ovhd_inc(long inc) { __mem_ovhd += inc; }
+static inline long ovhd_get() { return __mem_ovhd; }
 
 void ozoverheadCommand(client *c);
 void rzoverheadCommand(client *c);
@@ -115,10 +109,7 @@ void rwfloverheadCommand(client *c);
 
 static int __op_count = 0;
 #define OPCOUNT_ISTR __op_count++;
-static inline int op_count_get()
-{
-    return __op_count;
-}
+static inline int op_count_get() { return __op_count; }
 
 void ozopcountCommand(client *c);
 void rzopcountCommand(client *c);
@@ -136,4 +127,4 @@ void rzestatusCommand(client *c);
 void rwfzestatusCommand(client *c);
 #endif
 
-#endif //REDIS_CRDT_EXP_H
+#endif  // REDIS_CRDT_EXP_H

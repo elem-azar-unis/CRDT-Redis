@@ -3,18 +3,18 @@
 //
 
 #include "rpq_exp.h"
-#include "rpq_generator.h"
-#include "../exp_runner.h"
 
-exp_setting::default_setting rpq_exp::rpq_setting{
-    .delay = 50,
-    .delay_low = 10,
-    .total_clusters = 3,
-    .server_per_cluster = 3,
-    .op_per_sec = 10000,
-    .speed_e{.start = 500, .end = 10000, .step = 100},
-    .replica_e{.start = 1, .end = 5, .step = 1},
-    .delay_e{.start = 20, .end = 380, .step = 40}};
+#include "../exp_runner.h"
+#include "rpq_generator.h"
+
+exp_setting::default_setting rpq_exp::rpq_setting{.delay = 50,
+                                                  .delay_low = 10,
+                                                  .total_clusters = 3,
+                                                  .server_per_cluster = 3,
+                                                  .op_per_sec = 10000,
+                                                  .speed_e{.start = 500, .end = 10000, .step = 100},
+                                                  .replica_e{.start = 1, .end = 5, .step = 1},
+                                                  .delay_e{.start = 20, .end = 380, .step = 40}};
 
 void rpq_exp::exp_impl(rpq_type type, const char *pattern)
 {

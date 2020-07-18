@@ -37,4 +37,4 @@ enum class list_type
 
 extern const char *list_type_str[];
 
-#endif //BENCH_LIST_BASICS_H
+#endif  // BENCH_LIST_BASICS_H

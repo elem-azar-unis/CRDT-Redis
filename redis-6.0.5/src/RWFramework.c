@@ -20,7 +20,8 @@ robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create)
     return ht;
 }
 
-reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, rehNew_func_t rehNew_p)
+reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create,
+              rehNew_func_t rehNew_p)
 {
     robj *ht = getInnerHT(db, tname, suffix, create);
     if (ht == NULL) return NULL;
@@ -30,11 +31,11 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
     {
         if (!create) return NULL;
         e = (*rehNew_p)();
-        RWFHT_SET(ht, key->ptr, reh*, e);
+        RWFHT_SET(ht, key->ptr, reh *, e);
     }
     else
     {
-        e = *(reh **) (value->ptr);
+        e = *(reh **)(value->ptr);
         decrRefCount(value);
     }
     return e;

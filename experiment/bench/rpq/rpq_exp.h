@@ -5,9 +5,9 @@
 #ifndef BENCH_RPQ_EXP_H
 #define BENCH_RPQ_EXP_H
 
-#include "rpq_basics.h"
 #include "../exp_setting.h"
 #include "../util.h"
+#include "rpq_basics.h"
 
 class rpq_exp : public rdt_exp<rpq_type>
 {
@@ -25,4 +25,4 @@ public:
     }
 };
 
-#endif //BENCH_RPQ_EXP_H
+#endif  // BENCH_RPQ_EXP_H

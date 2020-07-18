@@ -112,21 +112,16 @@ typedef struct RWF_element_header
 
 static inline int insertCheck(reh *h, vc *t)
 {
-    if (!vc_equal(t, CURRENT(h)))
-        return 0;
+    if (!vc_equal(t, CURRENT(h))) return 0;
     return PID(h) < t->id;
 }
 
-static inline int updateCheck(reh *h, vc *t)
-{
-    return vc_equal(t, CURRENT(h));
-}
+static inline int updateCheck(reh *h, vc *t) { return vc_equal(t, CURRENT(h)); }
 
 static inline int removeCheck(reh *h, vc *t)
 {
     for (int i = 0; i < t->size; ++i)
-        if (CURRENT(h)->vector[i] < t->vector[i])
-            return 1;
+        if (CURRENT(h)->vector[i] < t->vector[i]) return 1;
     return 0;
 }
 
@@ -139,15 +134,15 @@ static inline int removeCheck(reh *h, vc *t)
  * */
 robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create);
 
-/* Get the element metadata type from the container, in the format of the header struct. You may cast it
- * to your actual element struct.
+/* Get the element metadata type from the container, in the format of the header struct. You may
+ * cast it to your actual element struct.
  *
  * redisDb *db : the data base
  * robj *tname : the name of the container
  * const char *suffix : the suffix of the container metadata
  * robj *key : the key of the element
- * int create : 1 (or 0) if you want to create the container and the element if they don't exist (or not)
- * rehNew_func_t rehNew_p : The pointer to the create function of the element struct
+ * int create : 1 (or 0) if you want to create the container and the element if they don't exist (or
+ * not) rehNew_func_t rehNew_p : The pointer to the create function of the element struct
  *
  * If define CRDT_OVERHEAD, remember to count the memory usage when creating elements by yourself.
  *
@@ -155,13 +150,15 @@ robj *getInnerHT(redisDb *db, robj *tname, const char *suffix, int create);
  * in RWF-CRPQ, the element type name is rwfze:
  *
  * #define GET_RWFZE(arg_t, create)\
- *     (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create, (rehNew_func_t)rzeNew)
+ *     (rwfze *) rehHTGet(c->db, c->arg_t[1], RWF_RPQ_TABLE_SUFFIX, c->arg_t[2], create,
+ * (rehNew_func_t)rzeNew)
  *
  * */
 
 typedef reh *(*rehNew_func_t)();
 
-reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create, rehNew_func_t rehNew_p);
+reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int create,
+              rehNew_func_t rehNew_p);
 
 // set key(sds type) with value(value_t type) in ht(hash table type)
 #define RWFHT_SET(ht, key, value_t, value) \
@@ -169,7 +166,8 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
 
 /*
  * Add the remove history into rargv. Use the macro at the end of the prepare phase.
- * Suppose the target element you get from the CRDC (or may be newly created) is e, then choose the macro:
+ * Suppose the target element you get from the CRDC (or may be newly created) is e, then choose the
+ * macro:
  * - non-remove operations: ADD_CR_NON_RMV(e)
  * - remove operation: ADD_CR_RMV(e)
  * */
@@ -180,4 +178,4 @@ reh *rehHTGet(redisDb *db, robj *tname, const char *suffix, robj *key, int creat
 #define CR_GET(n) sdsToVC(c->rargv[n]->ptr)
 #define CR_GET_LAST CR_GET(c->rargc - 1)
 
-#endif //RWFRAMEWORK_H
+#endif  // RWFRAMEWORK_H

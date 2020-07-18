@@ -7,9 +7,9 @@
 
 #include <thread>
 
-#include "util.h"
 #include "constants.h"
 #include "exp_env.h"
+#include "util.h"
 
 #if defined(__linux__)
 
@@ -17,13 +17,14 @@
 
 #elif defined(_WIN32)
 
-#include "../../redis-6.0.5/deps/hiredis/hiredis.h"
 #include <direct.h>
+
+#include "../../redis-6.0.5/deps/hiredis/hiredis.h"
 
 #endif
 
 using namespace std;
-//extern const char *ips[3];
+// extern const char *ips[3];
 
 class exp_runner
 {
@@ -81,20 +82,11 @@ private:
 public:
     exp_runner(rdt_log &log, generator &gen) : gen(gen), log(log) {}
 
-    void set_cmd_read(cmd &readCmd)
-    {
-        read_cmd = &readCmd;
-    }
+    void set_cmd_read(cmd &readCmd) { read_cmd = &readCmd; }
 
-    void set_cmd_ovhd(cmd &ovhdCmd)
-    {
-        ovhd_cmd = &ovhdCmd;
-    }
+    void set_cmd_ovhd(cmd &ovhdCmd) { ovhd_cmd = &ovhdCmd; }
 
-    void set_cmd_opcount(cmd &opcountCmd)
-    {
-        opcount_cmd = &opcountCmd;
-    }
+    void set_cmd_opcount(cmd &opcountCmd) { opcount_cmd = &opcountCmd; }
 
     void run()
     {
@@ -151,8 +143,7 @@ public:
                     this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
                     ovhd_cmd->exec(cl);
                 }
-                if (opcount_cmd != nullptr)
-                    opcount_cmd->exec(cl);
+                if (opcount_cmd != nullptr) opcount_cmd->exec(cl);
             });
         }
 
@@ -181,4 +172,4 @@ public:
     }
 };
 
-#endif //BENCH_EXP_RUNNER_H
+#endif  // BENCH_EXP_RUNNER_H

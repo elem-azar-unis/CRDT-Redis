@@ -25,7 +25,12 @@ extern rpq_op_gen_pattern rpq_pt_dft, rpq_pt_ard;
 
 enum class rpq_op_type
 {
-    add, incrby, rem, max, overhead, opcount
+    add,
+    incrby,
+    rem,
+    max,
+    overhead,
+    opcount
 };
 
 #define RPQ_TYPE_CODEC(ACTION) \
@@ -42,4 +47,4 @@ enum class rpq_type
 
 extern const char *rpq_type_str[];
 
-#endif //BENCH_RPQ_BASICS_H
+#endif  // BENCH_RPQ_BASICS_H

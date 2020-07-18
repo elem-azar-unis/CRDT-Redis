@@ -32,4 +32,4 @@ constexpr int THREAD_PER_SERVER = 3;
 constexpr int TIME_OVERHEAD = 1;
 constexpr int TIME_MAX = 1;
 
-#endif //BENCH_CONSTANTS_H
+#endif  // BENCH_CONSTANTS_H

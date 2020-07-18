@@ -7,13 +7,13 @@
 double list_log::diff(const list_log::element &e, const redisReply *r)
 {
     if (e.content != r->element[1]->str) return 1;
-    if (e.font != atoi(r->element[2]->str)) return 0.5; // NOLINT
-    if (e.size != atoi(r->element[3]->str)) return 0.5; // NOLINT
-    if (e.color != atoi(r->element[4]->str)) return 0.5; // NOLINT
-    int p = atoi(r->element[5]->str); // NOLINT
-    if (e.bold != (bool) (p & BOLD)) return 0.5; // NOLINT
-    if (e.italic != (bool) (p & ITALIC)) return 0.5; // NOLINT
-    if (e.underline != (bool) (p & UNDERLINE)) return 0.5; // NOLINT
+    if (e.font != atoi(r->element[2]->str)) return 0.5;    // NOLINT
+    if (e.size != atoi(r->element[3]->str)) return 0.5;    // NOLINT
+    if (e.color != atoi(r->element[4]->str)) return 0.5;   // NOLINT
+    int p = atoi(r->element[5]->str);                      // NOLINT
+    if (e.bold != (bool)(p & BOLD)) return 0.5;            // NOLINT
+    if (e.italic != (bool)(p & ITALIC)) return 0.5;        // NOLINT
+    if (e.underline != (bool)(p & UNDERLINE)) return 0.5;  // NOLINT
     return 0;
 }
 
@@ -30,8 +30,10 @@ void list_log::read_list(redisReply_ptr &r)
     int r_len = r->elements;
     // Levenshtein distance
     vector<vector<double> > dp(len + 1, vector<double>(r_len + 1, 0));
-    for (int i = 1; i <= len; i++) dp[i][0] = i;
-    for (int j = 1; j <= r_len; j++) dp[0][j] = j;
+    for (int i = 1; i <= len; i++)
+        dp[i][0] = i;
+    for (int j = 1; j <= r_len; j++)
+        dp[0][j] = j;
     auto iter = doc_read.begin();
     for (int i = 1; i <= len; i++)
     {
@@ -78,15 +80,14 @@ void list_log::write_file()
     fclose(distance);
 }
 
-void list_log::insert(string &prev, string &name, string &content,
-                      int font, int size, int color, bool bold, bool italic, bool underline)
+void list_log::insert(string &prev, string &name, string &content, int font, int size, int color,
+                      bool bold, bool italic, bool underline)
 {
     lock_guard<mutex> lk(mtx);
     if (ele_map.find(prev) == ele_map.end() || ele_map.find(name) != ele_map.end()) return;
     auto it_next = prev.empty() ? document.begin() : ele_map[prev];
     if (it_next != document.begin()) it_next++;
-    document.emplace(it_next, new element(content, font, size,
-                                          color, bold, italic, underline));
+    document.emplace(it_next, new element(content, font, size, color, bold, italic, underline));
     it_next--;
     ele_map[name] = it_next;
 }
@@ -127,7 +128,7 @@ string list_log::random_get()
 {
     lock_guard<mutex> lk(mtx);
     if (ele_map.empty()) return string("null");
-    int pos = intRand(ele_map.size() + 1); // NOLINT
+    int pos = intRand(ele_map.size() + 1);  // NOLINT
     if (pos == ele_map.size()) return string("null");
     auto random_it = next(begin(ele_map), pos);
     return random_it->first;

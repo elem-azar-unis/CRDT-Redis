@@ -10,17 +10,18 @@
 #include "server.h"
 
 #define FORALL_NORMAL(ACTION) \
-    ACTION(font)           \
-    ACTION(size)           \
+    ACTION(font)              \
+    ACTION(size)              \
     ACTION(color)
 
 #define FORALL_BITMAP(ACTION) \
-    ACTION(bold)          \
-    ACTION(italic)        \
+    ACTION(bold)              \
+    ACTION(italic)            \
     ACTION(underline)
 
-#define FORALL(ACTION) FORALL_NORMAL(ACTION) \
-FORALL_BITMAP(ACTION)
+#define FORALL(ACTION)    \
+    FORALL_NORMAL(ACTION) \
+    FORALL_BITMAP(ACTION)
 
 #define LIST_PR_NUM 6
 #define LIST_PR_NORMAL_NUM 3
@@ -43,10 +44,8 @@ typedef struct position
 
 static inline int pos_cmp(const position *p1, const position *p2)
 {
-    if (p1->pos != p2->pos)
-        return p1->pos - p2->pos;
-    if (p1->pid != p2->pid)
-        return p1->pid - p2->pid;
+    if (p1->pos != p2->pos) return p1->pos - p2->pos;
+    if (p1->pid != p2->pid) return p1->pid - p2->pid;
     return p1->count - p2->count;
 }
 
@@ -70,19 +69,15 @@ int leid_cmp(const leid *id1, const leid *id2);
 
 static inline int lprefix(leid *p, int i)
 {
-    if (p == NULL)
-        return 0;
-    if (i >= p->num)
-        return 0;
+    if (p == NULL) return 0;
+    if (i >= p->num) return 0;
     return p->p[i].pos;
 }
 
 static inline int rprefix(leid *p, int i)
 {
-    if (p == NULL)
-        return BASE;
-    if (i >= p->num)
-        return BASE;
+    if (p == NULL) return BASE;
+    if (i >= p->num) return BASE;
     return p->p[i].pos;
 }
 
@@ -106,4 +101,4 @@ void incrLen(robj *ht, int inc);
 
 #endif
 
-#endif //REDIS_LIST_BASICS_H
+#endif  // REDIS_LIST_BASICS_H

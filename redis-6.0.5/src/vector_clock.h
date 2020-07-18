@@ -57,4 +57,4 @@ static inline sds vc_now(vc *c)
     return rtn;
 }
 
-#endif //REDIS_VECTOR_CLOCK_H
+#endif  // REDIS_VECTOR_CLOCK_H

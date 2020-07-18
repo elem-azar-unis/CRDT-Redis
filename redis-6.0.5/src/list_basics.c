@@ -24,16 +24,19 @@ leid *sdsToLeid(sds s)
     char *p = s;
     while (1)
     {
-        leid_buf[size].pos = (unsigned int) atoi(p);
-        while (*p != ',') p++;
+        leid_buf[size].pos = (unsigned int)atoi(p);
+        while (*p != ',')
+            p++;
         p++;
         leid_buf[size].pid = atoi(p);
-        while (*p != ',') p++;
+        while (*p != ',')
+            p++;
         p++;
         leid_buf[size].count = atoi(p);
         size++;
-        while (*p != '|' && *p != '\0') p++;
-        if (*p == '\0')break;
+        while (*p != '|' && *p != '\0')
+            p++;
+        if (*p == '\0') break;
         p++;
     }
     leid *rtn = zmalloc(sizeof(leid));
@@ -63,7 +66,8 @@ leid *constructLeid(leid *p, leid *q, vc *t)
     int index = 0, count = 0;
     for (int i = 0; i < t->size; ++i)
         count += t->vector[i];
-    while (rprefix(q, index) - lprefix(p, index) < 2) index++;
+    while (rprefix(q, index) - lprefix(p, index) < 2)
+        index++;
     int left = lprefix(p, index);
     int right = rprefix(q, index);
     // left<new<right
@@ -96,7 +100,7 @@ leid *constructLeid(leid *p, leid *q, vc *t)
     }
     int step = right - left - 2;
     step = step < RDM_STEP ? step : RDM_STEP;
-    rtn->p[index].pos = left + (unsigned int) (rand() % step) + 1;
+    rtn->p[index].pos = left + (unsigned int)(rand() % step) + 1;
     rtn->p[index].pid = t->id;
     rtn->p[index].count = count;
     return rtn;
@@ -107,8 +111,8 @@ void *getHead(robj *ht)
     sds hname = sdsnew("head");
     robj *value = hashTypeGetValueObject(ht, hname);
     sdsfree(hname);
-    if (value == NULL)return NULL;
-    void *e = *(void **) (value->ptr);
+    if (value == NULL) return NULL;
+    void *e = *(void **)(value->ptr);
     decrRefCount(value);
     return e;
 }
@@ -116,7 +120,7 @@ void *getHead(robj *ht)
 void setHead(robj *ht, void *e)
 {
     sds hname = sdsnew("head");
-    RWFHT_SET(ht, hname, void*, e);
+    RWFHT_SET(ht, hname, void *, e);
     sdsfree(hname);
 }
 
@@ -128,11 +132,11 @@ vc *getCurrent(robj *ht)
     if (value == NULL)
     {
         e = vc_new();
-        RWFHT_SET(ht, hname, vc*, e);
+        RWFHT_SET(ht, hname, vc *, e);
     }
     else
     {
-        e = *(vc **) (value->ptr);
+        e = *(vc **)(value->ptr);
         decrRefCount(value);
     }
     sdsfree(hname);
@@ -148,7 +152,7 @@ int getLen(robj *ht)
         return 0;
     else
     {
-        int len = *(int *) (value->ptr);
+        int len = *(int *)(value->ptr);
         decrRefCount(value);
         return len;
     }
@@ -163,7 +167,7 @@ void incrLen(robj *ht, int inc)
         len = 0;
     else
     {
-        len = *(int *) (value->ptr);
+        len = *(int *)(value->ptr);
         decrRefCount(value);
     }
     len += inc;

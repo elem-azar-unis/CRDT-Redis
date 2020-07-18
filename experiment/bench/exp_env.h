@@ -5,10 +5,10 @@
 #ifndef BENCH_EXP_ENV_H
 #define BENCH_EXP_ENV_H
 
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <thread>
 
 #include "constants.h"
@@ -19,7 +19,7 @@
 constexpr int BASE_PORT = 6379;
 
 #define SUDO_PREFIX "echo %s | sudo -S "
-#define CMD_SUFFIX " 1>/dev/null" // or " 1>/dev/null 2>&1"
+#define CMD_SUFFIX " 1>/dev/null"  // or " 1>/dev/null 2>&1"
 
 class exp_env
 {
@@ -53,10 +53,11 @@ private:
         char cmd[256];
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
-            sprintf(cmd, "redis-server ../../redis-6.0.5/redis.conf "
-                         "--protected-mode no --daemonize yes --loglevel debug "
-                         "--port %d --logfile %d.log --dbfilename %d.rdb "
-                         "--pidfile /var/run/redis_%d.pid --io-threads 2",
+            sprintf(cmd,
+                    "redis-server ../../redis-6.0.5/redis.conf "
+                    "--protected-mode no --daemonize yes --loglevel debug "
+                    "--port %d --logfile %d.log --dbfilename %d.rdb "
+                    "--pidfile /var/run/redis_%d.pid --io-threads 2",
                     port, port, port, port);
             shell_exec(cmd, false);
         }
@@ -74,8 +75,9 @@ private:
             for (int j = 0; j < exp_setting::server_per_cluster; ++j)
             {
                 int num = i * exp_setting::server_per_cluster + j;
-                sprintf(cmd, "redis-cli -h 127.0.0.1 -p %d "
-                             "REPLICATE %d %d exp_local%s",
+                sprintf(cmd,
+                        "redis-cli -h 127.0.0.1 -p %d "
+                        "REPLICATE %d %d exp_local%s",
                         BASE_PORT + num, TOTAL_SERVERS, num, repl);
                 shell_exec(cmd, false);
                 sprintf(repl, "%s " IP_WITHIN_CLUSTER " %d", repl, BASE_PORT + num);
@@ -91,19 +93,25 @@ private:
         char cmd[128];
         shell_exec("tc qdisc add dev lo root handle 1: prio", true);
 
-        sprintf(cmd, "tc qdisc add dev lo parent 1:1 handle 10: "
-                     "netem delay %.dms %.1fms distribution normal limit 100000",
+        sprintf(cmd,
+                "tc qdisc add dev lo parent 1:1 handle 10: "
+                "netem delay %.dms %.1fms distribution normal limit 100000",
                 exp_setting::delay_low, exp_setting::delay_low / 5.0);
         shell_exec(cmd, true);
-        shell_exec("tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst "
-                   IP_WITHIN_CLUSTER " flowid 1:1", true);
+        shell_exec(
+            "tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst " IP_WITHIN_CLUSTER
+            " flowid 1:1",
+            true);
 
-        sprintf(cmd, "tc qdisc add dev lo parent 1:2 handle 20: "
-                     "netem delay %.dms %.1fms distribution normal limit 100000",
+        sprintf(cmd,
+                "tc qdisc add dev lo parent 1:2 handle 20: "
+                "netem delay %.dms %.1fms distribution normal limit 100000",
                 exp_setting::delay, exp_setting::delay / 5.0);
         shell_exec(cmd, true);
-        shell_exec("tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst "
-                   IP_BETWEEN_CLUSTER " flowid 1:2", true);
+        shell_exec(
+            "tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst " IP_BETWEEN_CLUSTER
+            " flowid 1:2",
+            true);
 
         shell_exec("tc qdisc add dev lo parent 1:3 handle 30: pfifo_fast", true);
     }
@@ -125,10 +133,7 @@ private:
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 
-    static void clean()
-    {
-        shell_exec("rm -rf *.rdb *.log", false);
-    }
+    static void clean() { shell_exec("rm -rf *.rdb *.log", false); }
 
 public:
     static char sudo_pwd[32];
@@ -155,4 +160,4 @@ public:
     }
 };
 
-#endif //BENCH_EXP_ENV_H
+#endif  // BENCH_EXP_ENV_H

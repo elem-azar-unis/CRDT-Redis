@@ -2,9 +2,10 @@
 // Created by admin on 2020/1/8.
 //
 
+#include "util.h"
+
 #include "exp_env.h"
 #include "exp_setting.h"
-#include "util.h"
 
 char exp_env::sudo_pwd[32];
 

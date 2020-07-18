@@ -169,8 +169,8 @@ void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 
 int main(int argc, char *argv[])
 {
-    //time_max();
-    //test_count_dis_one(ips[0],6379);
+    // time_max();
+    // test_count_dis_one(ips[0],6379);
 
     if (argc == 2)
         strcpy(exp_env::sudo_pwd, argv[1]);

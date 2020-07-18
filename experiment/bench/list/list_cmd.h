@@ -5,10 +5,11 @@
 #ifndef BENCH_LIST_CMD_H
 #define BENCH_LIST_CMD_H
 
+#include <string>
+
 #include "../util.h"
 #include "list_basics.h"
 #include "list_log.h"
-#include <string>
 
 class list_cmd : public cmd
 {
@@ -30,21 +31,30 @@ private:
     string prev, id, content;
     int font, size, color;
     bool bold, italic, underline;
+
 public:
     list_add_cmd(list_type type, list_log &list, string &prev, string &id, string &content,
-                 int font, int size, int color, bool bold, bool italic, bool underline) :
-            list_cmd(type, list, "insert"), prev(prev), id(id), content(content),
-            font(font), size(size), color(color), bold(bold), italic(italic), underline(underline) {}
+                 int font, int size, int color, bool bold, bool italic, bool underline)
+        : list_cmd(type, list, "insert"),
+          prev(prev),
+          id(id),
+          content(content),
+          font(font),
+          size(size),
+          color(color),
+          bold(bold),
+          italic(italic),
+          underline(underline)
+    {}
 
     void exec(redis_client &c) override
     {
         int property = 0;
-        if (bold) property |= BOLD;    //NOLINT
-        if (italic) property |= ITALIC;    //NOLINT
-        if (underline) property |= UNDERLINE;    //NOLINT
+        if (bold) property |= BOLD;            // NOLINT
+        if (italic) property |= ITALIC;        // NOLINT
+        if (underline) property |= UNDERLINE;  // NOLINT
         char cmd[256];
-        sprintf(cmd, "%s %s %s %s %d %d %d %d",
-                cmd_head, prev.c_str(), id.c_str(), content.c_str(),
+        sprintf(cmd, "%s %s %s %s %d %d %d %d", cmd_head, prev.c_str(), id.c_str(), content.c_str(),
                 font, size, color, property);
         auto r = c.exec(cmd);
         list.insert(prev, id, content, font, size, color, bold, italic, underline);
@@ -56,9 +66,11 @@ class list_update_cmd : public list_cmd
 private:
     string id, upd_type;
     int value;
+
 public:
-    list_update_cmd(list_type type, list_log &list, string &id, string &upd_type, int value) :
-            list_cmd(type, list, "update"), id(id), upd_type(upd_type), value(value) {}
+    list_update_cmd(list_type type, list_log &list, string &id, string &upd_type, int value)
+        : list_cmd(type, list, "update"), id(id), upd_type(upd_type), value(value)
+    {}
 
     void exec(redis_client &c) override
     {
@@ -73,9 +85,11 @@ class list_remove_cmd : public list_cmd
 {
 private:
     string id;
+
 public:
-    list_remove_cmd(list_type type, list_log &list, string &id) :
-            list_cmd(type, list, "rem"), id(id) {}
+    list_remove_cmd(list_type type, list_log &list, string &id)
+        : list_cmd(type, list, "rem"), id(id)
+    {}
 
     void exec(redis_client &c) override
     {
@@ -122,4 +136,4 @@ public:
     }
 };
 
-#endif //BENCH_LIST_CMD_H
+#endif  // BENCH_LIST_CMD_H

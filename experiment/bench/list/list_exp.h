@@ -5,9 +5,9 @@
 #ifndef BENCH_LIST_EXP_H
 #define BENCH_LIST_EXP_H
 
-#include "list_basics.h"
 #include "../exp_setting.h"
 #include "../util.h"
+#include "list_basics.h"
 
 class list_exp : public rdt_exp<list_type>
 {
@@ -25,4 +25,4 @@ public:
     }
 };
 
-#endif //BENCH_LIST_EXP_H
+#endif  // BENCH_LIST_EXP_H

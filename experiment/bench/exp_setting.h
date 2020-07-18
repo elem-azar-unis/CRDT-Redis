@@ -5,8 +5,8 @@
 #ifndef BENCH_EXP_SETTING_H
 #define BENCH_EXP_SETTING_H
 
-#include <cstdio>
 #include <cassert>
+#include <cstdio>
 
 class exp_setting
 {
@@ -56,10 +56,7 @@ public:
     ACTION(pattern)
 
 #define DEFINE_ACTION(_name) _name,
-    static enum class exp_type
-    {
-        EXP_TYPE_CODEC(DEFINE_ACTION)
-    } type;
+    static enum class exp_type { EXP_TYPE_CODEC(DEFINE_ACTION) } type;
 #undef DEFINE_ACTION
 
     static const char *type_str[];
@@ -75,17 +72,17 @@ public:
         {
             switch (type)
             {
-            case exp_type::speed:
-                printf("speed: %dop/s", op_per_sec);
-                break;
-            case exp_type::replica:
-                printf("replica: %dx%d", total_clusters, server_per_cluster);
-                break;
-            case exp_type::delay:
-                printf("delay: (%dms,%dms)", delay, delay_low);
-                break;
-            case exp_type::pattern:
-                break;
+                case exp_type::speed:
+                    printf("speed: %dop/s", op_per_sec);
+                    break;
+                case exp_type::replica:
+                    printf("replica: %dx%d", total_clusters, server_per_cluster);
+                    break;
+                case exp_type::delay:
+                    printf("delay: (%dms,%dms)", delay, delay_low);
+                    break;
+                case exp_type::pattern:
+                    break;
             }
             printf(", round %d", round_num);
         }
@@ -98,8 +95,9 @@ public:
     {
         apply_default();
         op_per_sec = speed;
-        total_ops = total_sec / default_p->speed_e.times() *
-                    (default_p->speed_e.start + default_p->speed_e.step * default_p->speed_e.times() / 10);
+        total_ops = total_sec / default_p->speed_e.times()
+                    * (default_p->speed_e.start
+                       + default_p->speed_e.step * default_p->speed_e.times() / 10);
         round_num = round;
         type = exp_type::speed;
     }
@@ -133,4 +131,4 @@ public:
     }
 };
 
-#endif //BENCH_EXP_SETTING_H
+#endif  // BENCH_EXP_SETTING_H
