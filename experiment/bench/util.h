@@ -117,15 +117,11 @@ protected:
         T get(T fail)
         {
             lock_guard<mutex> lk(mtx);
-            if (h.empty())
-                return fail;
-            else
-            {
-                int b = (cur + intRand(SPLIT_NUM)) % SPLIT_NUM;
-                while (v[b].empty())
-                    b = (b + 1) % SPLIT_NUM;
-                return v[b][intRand(static_cast<const int>(v[b].size()))];
-            }
+            if (h.empty()) return fail;
+            int b = (cur + intRand(SPLIT_NUM)) % SPLIT_NUM;
+            while (v[b].empty())
+                b = (b + 1) % SPLIT_NUM;
+            return v[b][intRand(static_cast<const int>(v[b].size()))];
         }
 
         void inc_rem() override
