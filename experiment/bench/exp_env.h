@@ -36,16 +36,16 @@ private:
         char *_cmd_apend;
         if (sudo)
         {
-            _cmd_apend = new char[strlen(cmd) + sizeof(SUDO_PREFIX CMD_SUFFIX) + 32];
-            sprintf(_cmd_apend, SUDO_PREFIX "%s" CMD_SUFFIX, sudo_pwd, cmd);
+            unique_ptr<char[]> _cmd_apend(
+                new char[strlen(cmd) + sizeof(SUDO_PREFIX CMD_SUFFIX) + 32]);
+            sprintf(_cmd_apend.get(), SUDO_PREFIX "%s" CMD_SUFFIX, sudo_pwd, cmd);
         }
         else
         {
-            _cmd_apend = new char[strlen(cmd) + sizeof(CMD_SUFFIX)];
-            sprintf(_cmd_apend, "%s" CMD_SUFFIX, cmd);
+            unique_ptr<char[]> _cmd_apend(new char[strlen(cmd) + sizeof(CMD_SUFFIX)]);
+            sprintf(_cmd_apend.get(), "%s" CMD_SUFFIX, cmd);
         }
         system(_cmd_apend);
-        delete[] _cmd_apend;
     }
 
     static void start_servers()
@@ -65,26 +65,24 @@ private:
 
     static void construct_repl()
     {
-        char *cmd = new char[64 + 16 * (TOTAL_SERVERS - 1)];
-        char *repl = new char[16 * TOTAL_SERVERS];
+        unique_ptr<char[]> cmd(new char[64 + 16 * (TOTAL_SERVERS - 1)]);
+        unique_ptr<char[]> repl(new char[16 * TOTAL_SERVERS]);
         for (int i = 0; i < exp_setting::total_clusters; ++i)
         {
             repl[0] = '\0';
             for (int k = 0; k < i * exp_setting::server_per_cluster; ++k)
-                sprintf(repl, "%s " IP_BETWEEN_CLUSTER " %d", repl, BASE_PORT + k);
+                sprintf(repl.get(), "%s " IP_BETWEEN_CLUSTER " %d", repl, BASE_PORT + k);
             for (int j = 0; j < exp_setting::server_per_cluster; ++j)
             {
                 int num = i * exp_setting::server_per_cluster + j;
-                sprintf(cmd,
+                sprintf(cmd.get(),
                         "redis-cli -h 127.0.0.1 -p %d "
                         "REPLICATE %d %d exp_local%s",
                         BASE_PORT + num, TOTAL_SERVERS, num, repl);
-                shell_exec(cmd, false);
-                sprintf(repl, "%s " IP_WITHIN_CLUSTER " %d", repl, BASE_PORT + num);
+                shell_exec(cmd.get(), false);
+                sprintf(repl.get(), "%s " IP_WITHIN_CLUSTER " %d", repl, BASE_PORT + num);
             }
         }
-        delete[] cmd;
-        delete[] repl;
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 

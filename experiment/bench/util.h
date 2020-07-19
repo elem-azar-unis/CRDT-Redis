@@ -234,19 +234,13 @@ private:
 
 protected:
     vector<T> rdt_types;
-    vector<char *> rdt_patterns;
+    vector<string> rdt_patterns;
 
     void add_type(T type) { rdt_types.emplace_back(type); }
 
-    void add_pattern(const char *pattern) { rdt_patterns.emplace_back(strdup(pattern)); }
+    void add_pattern(const char *pattern) { rdt_patterns.emplace_back(pattern); }
 
     explicit rdt_exp(exp_setting::default_setting &rdt_st) : rdt_exp_setting(rdt_st) {}
-
-    ~rdt_exp()
-    {
-        for (auto p : rdt_patterns)
-            delete[] p;
-    }
 
     virtual void exp_impl(T type, const char *pattern) = 0;
 
@@ -287,9 +281,9 @@ public:
     {
         auto start = chrono::steady_clock::now();
 
-        for (auto p : rdt_patterns)
+        for (auto &p : rdt_patterns)
             for (auto t : rdt_types)
-                pattern_fix(p, t);
+                pattern_fix(p.c_str(), t);
 
         for (int i = 0; i < rounds; i++)
         {
