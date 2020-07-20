@@ -6,7 +6,9 @@
 #define BENCH_EXP_SETTING_H
 
 #include <cassert>
-#include <cstdio>
+#include <iostream>
+
+using namespace std;
 
 class exp_setting
 {
@@ -60,35 +62,35 @@ public:
 #undef DEFINE_ACTION
 
     static const char *type_str[];
-    static const char *pattern_name;
+    static string pattern_name;
     static int round_num;
 
     static inline void set_default(default_setting *p) { default_p = p; }
 
     static inline void print_settings()
     {
-        printf("exp on ");
+        cout << "exp on ";
         if (type != exp_type::pattern)
         {
             switch (type)
             {
                 case exp_type::speed:
-                    printf("speed: %dop/s", op_per_sec);
+                    cout << "speed: " << op_per_sec << "op/s";
                     break;
                 case exp_type::replica:
-                    printf("replica: %dx%d", total_clusters, server_per_cluster);
+                    cout << "replica: " << total_clusters << "x" << server_per_cluster;
                     break;
                 case exp_type::delay:
-                    printf("delay: (%dms,%dms)", delay, delay_low);
+                    cout << "delay: (" << delay << "ms," << delay_low << "ms)";
                     break;
                 case exp_type::pattern:
                     break;
             }
-            printf(", round %d", round_num);
+            cout << ", round " << round_num;
         }
         else
-            printf("pattern: %s", pattern_name);
-        printf(", total ops %d\n", total_ops);
+            cout << "pattern: " << pattern_name;
+        cout << ", total ops " << total_ops << "\n";
     }
 
     static inline void set_speed(int round, int speed)
@@ -122,7 +124,7 @@ public:
         type = exp_type::delay;
     }
 
-    static inline void set_pattern(const char *name)
+    static inline void set_pattern(const string &name)
     {
         apply_default();
         total_ops = total_sec / 5 * op_per_sec;

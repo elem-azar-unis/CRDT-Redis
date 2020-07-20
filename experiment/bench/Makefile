@@ -1,8 +1,8 @@
 CXX = g++
 CXXFLAGS = -std=c++14 -Wno-unused-result -O3
 
-HEADERS = $(shell find ./ -maxdepth 2 -name "*.h")
-CFILES = $(shell find ./ -maxdepth 2 -name "*.cpp")
+HEADERS = $(shell find . -name "*.h")
+CFILES = $(shell find . -name "*.cpp")
 OBJS = $(CFILES:.cpp=.o)
 
 bench: $(OBJS) $(HEADERS)

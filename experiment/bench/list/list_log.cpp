@@ -1,7 +1,6 @@
 //
 // Created by admin on 2020/1/13.
 //
-
 #include "list_log.h"
 
 double list_log::diff(const list_log::element &e, const redisReply *r)
@@ -63,21 +62,17 @@ void list_log::overhead(int o)
 
 void list_log::write_file()
 {
-    char f[64];
-
-    sprintf(f, "%s/ovhd.csv", dir);
-    FILE *ovhd = fopen(f, "w");
+    ostringstream stream;
+    stream << dir << "/ovhd.csv";
+    ofstream ovhd(stream.str(), ios::out | ios::trunc);
     for (auto &o : overhead_log)
-        fprintf(ovhd, "%d,%d\n", get<0>(o), get<1>(o));
-    fflush(ovhd);
-    fclose(ovhd);
+        ovhd << get<0>(o) << "," << get<1>(o) << "\n";
 
-    sprintf(f, "%s/distance.csv", dir);
-    FILE *distance = fopen(f, "w");
+    stream.str("");
+    stream << dir << "/distance.csv";
+    ofstream distance(stream.str(), ios::out | ios::trunc);
     for (auto &o : distance_log)
-        fprintf(distance, "%d,%f\n", get<0>(o), get<1>(o));
-    fflush(distance);
-    fclose(distance);
+        distance << get<0>(o) << "," << get<1>(o) << "\n";
 }
 
 void list_log::insert(string &prev, string &name, string &content, int font, int size, int color,

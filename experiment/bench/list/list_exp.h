@@ -14,7 +14,7 @@ class list_exp : public rdt_exp<list_type>
 private:
     static exp_setting::default_setting list_setting;
 
-    void exp_impl(list_type type, const char *pattern) override;
+    void exp_impl(list_type type, const string& pattern) override;
 
 public:
     list_exp() : rdt_exp<list_type>(list_setting)

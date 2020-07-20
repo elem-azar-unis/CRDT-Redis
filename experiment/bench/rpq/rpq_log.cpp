@@ -121,21 +121,17 @@ void rpq_log::overhead(int o)
 
 void rpq_log::write_file()
 {
-    char f[64];
-
-    sprintf(f, "%s/ovhd.csv", dir);
-    FILE *ovhd = fopen(f, "w");
+    ostringstream stream;
+    stream << dir << "/ovhd.csv";
+    ofstream ovhd(stream.str(), ios::out | ios::trunc);
     for (auto &o : overhead_log)
-        fprintf(ovhd, "%d,%d\n", get<0>(o), get<1>(o));
-    fflush(ovhd);
-    fclose(ovhd);
+        ovhd << get<0>(o) << "," << get<1>(o) << "\n";
 
-    sprintf(f, "%s/max.csv", dir);
-    FILE *max = fopen(f, "w");
+    stream.str("");
+    stream << dir << "/max.csv";
+    ofstream max(stream.str(), ios::out | ios::trunc);
     for (auto &o : max_log)
-        fprintf(max, "%d,%f,%d,%f\n", get<0>(o), get<1>(o), get<2>(o), get<3>(o));
-    fflush(max);
-    fclose(max);
+        max << get<0>(o) << "," << get<1>(o) << "," << get<2>(o) << "," << get<3>(o) << "\n";
 }
 
 int rpq_log::random_get()

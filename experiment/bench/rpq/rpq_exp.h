@@ -14,7 +14,7 @@ class rpq_exp : public rdt_exp<rpq_type>
 private:
     static exp_setting::default_setting rpq_setting;
 
-    void exp_impl(rpq_type type, const char *pattern) override;
+    void exp_impl(rpq_type type, const string& pattern) override;
 
 public:
     rpq_exp() : rdt_exp<rpq_type>(rpq_setting)

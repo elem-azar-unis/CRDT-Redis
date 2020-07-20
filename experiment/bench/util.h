@@ -8,9 +8,12 @@
 #include <sys/stat.h>
 
 #include <condition_variable>
-#include <cstring>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
 #include <mutex>
 #include <random>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <unordered_set>
@@ -36,7 +39,7 @@ static inline int intRand(int max) { return intRand(0, max - 1); }
 
 static inline bool boolRand() { return intRand(0, 1); }
 
-string strRand();
+string strRand(int max_len = 16);
 
 double doubleRand(double min, double max);
 
@@ -55,21 +58,22 @@ public:
         c = redisConnect(ip, port);
         if (c == nullptr || c->err)
         {
-            if (c) { printf("Error: %s, ip:%s, port:%d\n", c->errstr, ip, port); }
+            if (c) { cout << "Error: " << c->errstr << ", ip:" << ip << ", port:" << port << "\n"; }
             else
             {
-                printf("Can't allocate redis context\n");
+                cout << "Can't allocate redis context\n";
             }
             exit(-1);
         }
     }
 
-    redisReply_ptr exec(const char *cmd)
+    redisReply_ptr exec(const string &cmd)
     {
-        auto r = static_cast<redisReply *>(redisCommand(c, cmd));
+        auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
         if (r == nullptr)
         {
-            printf("host %s:%d terminated.\nexecuting %s\n", c->tcp.host, c->tcp.port, cmd);
+            cout << "host " << c->tcp.host << ":" << c->tcp.port << " terminated.\n"
+                 << "executing " << cmd << "\n";
             exit(-1);
         }
         return redisReply_ptr(r, freeReplyObject);
@@ -154,47 +158,49 @@ protected:
         });
     }
 
-public:
-    virtual void gen_and_exec(redis_client &c) = 0;
-
     ~generator()
     {
         running = false;
         if (maintainer.joinable()) maintainer.join();
     }
+
+public:
+    virtual void gen_and_exec(redis_client &c) = 0;
 };
 
 class rdt_log
 {
 private:
-    static inline void bench_mkdir(const char *path)
+    static inline void bench_mkdir(const string &path)
     {
 #if defined(_WIN32)
-        _mkdir(path);
+        _mkdir(path.c_str());
 #else
-        mkdir(path, S_IRWXU | S_IRGRP | S_IROTH);
+        mkdir(path.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
 #endif
     }
 
 protected:
-    char dir[64]{};
+    string dir;
 
     rdt_log(const char *CRDT_name, const char *type)
     {
-        sprintf(dir, "../result/%s", CRDT_name);
-        bench_mkdir(dir);
+        ostringstream stream;
+        stream << "../result/" << CRDT_name;
+        bench_mkdir(stream.str());
 
         if (exp_setting::type == exp_setting::exp_type::pattern)
-            sprintf(dir, "%s/%s", dir, exp_setting::pattern_name);
+            stream << "/" << exp_setting::pattern_name;
         else
-            sprintf(dir, "%s/%s", dir, exp_setting::type_str[static_cast<int>(exp_setting::type)]);
-        bench_mkdir(dir);
+            stream << "/" << exp_setting::type_str[static_cast<int>(exp_setting::type)];
+        bench_mkdir(stream.str());
 
-        sprintf(dir, "%s/%d", dir, exp_setting::round_num);
-        bench_mkdir(dir);
+        stream << "/" << exp_setting::round_num;
+        bench_mkdir(stream.str());
 
-        sprintf(dir, "%s/%s_%d,%d,(%d,%d)", dir, type, TOTAL_SERVERS, exp_setting::op_per_sec,
-                exp_setting::delay, exp_setting::delay_low);
+        stream << "/" << type << "_" << TOTAL_SERVERS << "," << exp_setting::op_per_sec << ",("
+               << exp_setting::delay << "," << exp_setting::delay_low << ")";
+        dir = stream.str();
         bench_mkdir(dir);
     }
 
@@ -242,14 +248,16 @@ protected:
 
     explicit rdt_exp(exp_setting::default_setting &rdt_st) : rdt_exp_setting(rdt_st) {}
 
-    virtual void exp_impl(T type, const char *pattern) = 0;
+    virtual void exp_impl(T type, const string &pattern) = 0;
+
+    inline void exp_impl(T type) { exp_impl(type, ""); }
 
 public:
     void delay_fix(int delay, int round, T type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_delay(round, delay, delay / 5);
-        exp_impl(type, nullptr);
+        exp_impl(type);
         exp_setting::set_default(nullptr);
     }
 
@@ -257,7 +265,7 @@ public:
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_replica(round, 3, s_p_c);
-        exp_impl(type, nullptr);
+        exp_impl(type);
         exp_setting::set_default(nullptr);
     }
 
@@ -265,11 +273,11 @@ public:
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_speed(round, speed);
-        exp_impl(type, nullptr);
+        exp_impl(type);
         exp_setting::set_default(nullptr);
     }
 
-    void pattern_fix(const char *pattern, T type)
+    void pattern_fix(const string &pattern, T type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_pattern(pattern);
@@ -283,7 +291,7 @@ public:
 
         for (auto &p : rdt_patterns)
             for (auto t : rdt_types)
-                pattern_fix(p.c_str(), t);
+                pattern_fix(p, t);
 
         for (int i = 0; i < rounds; i++)
         {
@@ -294,7 +302,7 @@ public:
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        printf("total time: %f seconds\n", time);
+        cout << "total time: " << time << " seconds\n";
     }
 };
 

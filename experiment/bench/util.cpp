@@ -7,7 +7,7 @@
 #include "exp_env.h"
 #include "exp_setting.h"
 
-char exp_env::sudo_pwd[32];
+string exp_env::sudo_pwd;
 
 exp_setting::default_setting *exp_setting::default_p = nullptr;
 
@@ -19,7 +19,7 @@ int exp_setting::total_ops;
 int exp_setting::op_per_sec;
 
 exp_setting::exp_type exp_setting::type;
-const char *exp_setting::pattern_name;
+string exp_setting::pattern_name;
 int exp_setting::round_num;
 
 #define DEFINE_ACTION(_name) #_name,
@@ -34,18 +34,17 @@ int intRand(int min, int max)
     return distribution(*rand_gen);
 }
 
-string strRand()
+string strRand(int max_len)
 {
     static const char charset[] =
         "0123456789"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         "abcdefghijklmnopqrstuvwxyz";
-    char str[16];
-    int len = intRand(16);
+    int len = intRand(1, max_len - 1);
+    ostringstream stream;
     for (int i = 0; i < len; ++i)
-        str[i] = charset[intRand(sizeof(charset))];
-    str[len] = '\0';
-    return string(str);
+        stream << charset[intRand(sizeof(charset))];
+    return stream.str();
 }
 
 double doubleRand(double min, double max)

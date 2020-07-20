@@ -26,15 +26,15 @@ private:
     static double gen_increament() { return doubleRand(-MAX_INCR, MAX_INCR); }
 
 public:
-    rpq_generator(rpq_type zt, rpq_log &e, const char *p) : zt(zt), ele(e)
+    rpq_generator(rpq_type zt, rpq_log &e, const string &p) : zt(zt), ele(e)
     {
         add_record(add);
         add_record(rem);
         start_maintaining_records();
 
-        if (p == nullptr)
+        if (p.empty())
             pattern = &rpq_pt_dft;
-        else if (strcmp(p, "ardominant") == 0)
+        else if (p == "ardominant")
             pattern = &rpq_pt_ard;
     }
 

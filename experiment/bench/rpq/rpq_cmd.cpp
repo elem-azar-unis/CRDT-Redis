@@ -11,31 +11,30 @@ const char *rpq_type_str[] = {RPQ_TYPE_CODEC(DEFINE_ACTION)};
 void rpq_cmd::exec(redis_client &c)
 {
     const char *type_str = rpq_type_str[static_cast<int>(zt)];
-    char name[32];
-    sprintf(name, "%srpq", type_str);
-    char tmp[256];
+    ostringstream stream;
+    stream << type_str;
     switch (t)
     {
         case rpq_op_type::add:
-            sprintf(tmp, "%szadd %s %d %f", type_str, name, e, d);
+            stream << "zadd " << type_str << "rpq " << e << " " << d;
             break;
         case rpq_op_type::incrby:
-            sprintf(tmp, "%szincrby %s %d %f", type_str, name, e, d);
+            stream << "zincrby " << type_str << "rpq " << e << " " << d;
             break;
         case rpq_op_type::rem:
-            sprintf(tmp, "%szrem %s %d", type_str, name, e);
+            stream << "zrem " << type_str << "rpq " << e;
             break;
         case rpq_op_type::max:
-            sprintf(tmp, "%szmax %s", type_str, name);
+            stream << "zmax " << type_str << "rpq";
             break;
         case rpq_op_type::overhead:
-            sprintf(tmp, "%szoverhead %s", type_str, name);
+            stream << "zoverhead " << type_str << "rpq";
             break;
         case rpq_op_type::opcount:
-            sprintf(tmp, "%szopcount", type_str);
+            stream << "zopcount";
             break;
     }
-    auto r = c.exec(tmp);
+    auto r = c.exec(stream.str());
     switch (t)
     {
         case rpq_op_type::add:
@@ -62,7 +61,7 @@ void rpq_cmd::exec(redis_client &c)
             ele.overhead(static_cast<int>(r->integer));
             break;
         case rpq_op_type::opcount:
-            printf("%lli\n", r->integer);
+            cout << r->integer << "\n";
             break;
     }
 }

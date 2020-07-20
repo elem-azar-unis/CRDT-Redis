@@ -6,9 +6,7 @@
 #define BENCH_EXP_ENV_H
 
 #include <chrono>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+#include <sstream>
 #include <thread>
 
 #include "constants.h"
@@ -18,69 +16,54 @@
 #define IP_SERVER "127.0.0.1"
 constexpr int BASE_PORT = 6379;
 
-#define SUDO_PREFIX "echo %s | sudo -S "
-#define CMD_SUFFIX " 1>/dev/null"  // or " 1>/dev/null 2>&1"
-
 class exp_env
 {
 private:
-    static void shell_exec(const char *cmd, bool sudo)
+    static void shell_exec(const char* cmd, bool sudo)
     {
 //#define PRINT_CMD
 #ifdef PRINT_CMD
         if (sudo)
-            printf("\nsudo %s\n", cmd);
+            cout << "\nsudo " << cmd << "\n";
         else
-            printf("\n%s\n", cmd);
+            cout << "\n" << cmd << "\n";
 #endif
-        char *_cmd_apend;
-        if (sudo)
-        {
-            unique_ptr<char[]> _cmd_apend(
-                new char[strlen(cmd) + sizeof(SUDO_PREFIX CMD_SUFFIX) + 32]);
-            sprintf(_cmd_apend.get(), SUDO_PREFIX "%s" CMD_SUFFIX, sudo_pwd, cmd);
-        }
-        else
-        {
-            unique_ptr<char[]> _cmd_apend(new char[strlen(cmd) + sizeof(CMD_SUFFIX)]);
-            sprintf(_cmd_apend.get(), "%s" CMD_SUFFIX, cmd);
-        }
-        system(_cmd_apend);
+        ostringstream cmd_stream;
+        if (sudo) cmd_stream << "echo " << sudo_pwd << " | sudo -S ";
+        cmd_stream << cmd << " 1>/dev/null";  // or " 1>/dev/null 2>&1"
+        system(cmd_stream.str().c_str());
     }
+
+    static inline void shell_exec(const string& cmd, bool sudo) { shell_exec(cmd.c_str(), sudo); }
 
     static void start_servers()
     {
-        char cmd[256];
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
-            sprintf(cmd,
-                    "redis-server ../../redis-6.0.5/redis.conf "
-                    "--protected-mode no --daemonize yes --loglevel debug "
-                    "--port %d --logfile %d.log --dbfilename %d.rdb "
-                    "--pidfile /var/run/redis_%d.pid --io-threads 2",
-                    port, port, port, port);
-            shell_exec(cmd, false);
+            ostringstream stream;
+            stream << "redis-server ../../redis-6.0.5/redis.conf --protected-mode no "
+                   << "--daemonize yes --loglevel debug --port " << port << " --logfile " << port
+                   << ".log --dbfilename " << port << ".rdb --pidfile /var/run/redis_" << port
+                   << ".pid --io-threads 2";
+            shell_exec(stream.str(), false);
         }
     }
 
     static void construct_repl()
     {
-        unique_ptr<char[]> cmd(new char[64 + 16 * (TOTAL_SERVERS - 1)]);
-        unique_ptr<char[]> repl(new char[16 * TOTAL_SERVERS]);
         for (int i = 0; i < exp_setting::total_clusters; ++i)
         {
-            repl[0] = '\0';
+            ostringstream repl_stream;
             for (int k = 0; k < i * exp_setting::server_per_cluster; ++k)
-                sprintf(repl.get(), "%s " IP_BETWEEN_CLUSTER " %d", repl, BASE_PORT + k);
+                repl_stream << " " << IP_BETWEEN_CLUSTER << " " << BASE_PORT + k;
             for (int j = 0; j < exp_setting::server_per_cluster; ++j)
             {
+                ostringstream cmd_stream;
                 int num = i * exp_setting::server_per_cluster + j;
-                sprintf(cmd.get(),
-                        "redis-cli -h 127.0.0.1 -p %d "
-                        "REPLICATE %d %d exp_local%s",
-                        BASE_PORT + num, TOTAL_SERVERS, num, repl);
-                shell_exec(cmd.get(), false);
-                sprintf(repl.get(), "%s " IP_WITHIN_CLUSTER " %d", repl, BASE_PORT + num);
+                cmd_stream << "redis-cli -h 127.0.0.1 -p " << BASE_PORT + num << " REPLICATE "
+                           << TOTAL_SERVERS << " " << num << " exp_local" << repl_stream.str();
+                shell_exec(cmd_stream.str(), false);
+                repl_stream << " " << IP_WITHIN_CLUSTER << " " << BASE_PORT + num;
             }
         }
         std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -88,24 +71,21 @@ private:
 
     static void set_delay()
     {
-        char cmd[128];
         shell_exec("tc qdisc add dev lo root handle 1: prio", true);
 
-        sprintf(cmd,
-                "tc qdisc add dev lo parent 1:1 handle 10: "
-                "netem delay %.dms %.1fms distribution normal limit 100000",
-                exp_setting::delay_low, exp_setting::delay_low / 5.0);
-        shell_exec(cmd, true);
+        ostringstream stream;
+        stream << "tc qdisc add dev lo parent 1:1 handle 10: netem delay " << exp_setting::delay_low
+               << "ms " << exp_setting::delay_low / 5.0 << "ms distribution normal limit 100000";
+        shell_exec(stream.str(), true);
         shell_exec(
             "tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst " IP_WITHIN_CLUSTER
             " flowid 1:1",
             true);
 
-        sprintf(cmd,
-                "tc qdisc add dev lo parent 1:2 handle 20: "
-                "netem delay %.dms %.1fms distribution normal limit 100000",
-                exp_setting::delay, exp_setting::delay / 5.0);
-        shell_exec(cmd, true);
+        stream.str("");
+        stream << "tc qdisc add dev lo parent 1:2 handle 20: netem delay " << exp_setting::delay
+               << "ms " << exp_setting::delay / 5.0 << "ms distribution normal limit 100000";
+        shell_exec(stream.str(), true);
         shell_exec(
             "tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst " IP_BETWEEN_CLUSTER
             " flowid 1:2",
@@ -122,11 +102,11 @@ private:
 
     static void shutdown_servers()
     {
-        char cmd[64];
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
-            sprintf(cmd, "redis-cli -h 127.0.0.1 -p %d SHUTDOWN NOSAVE", port);
-            shell_exec(cmd, false);
+            ostringstream stream;
+            stream << "redis-cli -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
+            shell_exec(stream.str(), false);
         }
         std::this_thread::sleep_for(std::chrono::seconds(2));
     }
@@ -134,27 +114,27 @@ private:
     static void clean() { shell_exec("rm -rf *.rdb *.log", false); }
 
 public:
-    static char sudo_pwd[32];
+    static string sudo_pwd;
 
     exp_env()
     {
         exp_setting::print_settings();
         start_servers();
-        printf("server started, ");
+        cout << "server started, ";
         construct_repl();
-        printf("replication constructed, ");
+        cout << "replication constructed, ";
         set_delay();
-        printf("delay set\n");
+        cout << "delay set\n";
     }
 
     ~exp_env()
     {
         remove_delay();
-        printf("delay removed, ");
+        cout << "delay removed, ";
         shutdown_servers();
-        printf("server shutdown, ");
+        cout << "server shutdown, ";
         clean();
-        printf("cleaned\n\n");
+        cout << "cleaned\n\n";
     }
 };
 

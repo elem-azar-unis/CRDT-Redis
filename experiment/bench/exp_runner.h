@@ -24,7 +24,7 @@
 #endif
 
 using namespace std;
-// extern const char *ips[3];
+// extern const char *ips[];
 
 class exp_runner
 {
@@ -153,9 +153,9 @@ public:
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        printf("%f seconds, %f op/s\n", time, exp_setting::total_ops / time);
+        cout << time << " seconds, " << exp_setting::total_ops / time << " op/s\n";
 
-        printf("ending.\n");
+        cout << "ending.\n";
 
         if (read_thread.joinable())
         {

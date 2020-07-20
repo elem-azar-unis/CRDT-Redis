@@ -1,13 +1,10 @@
-#include <cstdio>
-#include <cstring>
-
 #include "exp_env.h"
 #include "rpq/rpq_exp.h"
 
 using namespace std;
 
 /*
-const char *ips[3] = {"192.168.188.135",
+const char *ips[] = {"192.168.188.135",
                       "192.168.188.136",
                       "192.168.188.137"};
 
@@ -172,16 +169,19 @@ int main(int argc, char *argv[])
     // time_max();
     // test_count_dis_one(ips[0],6379);
 
+    istream::sync_with_stdio(false);
+    ostream::sync_with_stdio(false);
+
     if (argc == 2)
-        strcpy(exp_env::sudo_pwd, argv[1]);
+        exp_env::sudo_pwd = argv[1];
     else if (argc == 1)
     {
-        printf("please enter the password for sudo: ");
-        scanf("%s", exp_env::sudo_pwd);
+        cout << "please enter the password for sudo: ";
+        cin >> exp_env::sudo_pwd;
     }
     else
     {
-        printf("error. too many input arguments\n");
+        cout << "error. too many input arguments\n";
         return -1;
     }
 

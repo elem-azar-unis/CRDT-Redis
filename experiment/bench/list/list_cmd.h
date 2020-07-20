@@ -16,12 +16,14 @@ class list_cmd : public cmd
 protected:
     list_type type;
     list_log &list;
-    char cmd_head[64]{};
+    string cmd_head;
 
     list_cmd(list_type type, list_log &list, const char *op) : type(type), list(list)
     {
         const char *type_str = list_type_str[static_cast<int>(type)];
-        sprintf(cmd_head, "%sl%s %slist", type_str, op, type_str);
+        ostringstream stream;
+        stream << type_str << "l" << op << " " << type_str << "list";
+        cmd_head = stream.str();
     }
 };
 
@@ -53,10 +55,10 @@ public:
         if (bold) property |= BOLD;            // NOLINT
         if (italic) property |= ITALIC;        // NOLINT
         if (underline) property |= UNDERLINE;  // NOLINT
-        char cmd[256];
-        sprintf(cmd, "%s %s %s %s %d %d %d %d", cmd_head, prev.c_str(), id.c_str(), content.c_str(),
-                font, size, color, property);
-        auto r = c.exec(cmd);
+        ostringstream stream;
+        stream << cmd_head << " " << prev << " " << id << " " << content << " " << font << " "
+               << size << " " << color << " " << property;
+        auto r = c.exec(stream.str());
         list.insert(prev, id, content, font, size, color, bold, italic, underline);
     }
 };
@@ -74,9 +76,9 @@ public:
 
     void exec(redis_client &c) override
     {
-        char cmd[128];
-        sprintf(cmd, "%s %s %s %d", cmd_head, id.c_str(), upd_type.c_str(), value);
-        auto r = c.exec(cmd);
+        ostringstream stream;
+        stream << cmd_head << " " << id << " " << upd_type << " " << value;
+        auto r = c.exec(stream.str());
         list.update(id, upd_type, value);
     }
 };
@@ -93,9 +95,9 @@ public:
 
     void exec(redis_client &c) override
     {
-        char cmd[128];
-        sprintf(cmd, "%s %s", cmd_head, id.c_str());
-        auto r = c.exec(cmd);
+        ostringstream stream;
+        stream << cmd_head << " " << id;
+        auto r = c.exec(stream.str());
         list.remove(id);
     }
 };
@@ -132,7 +134,7 @@ public:
     void exec(redis_client &c) override
     {
         auto r = c.exec(cmd_head);
-        printf("%lli\n", r->integer);
+        cout << r->integer << "\n";
     }
 };
 

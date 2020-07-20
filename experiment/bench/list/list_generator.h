@@ -26,10 +26,10 @@ private:
 
         string get()
         {
-            char tmp[16];
-            sprintf(tmp, "%d,%d", id, count);
+            ostringstream stream;
+            stream << id << "," << count;
             count++;
-            return string(tmp);
+            return stream.str();
         }
     } new_id;
 
@@ -39,11 +39,11 @@ private:
     // TODO record_for_collision<string> add;
 
 public:
-    list_generator(list_type type, list_log &list, const char *p) : type(type), list(list)
+    list_generator(list_type type, list_log &list, const string &p) : type(type), list(list)
     {
         // TODO add_record(add); start_maintaining_records();
 
-        if (p == nullptr) pattern = &list_pt_dft;
+        if (p.empty()) pattern = &list_pt_dft;
         // TODO pattern?
     }
 
