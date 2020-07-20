@@ -20,9 +20,9 @@ void rpq_exp::exp_impl(const string& type, const string& pattern)
 {
     rpq_log qlog(type);
     rpq_generator gen(type, qlog, pattern);
-    rpq_cmd read_max(type, rpq_op_type::max, -1, -1, qlog);
-    rpq_cmd ovhd(type, rpq_op_type::overhead, -1, -1, qlog);
-    rpq_cmd opcount(type, rpq_op_type::opcount, -1, -1, qlog);
+    rpq_max_cmd read_max(type, qlog);
+    rpq_overhead_cmd ovhd(type, qlog);
+    rpq_opcount_cmd opcount(type, qlog);
 
     exp_runner runner(qlog, gen);
     runner.set_cmd_opcount(opcount);

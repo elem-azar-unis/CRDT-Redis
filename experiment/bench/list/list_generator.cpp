@@ -40,7 +40,7 @@ void list_generator::gen_and_exec(redis_client &c)
         int font = intRand(TOTAL_FONT_TYPE), size = intRand(MAX_FONT_SIZE),
             color = intRand(MAX_COLOR);
         bool bold = boolRand(), italic = boolRand(), underline = boolRand();
-        list_add_cmd(type, list, prev, id, content, font, size, color, bold, italic, underline)
+        list_insert_cmd(type, list, prev, id, content, font, size, color, bold, italic, underline)
             .exec(c);
     }
     else if (rand <= PU)

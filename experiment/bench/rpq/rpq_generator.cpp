@@ -38,14 +38,11 @@ rpq_generator::rpq_op_gen_pattern& rpq_generator::get_pattern(const string& name
 
 void rpq_generator::gen_and_exec(redis_client& c)
 {
-    rpq_op_type t;
     int e;
-    double d;
     double rand = decide();
     if (rand <= PA)
     {
-        t = rpq_op_type::add;
-        d = gen_initial();
+        double d = gen_initial();
         double conf = decide();
         if (conf < PAA)
         {
@@ -67,18 +64,17 @@ void rpq_generator::gen_and_exec(redis_client& c)
             e = gen_element();
             add.add(e);
         }
+        rpq_add_cmd(zt, ele, e, d).exec(c);
     }
     else if (rand <= PI)
     {
-        t = rpq_op_type::incrby;
         e = ele.random_get();
         if (e == -1) return;
-        d = gen_increment();
+        double d = gen_increment();
+        rpq_incrby_cmd(zt, ele, e, d).exec(c);
     }
     else
     {
-        t = rpq_op_type::rem;
-        d = -1;
         double conf = decide();
         if (conf < PRA)
         {
@@ -106,6 +102,6 @@ void rpq_generator::gen_and_exec(redis_client& c)
             if (e == -1) return;
             rem.add(e);
         }
+        rpq_remove_cmd(zt, ele, e).exec(c);
     }
-    rpq_cmd(zt, t, e, d, ele).exec(c);
 }

@@ -1144,23 +1144,23 @@ struct redisCommand redisCommandTable[] = {
 #endif
 
 #ifdef CRDT_OPCOUNT
-    {"ozopcount", ozopcountCommand, 1,
+    {"ozopcount", ozopcountCommand, 2,
      "read-only fast",
      0, NULL, 1, 1, 1, 0, 0, 0},
 
-    {"rzopcount", rzopcountCommand, 1,
+    {"rzopcount", rzopcountCommand, 2,
      "read-only fast",
      0, NULL, 1, 1, 1, 0, 0, 0},
 
-    {"rwfzopcount", rwfzopcountCommand, 1,
+    {"rwfzopcount", rwfzopcountCommand, 2,
      "read-only fast",
      0, NULL, 1, 1, 1, 0, 0, 0},
 
-    {"rlopcount", rlopcountCommand, 1,
+    {"rlopcount", rlopcountCommand, 2,
      "read-only fast",
      0, NULL, 1, 1, 1, 0, 0, 0},
 
-    {"rwflopcount", rwflopcountCommand, 1,
+    {"rwflopcount", rwflopcountCommand, 2,
      "read-only fast",
      0, NULL, 1, 1, 1, 0, 0, 0},
 #endif

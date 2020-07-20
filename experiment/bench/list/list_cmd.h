@@ -12,28 +12,14 @@ class list_cmd : public cmd
 {
 protected:
     list_log &list;
-    ostringstream stream;
 
     list_cmd(const string &type, list_log &list, const char *op) : list(list)
     {
         stream << type << "l" << op << " " << type << "list";
     }
-
-public:
-    inline list_cmd &add(const string &s)
-    {
-        stream << " " << s;
-        return *this;
-    }
-
-    inline list_cmd &add(int s)
-    {
-        stream << " " << s;
-        return *this;
-    }
 };
 
-class list_add_cmd : public list_cmd
+class list_insert_cmd : public list_cmd
 {
 private:
     string prev, id, content;
@@ -41,8 +27,8 @@ private:
     bool bold, italic, underline;
 
 public:
-    list_add_cmd(const string &type, list_log &list, string &prev, string &id, string &content,
-                 int font, int size, int color, bool bold, bool italic, bool underline)
+    list_insert_cmd(const string &type, list_log &list, string &prev, string &id, string &content,
+                    int font, int size, int color, bool bold, bool italic, bool underline)
         : list_cmd(type, list, "insert"),
           prev(prev),
           id(id),

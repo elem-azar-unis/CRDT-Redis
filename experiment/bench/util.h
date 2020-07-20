@@ -5,8 +5,6 @@
 #ifndef BENCH_UTIL_H
 #define BENCH_UTIL_H
 
-#include <sys/stat.h>
-
 #include <condition_variable>
 #include <cstdlib>
 #include <fstream>
@@ -85,7 +83,30 @@ public:
 
 class cmd
 {
+protected:
+    ostringstream stream;
+
+    cmd() = default;
+
 public:
+    inline cmd &add(const string &s)
+    {
+        stream << " " << s;
+        return *this;
+    }
+
+    inline cmd &add(int s)
+    {
+        stream << " " << s;
+        return *this;
+    }
+
+    inline cmd &add(double s)
+    {
+        stream << " " << s;
+        return *this;
+    }
+
     virtual void exec(redis_client &c) = 0;
 };
 
@@ -119,7 +140,7 @@ protected:
             }
         }
 
-        T get(T fail)
+        T get(T &&fail)
         {
             lock_guard<mutex> lk(mtx);
             if (h.empty()) return fail;
