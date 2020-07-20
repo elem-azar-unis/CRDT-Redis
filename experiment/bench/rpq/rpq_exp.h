@@ -9,18 +9,19 @@
 #include "../util.h"
 #include "rpq_basics.h"
 
-class rpq_exp : public rdt_exp<rpq_type>
+class rpq_exp : public rdt_exp
 {
 private:
     static exp_setting::default_setting rpq_setting;
 
-    void exp_impl(rpq_type type, const string& pattern) override;
+    void exp_impl(const string& type, const string& pattern) override;
 
 public:
-    rpq_exp() : rdt_exp<rpq_type>(rpq_setting)
+    rpq_exp() : rdt_exp(rpq_setting)
     {
-        add_type(rpq_type::r);
-        add_type(rpq_type::rwf);
+        // ! RPQ types: "o", "r", "rwf"
+        add_type("r");
+        add_type("rwf");
         add_pattern("ardominant");
     }
 };

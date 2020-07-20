@@ -4,28 +4,29 @@
 
 #include "list_generator.h"
 
-#include <map>
+constexpr int MAX_FONT_SIZE = 100;
+constexpr int TOTAL_FONT_TYPE = 10;
+constexpr int MAX_COLOR = 1u << 25u;
 
-#define DEFINE_ACTION(_name) #_name,
-const char *list_type_str[] = {LIST_TYPE_CODEC(DEFINE_ACTION)};
-#undef DEFINE_ACTION
+#define PA (pattern.PR_ADD)
+#define PU (pattern.PR_ADD + pattern.PR_UPD)
 
-#define PA (pattern->PR_ADD)
-#define PU (pattern->PR_ADD + pattern->PR_UPD)
-
-list_op_gen_pattern list_pt_dft{
-    .PR_ADD = 0.41,
-    .PR_UPD = 0.2,
-    .PR_REM = 0.39,
-};
+list_generator::list_op_gen_pattern &list_generator::get_pattern(const string &name)
+{
+    // TODO patterns?
+    static map<string, list_op_gen_pattern> patterns{
+        {"default", {.PR_ADD = 0.41, .PR_UPD = 0.2, .PR_REM = 0.39}}};
+    if (patterns.find(name) == patterns.end()) return patterns["default"];
+    return patterns[name];
+}
 
 int list_generator::id_gen::index(thread::id tid)
 {
-    static int nextindex = 0;
+    static int next_index = 0;
     static mutex my_mutex;
     static map<thread::id, int> ids;
     lock_guard<mutex> lock(my_mutex);
-    if (ids.find(tid) == ids.end()) ids[tid] = nextindex++;
+    if (ids.find(tid) == ids.end()) ids[tid] = next_index++;
     return ids[tid];
 }
 

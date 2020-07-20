@@ -14,28 +14,42 @@
 class rpq_generator : public generator
 {
 private:
-    rpq_op_gen_pattern *pattern;
+    struct rpq_op_gen_pattern
+    {
+        double PR_ADD;
+        double PR_INC;
+        double PR_REM;
+
+        double PR_ADD_CA;
+        double PR_ADD_CR;
+        double PR_REM_CA;
+        double PR_REM_CR;
+    };
+
+    static constexpr int MAX_ELE = 200000;
+    static constexpr int MAX_INIT = 100;
+    static constexpr int MAX_INCR = 50;
+
+    rpq_op_gen_pattern &pattern;
     record_for_collision<int> add, rem;
     rpq_log &ele;
-    rpq_type zt;
+    const string &zt;
 
     static int gen_element() { return intRand(MAX_ELE); }
 
     static double gen_initial() { return doubleRand(0, MAX_INIT); }
 
-    static double gen_increament() { return doubleRand(-MAX_INCR, MAX_INCR); }
+    static double gen_increment() { return doubleRand(-MAX_INCR, MAX_INCR); }
+
+    static rpq_op_gen_pattern &get_pattern(const string &name);
 
 public:
-    rpq_generator(rpq_type zt, rpq_log &e, const string &p) : zt(zt), ele(e)
+    rpq_generator(const string &type, rpq_log &e, const string &p)
+        : zt(type), ele(e), pattern(get_pattern(p))
     {
         add_record(add);
         add_record(rem);
         start_maintaining_records();
-
-        if (p.empty())
-            pattern = &rpq_pt_dft;
-        else if (p == "ardominant")
-            pattern = &rpq_pt_ard;
     }
 
     void gen_and_exec(redis_client &c) override;

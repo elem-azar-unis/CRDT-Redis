@@ -14,6 +14,14 @@
 class list_generator : public generator
 {
 private:
+    // TODO conflicts?
+    struct list_op_gen_pattern
+    {
+        double PR_ADD;
+        double PR_UPD;
+        double PR_REM;
+    };
+
     class id_gen
     {
     private:
@@ -33,18 +41,18 @@ private:
         }
     } new_id;
 
-    list_op_gen_pattern *pattern;
+    list_op_gen_pattern &pattern;
     list_log &list;
-    list_type type;
+    const string &type;
     // TODO record_for_collision<string> add;
 
+    static list_op_gen_pattern &get_pattern(const string &name);
+
 public:
-    list_generator(list_type type, list_log &list, const string &p) : type(type), list(list)
+    list_generator(const string &type, list_log &list, const string &p)
+        : type(type), list(list), pattern(get_pattern(p))
     {
         // TODO add_record(add); start_maintaining_records();
-
-        if (p.empty()) pattern = &list_pt_dft;
-        // TODO pattern?
     }
 
     void gen_and_exec(redis_client &c) override;

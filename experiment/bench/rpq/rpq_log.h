@@ -54,7 +54,7 @@ private:
     void shift_down(int s);
 
 public:
-    explicit rpq_log(rpq_type type) : rdt_log("rpq", rpq_type_str[static_cast<int>(type)]) {}
+    explicit rpq_log(const string &type) : rdt_log("rpq", type) {}
 
     int random_get();
 

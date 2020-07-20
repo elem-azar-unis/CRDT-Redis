@@ -16,6 +16,10 @@
 
 using namespace std;
 
+constexpr int BOLD = 1u << 0u;
+constexpr int ITALIC = 1u << 1u;
+constexpr int UNDERLINE = 1u << 2u;
+
 class list_log : public rdt_log
 {
 private:
@@ -50,7 +54,7 @@ private:
     mutex mtx, dis_mtx, ovhd_mtx;
 
 public:
-    explicit list_log(list_type type) : rdt_log("list", list_type_str[static_cast<int>(type)]) {}
+    explicit list_log(const string &type) : rdt_log("list", type) {}
 
     string random_get();
 

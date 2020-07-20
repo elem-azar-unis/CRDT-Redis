@@ -16,7 +16,7 @@ exp_setting::default_setting rpq_exp::rpq_setting{.delay = 50,
                                                   .replica_e{.start = 1, .end = 5, .step = 1},
                                                   .delay_e{.start = 20, .end = 380, .step = 40}};
 
-void rpq_exp::exp_impl(rpq_type type, const string& pattern)
+void rpq_exp::exp_impl(const string& type, const string& pattern)
 {
     rpq_log qlog(type);
     rpq_generator gen(type, qlog, pattern);

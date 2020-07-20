@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <mutex>
 #include <random>
 #include <sstream>
@@ -183,7 +184,7 @@ private:
 protected:
     string dir;
 
-    rdt_log(const char *CRDT_name, const char *type)
+    rdt_log(const char *CRDT_name, const string &type)
     {
         ostringstream stream;
         stream << "../result/" << CRDT_name;
@@ -208,7 +209,6 @@ public:
     virtual void write_file() = 0;
 };
 
-template <class T>
 class rdt_exp
 {
 private:
@@ -218,7 +218,7 @@ private:
     {
         for (int delay = rdt_exp_setting.delay_e.start; delay <= rdt_exp_setting.delay_e.end;
              delay += rdt_exp_setting.delay_e.step)
-            for (auto type : rdt_types)
+            for (auto &type : rdt_types)
                 delay_fix(delay, round, type);
     }
 
@@ -226,7 +226,7 @@ private:
     {
         for (int replica = rdt_exp_setting.replica_e.start;
              replica <= rdt_exp_setting.replica_e.end; replica += rdt_exp_setting.replica_e.step)
-            for (auto type : rdt_types)
+            for (auto &type : rdt_types)
                 replica_fix(replica, round, type);
     }
 
@@ -234,26 +234,26 @@ private:
     {
         for (int speed = rdt_exp_setting.speed_e.start; speed <= rdt_exp_setting.speed_e.end;
              speed += rdt_exp_setting.speed_e.step)
-            for (auto type : rdt_types)
+            for (auto &type : rdt_types)
                 speed_fix(speed, round, type);
     }
 
 protected:
-    vector<T> rdt_types;
+    vector<string> rdt_types;
     vector<string> rdt_patterns;
 
-    void add_type(T type) { rdt_types.emplace_back(type); }
+    void add_type(const char *type) { rdt_types.emplace_back(type); }
 
     void add_pattern(const char *pattern) { rdt_patterns.emplace_back(pattern); }
 
     explicit rdt_exp(exp_setting::default_setting &rdt_st) : rdt_exp_setting(rdt_st) {}
 
-    virtual void exp_impl(T type, const string &pattern) = 0;
+    virtual void exp_impl(const string &type, const string &pattern) = 0;
 
-    inline void exp_impl(T type) { exp_impl(type, ""); }
+    inline void exp_impl(const string &type) { exp_impl(type, "default"); }
 
 public:
-    void delay_fix(int delay, int round, T type)
+    void delay_fix(int delay, int round, const string &type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_delay(round, delay, delay / 5);
@@ -261,7 +261,7 @@ public:
         exp_setting::set_default(nullptr);
     }
 
-    void replica_fix(int s_p_c, int round, T type)
+    void replica_fix(int s_p_c, int round, const string &type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_replica(round, 3, s_p_c);
@@ -269,7 +269,7 @@ public:
         exp_setting::set_default(nullptr);
     }
 
-    void speed_fix(int speed, int round, T type)
+    void speed_fix(int speed, int round, const string &type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_speed(round, speed);
@@ -277,7 +277,7 @@ public:
         exp_setting::set_default(nullptr);
     }
 
-    void pattern_fix(const string &pattern, T type)
+    void pattern_fix(const string &pattern, const string &type)
     {
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_pattern(pattern);
@@ -290,7 +290,7 @@ public:
         auto start = chrono::steady_clock::now();
 
         for (auto &p : rdt_patterns)
-            for (auto t : rdt_types)
+            for (auto &t : rdt_types)
                 pattern_fix(p, t);
 
         for (int i = 0; i < rounds; i++)

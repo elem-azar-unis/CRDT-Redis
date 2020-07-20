@@ -18,7 +18,7 @@ exp_setting::default_setting list_exp::list_setting{
     .replica_e{.start = 1, .end = 5, .step = 1},
     .delay_e{.start = 20, .end = 380, .step = 40}};
 
-void list_exp::exp_impl(list_type type, const string& pattern)
+void list_exp::exp_impl(const string& type, const string& pattern)
 {
     list_log list(type);
     list_generator gen(type, list, pattern);
