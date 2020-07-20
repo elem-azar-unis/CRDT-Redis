@@ -5,6 +5,8 @@
 #ifndef BENCH_UTIL_H
 #define BENCH_UTIL_H
 
+#include <sys/stat.h>
+
 #include <condition_variable>
 #include <cstdlib>
 #include <fstream>
