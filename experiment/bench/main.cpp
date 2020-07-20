@@ -1,4 +1,5 @@
 #include "exp_env.h"
+#include "list/list_exp.h"
 #include "rpq/rpq_exp.h"
 
 using namespace std;

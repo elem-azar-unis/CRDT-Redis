@@ -7,7 +7,6 @@
 
 #include <list>
 #include <mutex>
-#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <vector>

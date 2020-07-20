@@ -5,8 +5,6 @@
 #ifndef BENCH_LIST_CMD_H
 #define BENCH_LIST_CMD_H
 
-#include <string>
-
 #include "../util.h"
 #include "list_basics.h"
 #include "list_log.h"
