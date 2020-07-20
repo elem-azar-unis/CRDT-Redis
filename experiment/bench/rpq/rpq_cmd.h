@@ -6,7 +6,6 @@
 #define BENCH_RPQ_CMD_H
 
 #include "../util.h"
-#include "rpq_basics.h"
 #include "rpq_log.h"
 
 enum class rpq_op_type

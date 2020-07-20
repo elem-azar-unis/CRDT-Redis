@@ -7,7 +7,6 @@
 
 #include "../exp_setting.h"
 #include "../util.h"
-#include "rpq_basics.h"
 
 class rpq_exp : public rdt_exp
 {

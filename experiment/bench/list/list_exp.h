@@ -7,7 +7,6 @@
 
 #include "../exp_setting.h"
 #include "../util.h"
-#include "list_basics.h"
 
 class list_exp : public rdt_exp
 {

@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "../util.h"
-#include "rpq_basics.h"
 
 using namespace std;
 

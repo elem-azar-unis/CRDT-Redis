@@ -6,7 +6,6 @@
 #define BENCH_LIST_CMD_H
 
 #include "../util.h"
-#include "list_basics.h"
 #include "list_log.h"
 
 class list_cmd : public cmd

@@ -7,7 +7,6 @@
 
 #include "../constants.h"
 #include "../util.h"
-#include "list_basics.h"
 #include "list_cmd.h"
 #include "list_log.h"
 
