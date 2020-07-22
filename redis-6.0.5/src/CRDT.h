@@ -21,12 +21,12 @@
         incrRefCount(c->rargv[(r)]);  \
     } while (0)
 
-typedef struct prepare_rargv_vector
+struct prepare_rargv_vector
 {
     int size;
     int capacity;
     void **vector;  // actually here is robj** vector;
-} rvector;
+};
 
 #define INITIAL_CAPACITY 4
 #define RVCT_PREPARE                                                  \
@@ -140,10 +140,10 @@ typedef struct prepare_rargv_vector
 #define CRDT_BEGIN        \
     if (REPLICATION_MODE) \
     {
-#define CRDT_PREPARE                  \
-    if (!(c->flags & CLIENT_REPLICA)) \
-    {                                 \
-        rvector __rvct__;             \
+#define CRDT_PREPARE                          \
+    if (!(c->flags & CLIENT_REPLICA))         \
+    {                                         \
+        struct prepare_rargv_vector __rvct__; \
         RVCT_PREPARE;
 
 #define CRDT_EFFECT         \
