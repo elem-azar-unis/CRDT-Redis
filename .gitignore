@@ -11,7 +11,6 @@ cmake-build-debug
 compile_commands.json
 *.lnk
 .clangd
-.clang-format
 
 bench_start
 ozlog
