@@ -18,7 +18,7 @@
     {                                                      \
         c->rargc = c->argc;                                \
         c->rargv = zmalloc(sizeof(robj *) * __capacity__); \
-        for (int _i_ = 0; i < c->argc; _i_++;)             \
+        for (int _i_ = 0; _i_ < c->argc; _i_++)            \
         {                                                  \
             c->rargv[_i_] = c->argv[_i_];                  \
             incrRefCount(c->rargv[(_i_)]);                 \
