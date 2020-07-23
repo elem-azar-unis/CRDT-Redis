@@ -153,9 +153,9 @@ public:
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        cout << time << " seconds, " << exp_setting::total_ops / time << " op/s\n";
+        cout << time << " seconds, " << exp_setting::total_ops / time << " op/s" << endl;
 
-        cout << "ending.\n";
+        cout << "ending." << endl;
 
         if (read_thread.joinable())
         {

@@ -59,10 +59,10 @@ public:
         c = redisConnect(ip, port);
         if (c == nullptr || c->err)
         {
-            if (c) { cout << "Error: " << c->errstr << ", ip:" << ip << ", port:" << port << "\n"; }
+            if (c) { cout << "Error: " << c->errstr << ", ip:" << ip << ", port:" << port << endl; }
             else
             {
-                cout << "Can't allocate redis context\n";
+                cout << "Can't allocate redis context" << endl;
             }
             exit(-1);
         }
@@ -74,7 +74,7 @@ public:
         if (r == nullptr)
         {
             cout << "host " << c->tcp.host << ":" << c->tcp.port << " terminated.\n"
-                 << "executing " << cmd << "\n";
+                 << "executing " << cmd << endl;
             exit(-1);
         }
         return redisReply_ptr(r, freeReplyObject);
@@ -337,7 +337,7 @@ public:
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        cout << "total time: " << time << " seconds\n";
+        cout << "total time: " << time << " seconds" << endl;
     }
 };
 

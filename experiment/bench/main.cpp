@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        cout << "error. too many input arguments\n";
+        cout << "error. too many input arguments." << endl;
         return -1;
     }
 

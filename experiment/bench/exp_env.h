@@ -24,9 +24,9 @@ private:
 //#define PRINT_CMD
 #ifdef PRINT_CMD
         if (sudo)
-            cout << "\nsudo " << cmd << "\n";
+            cout << "\nsudo " << cmd << endl;
         else
-            cout << "\n" << cmd << "\n";
+            cout << "\n" << cmd << endl;
 #endif
         ostringstream cmd_stream;
         if (sudo) cmd_stream << "echo " << sudo_pwd << " | sudo -S ";
@@ -120,21 +120,21 @@ public:
     {
         exp_setting::print_settings();
         start_servers();
-        cout << "server started, ";
+        cout << "server started, " << flush;
         construct_repl();
-        cout << "replication constructed, ";
+        cout << "replication constructed, " << flush;
         set_delay();
-        cout << "delay set\n";
+        cout << "delay set" << endl;
     }
 
     ~exp_env()
     {
         remove_delay();
-        cout << "delay removed, ";
+        cout << "delay removed, " << flush;
         shutdown_servers();
-        cout << "server shutdown, ";
+        cout << "server shutdown, " << flush;
         clean();
-        cout << "cleaned\n\n";
+        cout << "cleaned\n" << endl;
     }
 };
 
