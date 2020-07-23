@@ -229,12 +229,14 @@ protected:
     }
 
 public:
+    int write_op_executed=0;
     virtual void write_file() = 0;
 };
 
 class rdt_exp
 {
 private:
+    const char *rdt_type;
     exp_setting::default_setting &rdt_exp_setting;
 
     void test_delay(int round)
@@ -269,7 +271,9 @@ protected:
 
     void add_pattern(const char *pattern) { rdt_patterns.emplace_back(pattern); }
 
-    explicit rdt_exp(exp_setting::default_setting &rdt_st) : rdt_exp_setting(rdt_st) {}
+    explicit rdt_exp(exp_setting::default_setting &rdt_st, const char *rdt_type)
+        : rdt_exp_setting(rdt_st), rdt_type(rdt_type)
+    {}
 
     virtual void exp_impl(const string &type, const string &pattern) = 0;
 
@@ -278,34 +282,42 @@ protected:
 public:
     void delay_fix(int delay, int round, const string &type)
     {
+        exp_setting::set_exp_subject(type.c_str(), rdt_type);
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_delay(round, delay, delay / 5);
         exp_impl(type);
         exp_setting::set_default(nullptr);
+        exp_setting::set_exp_subject(nullptr, nullptr);
     }
 
     void replica_fix(int s_p_c, int round, const string &type)
     {
+        exp_setting::set_exp_subject(type.c_str(), rdt_type);
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_replica(round, 3, s_p_c);
         exp_impl(type);
         exp_setting::set_default(nullptr);
+        exp_setting::set_exp_subject(nullptr, nullptr);
     }
 
     void speed_fix(int speed, int round, const string &type)
     {
+        exp_setting::set_exp_subject(type.c_str(), rdt_type);
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_speed(round, speed);
         exp_impl(type);
         exp_setting::set_default(nullptr);
+        exp_setting::set_exp_subject(nullptr, nullptr);
     }
 
     void pattern_fix(const string &pattern, const string &type)
     {
+        exp_setting::set_exp_subject(type.c_str(), rdt_type);
         exp_setting::set_default(&rdt_exp_setting);
         exp_setting::set_pattern(pattern);
         exp_impl(type, pattern);
         exp_setting::set_default(nullptr);
+        exp_setting::set_exp_subject(nullptr, nullptr);
     }
 
     void exp_start_all(int rounds)

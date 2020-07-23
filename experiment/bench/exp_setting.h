@@ -30,6 +30,8 @@ public:
     };
 
 private:
+    static const char *alg_type;
+    static const char *rdt_type;
     static constexpr int total_sec = 10000;
     static default_setting *default_p;
 
@@ -67,8 +69,15 @@ public:
 
     static inline void set_default(default_setting *p) { default_p = p; }
 
+    static inline void set_exp_subject(const char *alg_name, const char *rdt_name)
+    {
+        alg_type = alg_name;
+        rdt_type = rdt_name;
+    }
+
     static inline void print_settings()
     {
+        cout << "exp subject: [" << alg_type << "-" << rdt_type << "]\n";
         cout << "exp on ";
         if (type != exp_type::pattern)
         {

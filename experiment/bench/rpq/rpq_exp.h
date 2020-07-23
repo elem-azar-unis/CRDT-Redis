@@ -16,7 +16,7 @@ private:
     void exp_impl(const string& type, const string& pattern) override;
 
 public:
-    rpq_exp() : rdt_exp(rpq_setting)
+    rpq_exp() : rdt_exp(rpq_setting, "rpq")
     {
         // ! RPQ types: "o", "r", "rwf"
         add_type("r");

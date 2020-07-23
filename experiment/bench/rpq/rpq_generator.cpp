@@ -42,35 +42,13 @@ void rpq_generator::gen_and_exec(redis_client& c)
     double rand = decide();
     if (rand <= PA)
     {
-        double d = gen_initial();
-        double conf = decide();
-        if (conf < PAA)
-        {
-            e = add.get(-1);
-            if (e == -1)
-            {
-                e = gen_element();
-                add.add(e);
-            }
-        }
-        else if (conf < PAR)
-        {
-            e = rem.get(-1);
-            if (e == -1) e = gen_element();
-            add.add(e);
-        }
-        else
-        {
-            e = gen_element();
-            add.add(e);
-        }
-        rpq_add_cmd(zt, ele, e, d).exec(c);
+        gen_add().exec(c);
     }
     else if (rand <= PI)
     {
         e = ele.random_get();
-        if (e == -1) return;
-        double d = gen_increment();
+        if (e == -1) return gen_add().exec(c);
+        double d = doubleRand(-MAX_INCR, MAX_INCR);;
         rpq_incrby_cmd(zt, ele, e, d).exec(c);
     }
     else
@@ -82,7 +60,7 @@ void rpq_generator::gen_and_exec(redis_client& c)
             if (e == -1)
             {
                 e = ele.random_get();
-                if (e == -1) return;
+                if (e == -1) return gen_add().exec(c);
             }
             rem.add(e);
         }
@@ -92,16 +70,43 @@ void rpq_generator::gen_and_exec(redis_client& c)
             if (e == -1)
             {
                 e = ele.random_get();
-                if (e == -1) return;
+                if (e == -1) return gen_add().exec(c);
                 rem.add(e);
             }
         }
         else
         {
             e = ele.random_get();
-            if (e == -1) return;
+            if (e == -1) return gen_add().exec(c);
             rem.add(e);
         }
         rpq_remove_cmd(zt, ele, e).exec(c);
     }
+}
+rpq_add_cmd rpq_generator::gen_add()
+{
+    int e;
+    double d = doubleRand(0, MAX_INIT);
+    double conf = decide();
+    if (conf < PAA)
+    {
+        e = add.get(-1);
+        if (e == -1)
+        {
+            e = intRand(MAX_ELE);
+            add.add(e);
+        }
+    }
+    else if (conf < PAR)
+    {
+        e = rem.get(-1);
+        if (e == -1) e = intRand(MAX_ELE);
+        add.add(e);
+    }
+    else
+    {
+        e = intRand(MAX_ELE);
+        add.add(e);
+    }
+    return rpq_add_cmd(zt, ele, e, d);
 }

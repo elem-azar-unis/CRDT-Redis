@@ -85,6 +85,7 @@ void list_log::insert(string &prev, string &name, string &content, int font, int
     document.emplace(it_next, new element(content, font, size, color, bold, italic, underline));
     it_next--;
     ele_map[name] = it_next;
+    write_op_executed++;
 }
 
 void list_log::update(string &name, string &upd_type, int value)
@@ -106,6 +107,7 @@ void list_log::update(string &name, string &upd_type, int value)
         else if (upd_type == "underline")
             e->underline = value;
     }
+    write_op_executed++;
 }
 
 void list_log::remove(string &name)
@@ -117,6 +119,7 @@ void list_log::remove(string &name)
         document.erase(e);
         ele_map.erase(name);
     }
+    write_op_executed++;
 }
 
 string list_log::random_get()

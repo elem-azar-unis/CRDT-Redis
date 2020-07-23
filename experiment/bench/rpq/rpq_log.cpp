@@ -53,6 +53,7 @@ void rpq_log::add(int k, double v)
         heap.emplace_back(map[k].get());
         shift_up(static_cast<int>(heap.size() - 1));
     }
+    write_op_executed++;
 }
 
 void rpq_log::inc(int k, double i)
@@ -68,6 +69,7 @@ void rpq_log::inc(int k, double i)
         else
             shift_down(e->index);
     }
+    write_op_executed++;
 }
 
 void rpq_log::rem(int k)
@@ -81,6 +83,7 @@ void rpq_log::rem(int k)
         heap.erase(heap.end() - 1);
         shift_down(i);
     }
+    write_op_executed++;
 }
 
 void rpq_log::max(int k, double v)

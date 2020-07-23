@@ -16,7 +16,7 @@ private:
     void exp_impl(const string& type, const string& pattern) override;
 
 public:
-    list_exp() : rdt_exp(list_setting)
+    list_exp() : rdt_exp(list_setting, "list")
     {
         // ! List types: "r", "rwf"
         add_type("r");

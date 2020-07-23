@@ -9,6 +9,8 @@
 
 string exp_env::sudo_pwd;
 
+const char *exp_setting::alg_type;
+const char *exp_setting::rdt_type;
 exp_setting::default_setting *exp_setting::default_p = nullptr;
 
 int exp_setting::delay;

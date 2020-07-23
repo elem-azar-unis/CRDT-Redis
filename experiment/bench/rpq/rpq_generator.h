@@ -34,13 +34,8 @@ private:
     rpq_log &ele;
     const string &zt;
 
-    static int gen_element() { return intRand(MAX_ELE); }
-
-    static double gen_initial() { return doubleRand(0, MAX_INIT); }
-
-    static double gen_increment() { return doubleRand(-MAX_INCR, MAX_INCR); }
-
     static rpq_op_gen_pattern &get_pattern(const string &name);
+    rpq_add_cmd gen_add();
 
 public:
     rpq_generator(const string &type, rpq_log &e, const string &p)
