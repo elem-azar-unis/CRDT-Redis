@@ -17,5 +17,6 @@ stop:
 clean:
 	rm -rf bench_start $(OBJS) *.rdb *.log
 	
-run: clean bench
+run: bench
+	rm -rf *.rdb *.log
 	./bench_start

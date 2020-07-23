@@ -9,7 +9,7 @@
 
 #define ADDITIONAL_CAPACITY 4
 
-/*
+/**
  * Prepare rargc and rargv.
  * - copy the current argv to rargv
  * */
@@ -25,10 +25,16 @@
         }                                                  \
     } while (0)
 
-// Add one additional arg to rargv to rargv, type robj*. Will NOT delete the obj.
+/**
+ * The following 2 macros are used to add additional arg to rargv.
+ * ! Warning: When you use them, there is no regret to broadcast the rargv.
+ * */
+
+// Add one additional arg to rargv type robj*. Will NOT delete the obj.
 #define RARGV_ADD(obj)                                                    \
     do                                                                    \
     {                                                                     \
+        if (!c->rargv) INIT_RARGV;                                        \
         if (c->rargc == __capacity__)                                     \
         {                                                                 \
             __capacity__ = 2 * __capacity__ - c->argc;                    \
@@ -111,18 +117,18 @@
 #define CRDT_BEGIN        \
     if (REPLICATION_MODE) \
     {
-#define CRDT_PREPARE                                      \
-    if (!(c->flags & CLIENT_REPLICA))                     \
-    {                                                     \
-        int __capacity__ = c->argc + ADDITIONAL_CAPACITY; \
-        INIT_RARGV;
+#define CRDT_PREPARE                  \
+    if (!(c->flags & CLIENT_REPLICA)) \
+    {                                 \
+        int __capacity__ = c->argc + ADDITIONAL_CAPACITY;
 
-#define CRDT_EFFECT         \
-    addReply(c, shared.ok); \
-    LOG_ISTR_PRE;           \
-    }                       \
-    {                       \
-        OPCOUNT_ISTR;       \
+#define CRDT_EFFECT            \
+    addReply(c, shared.ok);    \
+    if (!c->rargv) INIT_RARGV; \
+    LOG_ISTR_PRE;              \
+    }                          \
+    {                          \
+        OPCOUNT_ISTR;          \
         LOG_ISTR_EFF;
 
 #define CRDT_END                                                       \
