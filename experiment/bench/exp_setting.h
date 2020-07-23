@@ -106,9 +106,10 @@ public:
     {
         apply_default();
         op_per_sec = speed;
-        total_ops = total_sec / default_p->speed_e.times()
-                    * (default_p->speed_e.start
-                       + default_p->speed_e.step * default_p->speed_e.times() / 10);
+        total_ops =
+            total_sec
+            * (default_p->speed_e.start + default_p->speed_e.step * default_p->speed_e.times() / 10)
+            / default_p->speed_e.times();
         round_num = round;
         type = exp_type::speed;
     }
@@ -118,7 +119,7 @@ public:
         apply_default();
         total_clusters = cluster;
         server_per_cluster = serverPCluster;
-        total_ops = total_sec / default_p->replica_e.times() * op_per_sec;
+        total_ops = total_sec * op_per_sec / default_p->replica_e.times();
         round_num = round;
         type = exp_type::replica;
     }
@@ -128,7 +129,7 @@ public:
         apply_default();
         delay = hd;
         delay_low = ld;
-        total_ops = total_sec / default_p->delay_e.times() * op_per_sec;
+        total_ops = total_sec * op_per_sec / default_p->delay_e.times();
         round_num = round;
         type = exp_type::delay;
     }
@@ -136,7 +137,7 @@ public:
     static inline void set_pattern(const string &name)
     {
         apply_default();
-        total_ops = total_sec / 5 * op_per_sec;
+        total_ops = total_sec * op_per_sec / 5;
         pattern_name = name;
         type = exp_type::pattern;
     }

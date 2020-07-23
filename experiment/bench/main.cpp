@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
     {
         cout << "please enter the password for sudo: ";
         cin >> exp_env::sudo_pwd;
+        cout << "\n";
     }
     else
     {

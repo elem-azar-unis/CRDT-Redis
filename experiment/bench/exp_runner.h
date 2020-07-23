@@ -154,7 +154,7 @@ public:
             while (pb)
             {
                 progress = log.write_op_executed / ((double)exp_setting::total_ops);
-                cout << "[";
+                cout << "\r[";
                 int pos = barWidth * progress;
                 for (int i = 0; i < barWidth; ++i)
                 {
@@ -165,13 +165,13 @@ public:
                     else
                         cout << " ";
                 }
-                cout << "] " << int(progress * 100) << " %\r" << flush;
+                cout << "] " << (int)(progress * 100) << "%" << flush;
                 this_thread::sleep_for(chrono::seconds(1));
             }
-            cout << "[";
+            cout << "\r[";
             for (int i = 0; i < barWidth; ++i)
                 cout << "=";
-            cout << "] 100 %" << endl;
+            cout << "] 100%" << endl;
         });
 
         timer.join();
@@ -180,7 +180,7 @@ public:
         if (progress_thread.joinable())
         {
             pb = false;
-            read_thread.join();
+            progress_thread.join();
         }
 
         auto end = chrono::steady_clock::now();
