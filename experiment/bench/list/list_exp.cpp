@@ -14,9 +14,9 @@ exp_setting::default_setting list_exp::list_setting{
     .total_clusters = 3,
     .server_per_cluster = 3,
     .op_per_sec = 10000,
-    .speed_e{.start = 500, .end = 10000, .step = 100},
-    .replica_e{.start = 1, .end = 5, .step = 1},
-    .delay_e{.start = 20, .end = 380, .step = 40}};
+    .speed_e = {.start = 500, .end = 10000, .step = 100},
+    .replica_e = {.start = 1, .end = 5, .step = 1},
+    .delay_e = {.start = 20, .end = 380, .step = 40}};
 
 void list_exp::exp_impl(const string& type, const string& pattern)
 {
