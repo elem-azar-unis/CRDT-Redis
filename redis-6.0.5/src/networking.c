@@ -1020,9 +1020,9 @@ static void freeClientArgv(client *c) {
         for (j = 0; j < c->rargc; j++)
             decrRefCount(c->rargv[j]);
         zfree(c->rargv);
-        c->rargv=NULL;
+        c->rargv = NULL;
+        c->rargc = 0;
     }
-    c->rargc = 0;
     c->cmd = NULL;
 }
 

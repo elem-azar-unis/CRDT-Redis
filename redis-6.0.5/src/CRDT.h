@@ -7,70 +7,41 @@
 
 #include "CRDT_exp.h"
 
-#define PREPARE_RARGC(n)                          \
-    do                                            \
-    {                                             \
-        c->rargc = (n);                           \
-        c->rargv = zmalloc(sizeof(robj *) * (n)); \
-    } while (0)
-
-#define COPY_ARG_TO_RARG(a, r)        \
-    do                                \
-    {                                 \
-        c->rargv[(r)] = c->argv[(a)]; \
-        incrRefCount(c->rargv[(r)]);  \
-    } while (0)
-
-struct prepare_rargv_vector
-{
-    int size;
-    int capacity;
-    void **vector;  // actually here is robj** vector;
-};
-
-#define INITIAL_CAPACITY 4
-#define RVCT_PREPARE                                                  \
-    do                                                                \
-    {                                                                 \
-        __rvct__.vector = zmalloc(INITIAL_CAPACITY * sizeof(robj *)); \
-        __rvct__.size = 0;                                            \
-        __rvct__.capacity = INITIAL_CAPACITY;                         \
-    } while (0)
-
-/* add one additional arg, type robj*, will not delete the obj */
-#define RARGV_ADD(obj)                                                      \
-    do                                                                      \
-    {                                                                       \
-        if (__rvct__.size == __rvct__.capacity)                             \
-        {                                                                   \
-            __rvct__.capacity *= 2;                                         \
-            __rvct__.vector = zrealloc(__rvct__.vector, __rvct__.capacity); \
-        }                                                                   \
-        __rvct__.vector[__rvct__.size] = obj;                               \
-        __rvct__.size++;                                                    \
-    } while (0)
-
-/* add one additional arg, type sds, will delete the sds */
-#define RARGV_ADD_SDS(str) RARGV_ADD(createObject(OBJ_STRING, str))
+#define ADDITIONAL_CAPACITY 4
 
 /*
  * Prepare rargc and rargv.
  * - copy the current argv to rargv
- * - add the additional args in __rcvt__ to rargv
  * */
-#define RVCT_BROADCAST                                      \
-    do                                                      \
-    {                                                       \
-        PREPARE_RARGC(c->argc + __rvct__.size);             \
-        for (int _i_ = 0; _i_ < c->argc; _i_++)             \
-            COPY_ARG_TO_RARG(_i_, _i_);                     \
-        for (int _i_ = 0; _i_ < __rvct__.size; _i_++)       \
-            c->rargv[c->argc + _i_] = __rvct__.vector[_i_]; \
-        zfree(__rvct__.vector);                             \
+#define INIT_RARGV                                         \
+    do                                                     \
+    {                                                      \
+        c->rargc = c->argc;                                \
+        c->rargv = zmalloc(sizeof(robj *) * __capacity__); \
+        for (int _i_ = 0; i < c->argc; _i_++;)             \
+        {                                                  \
+            c->rargv[_i_] = c->argv[_i_];                  \
+            incrRefCount(c->rargv[(_i_)]);                 \
+        }                                                  \
     } while (0)
 
-// check the argc and the container type.
-// you may use this at the start of the prepare phase.
+// Add one additional arg to rargv to rargv, type robj*. Will NOT delete the obj.
+#define RARGV_ADD(obj)                                                    \
+    do                                                                    \
+    {                                                                     \
+        if (c->rargc == __capacity__)                                     \
+        {                                                                 \
+            __capacity__ = 2 * __capacity__ - c->argc;                    \
+            c->rargv = zrealloc(c->rargv, sizeof(robj *) * __capacity__); \
+        }                                                                 \
+        c->rargv[c->rargc] = obj;                                         \
+        c->rargc++;                                                       \
+    } while (0)
+
+// Add one additional arg to rargv, type sds. Will DELETE the sds.
+#define RARGV_ADD_SDS(str) RARGV_ADD(createObject(OBJ_STRING, str))
+
+// Check the argc and the container type. You may use this at the start of the prepare phase.
 #define CHECK_ARGC_AND_CONTAINER_TYPE(_type, _max)  \
     do                                              \
     {                                               \
@@ -87,7 +58,7 @@ struct prepare_rargv_vector
         }                                           \
     } while (0)
 
-// Check the type of the arg, int / double
+// Check the type of the arg, int / double.
 
 #define CHECK_ARG_TYPE_INT(_obj)                                                                 \
     do                                                                                           \
@@ -140,15 +111,14 @@ struct prepare_rargv_vector
 #define CRDT_BEGIN        \
     if (REPLICATION_MODE) \
     {
-#define CRDT_PREPARE                          \
-    if (!(c->flags & CLIENT_REPLICA))         \
-    {                                         \
-        struct prepare_rargv_vector __rvct__; \
-        RVCT_PREPARE;
+#define CRDT_PREPARE                                      \
+    if (!(c->flags & CLIENT_REPLICA))                     \
+    {                                                     \
+        int __capacity__ = c->argc + ADDITIONAL_CAPACITY; \
+        INIT_RARGV;
 
 #define CRDT_EFFECT         \
     addReply(c, shared.ok); \
-    RVCT_BROADCAST;         \
     LOG_ISTR_PRE;           \
     }                       \
     {                       \
