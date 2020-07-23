@@ -147,15 +147,45 @@ public:
             });
         }
 
+        volatile bool pb = true;
+        thread progress_thread([this, &pb] {
+            constexpr int barWidth = 50;
+            double progress;
+            while (pb)
+            {
+                progress = log.write_op_executed / ((double)exp_setting::total_ops);
+                cout << "[";
+                int pos = barWidth * progress;
+                for (int i = 0; i < barWidth; ++i)
+                {
+                    if (i < pos)
+                        cout << "=";
+                    else if (i == pos)
+                        cout << ">";
+                    else
+                        cout << " ";
+                }
+                cout << "] " << int(progress * 100) << " %\r" << flush;
+                this_thread::sleep_for(chrono::seconds(1));
+            }
+            cout << "[";
+            for (int i = 0; i < barWidth; ++i)
+                cout << "=";
+            cout << "] 100 %" << endl;
+        });
+
         timer.join();
         for (auto &t : thds)
             t.join();
+        if (progress_thread.joinable())
+        {
+            pb = false;
+            read_thread.join();
+        }
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        cout << time << " seconds, " << exp_setting::total_ops / time << " op/s" << endl;
-
-        cout << "ending." << endl;
+        cout << time << " seconds, " << log.write_op_executed / time << " op/s" << endl;
 
         if (read_thread.joinable())
         {

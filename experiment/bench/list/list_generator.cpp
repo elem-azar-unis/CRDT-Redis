@@ -34,10 +34,7 @@ void list_generator::gen_and_exec(redis_client &c)
 {
     double rand = decide();
     // TODO conflicts?
-    if (rand <= PA)
-    {
-        gen_insert().exec(c);
-    }
+    if (rand <= PA) { gen_insert().exec(c); }
     else if (rand <= PU)
     {
         string id = list.random_get();
@@ -83,8 +80,8 @@ void list_generator::gen_and_exec(redis_client &c)
 list_insert_cmd list_generator::gen_insert()
 {
     string prev = list.random_get(), id = new_id.get(), content = strRand();
-    int font = intRand(TOTAL_FONT_TYPE), size = intRand(MAX_FONT_SIZE),
-        color = intRand(MAX_COLOR);
+    int font = intRand(TOTAL_FONT_TYPE), size = intRand(MAX_FONT_SIZE), color = intRand(MAX_COLOR);
     bool bold = boolRand(), italic = boolRand(), underline = boolRand();
-    return list_insert_cmd(type, list, prev, id, content, font, size, color, bold, italic, underline);
+    return list_insert_cmd(type, list, prev, id, content, font, size, color, bold, italic,
+                           underline);
 }

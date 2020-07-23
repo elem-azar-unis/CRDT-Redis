@@ -114,7 +114,7 @@ public:
     void exec(redis_client &c) override
     {
         auto r = c.exec(stream.str());
-        cout << r->integer << endl;
+        cout << r->integer << " operations actually executed on redis." << endl;
     }
 };
 

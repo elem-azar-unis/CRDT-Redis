@@ -40,15 +40,12 @@ void rpq_generator::gen_and_exec(redis_client& c)
 {
     int e;
     double rand = decide();
-    if (rand <= PA)
-    {
-        gen_add().exec(c);
-    }
+    if (rand <= PA) { gen_add().exec(c); }
     else if (rand <= PI)
     {
         e = ele.random_get();
         if (e == -1) return gen_add().exec(c);
-        double d = doubleRand(-MAX_INCR, MAX_INCR);;
+        double d = doubleRand(-MAX_INCR, MAX_INCR);
         rpq_incrby_cmd(zt, ele, e, d).exec(c);
     }
     else

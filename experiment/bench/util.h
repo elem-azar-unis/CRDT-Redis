@@ -7,6 +7,7 @@
 
 #include <sys/stat.h>
 
+#include <atomic>
 #include <condition_variable>
 #include <cstdlib>
 #include <fstream>
@@ -229,7 +230,7 @@ protected:
     }
 
 public:
-    int write_op_executed=0;
+    atomic_int write_op_executed{0};
     virtual void write_file() = 0;
 };
 
