@@ -90,7 +90,7 @@ public:
         }
         else
             cout << "pattern: " << pattern_name;
-        cout << ", total ops " << total_ops << "\n";
+        cout << ", total ops " << total_ops << endl;
     }
 
     static inline void set_speed(int round, int speed)

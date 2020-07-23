@@ -8,11 +8,14 @@ OBJS = $(CFILES:.cpp=.o)
 bench: $(OBJS) $(HEADERS)
 	$(CXX) -o bench_start $(OBJS) -pthread -lhiredis
 	
-.PHONY: clean run
+.PHONY: stop clean run
+
+stop:
+	../redis_test/shutdown.sh 6379 6380 6381 6382 6383 6384 6385 6386 6387
+	sudo tc qdisc del dev lo root
+
 clean:
-	rm -rf bench_start $(OBJS)
+	rm -rf bench_start $(OBJS) *.rdb *.log
 	
-run:
-	make clean
-	make
+run: clean bench
 	./bench_start

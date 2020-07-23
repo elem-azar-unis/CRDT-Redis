@@ -114,7 +114,7 @@ public:
     void exec(redis_client &c) override
     {
         auto r = c.exec(stream.str());
-        cout << r->integer << "\n";
+        cout << r->integer << endl;
     }
 };
 
