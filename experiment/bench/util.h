@@ -73,7 +73,7 @@ public:
         auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
         if (r == nullptr)
         {
-            cout << "host " << c->tcp.host << ":" << c->tcp.port << " terminated.\n"
+            cout << "\nhost " << c->tcp.host << ":" << c->tcp.port << " terminated.\n"
                  << "executing " << cmd << endl;
             exit(-1);
         }

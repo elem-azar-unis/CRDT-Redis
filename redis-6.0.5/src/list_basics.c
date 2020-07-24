@@ -68,8 +68,8 @@ leid *constructLeid(leid *p, leid *q, vc *t)
         count += t->vector[i];
     while (rprefix(q, index) - lprefix(p, index) < 2)
         index++;
-    int left = lprefix(p, index);
-    int right = rprefix(q, index);
+    unsigned int left = lprefix(p, index);
+    unsigned int right = rprefix(q, index);
     // left<new<right
     leid *rtn = zmalloc(sizeof(leid));
     rtn->num = index + 1;
@@ -98,9 +98,9 @@ leid *constructLeid(leid *p, leid *q, vc *t)
             rtn->p[i].count = 0;
         }
     }
-    int step = right - left - 2;
-    step = step < RDM_STEP ? step : RDM_STEP;
-    rtn->p[index].pos = left + (unsigned int)(rand() % step) + 1;
+    unsigned int step = right - left - 2;
+    if (step != 0) step = step < RDM_STEP ? rand() % step : rand() % RDM_STEP;
+    rtn->p[index].pos = left + step + 1;
     rtn->p[index].pid = t->id;
     rtn->p[index].count = count;
     return rtn;

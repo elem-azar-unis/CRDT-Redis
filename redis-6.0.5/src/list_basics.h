@@ -67,14 +67,14 @@ leid *sdsToLeid(sds s);
 
 int leid_cmp(const leid *id1, const leid *id2);
 
-static inline int lprefix(leid *p, int i)
+static inline unsigned int lprefix(leid *p, int i)
 {
     if (p == NULL) return 0;
     if (i >= p->num) return 0;
     return p->p[i].pos;
 }
 
-static inline int rprefix(leid *p, int i)
+static inline unsigned int rprefix(leid *p, int i)
 {
     if (p == NULL) return BASE;
     if (i >= p->num) return BASE;
