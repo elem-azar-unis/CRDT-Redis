@@ -24,7 +24,7 @@ leid *sdsToLeid(sds s)
     char *p = s;
     while (1)
     {
-        leid_buf[size].pos = (unsigned int)atoi(p);
+        leid_buf[size].pos = atoi(p);
         while (*p != ',')
             p++;
         p++;
@@ -68,8 +68,8 @@ leid *constructLeid(leid *p, leid *q, vc *t)
         count += t->vector[i];
     while (rprefix(q, index) - lprefix(p, index) < 2)
         index++;
-    unsigned int left = lprefix(p, index);
-    unsigned int right = rprefix(q, index);
+    int left = lprefix(p, index);
+    int right = rprefix(q, index);
     // left<new<right
     leid *rtn = zmalloc(sizeof(leid));
     rtn->num = index + 1;
@@ -98,7 +98,7 @@ leid *constructLeid(leid *p, leid *q, vc *t)
             rtn->p[i].count = 0;
         }
     }
-    unsigned int step = right - left - 2;
+    int step = right - left - 2;
     if (step != 0) step = step < RDM_STEP ? rand() % step : rand() % RDM_STEP;
     rtn->p[index].pos = left + step + 1;
     rtn->p[index].pid = t->id;

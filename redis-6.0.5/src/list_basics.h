@@ -34,10 +34,10 @@ enum property_type
 };
 
 #define BASE (1 << 24)
-#define RDM_STEP 8
+#define RDM_STEP 128
 typedef struct position
 {
-    unsigned int pos;
+    int pos;
     int pid;
     int count;
 } position;
@@ -67,14 +67,14 @@ leid *sdsToLeid(sds s);
 
 int leid_cmp(const leid *id1, const leid *id2);
 
-static inline unsigned int lprefix(leid *p, int i)
+static inline int lprefix(leid *p, int i)
 {
     if (p == NULL) return 0;
     if (i >= p->num) return 0;
     return p->p[i].pos;
 }
 
-static inline unsigned int rprefix(leid *p, int i)
+static inline int rprefix(leid *p, int i)
 {
     if (p == NULL) return BASE;
     if (i >= p->num) return BASE;
