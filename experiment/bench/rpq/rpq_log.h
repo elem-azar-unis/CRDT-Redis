@@ -6,9 +6,7 @@
 #define BENCH_QUEUELOG_H
 
 #include <mutex>
-#include <tuple>
 #include <unordered_map>
-#include <vector>
 
 #include "../util.h"
 
@@ -42,9 +40,9 @@ private:
     unordered_map<int, unique_ptr<element>> map;
     vector<element *> heap;
     // kread, vread, kactural, vactural
-    vector<tuple<int, double, int, double>> max_log;
+    list<tuple<int, double, int, double>> max_log;
     // num, ovhd
-    vector<tuple<int, int>> overhead_log;
+    list<tuple<int, int>> overhead_log;
 
     mutex mtx, max_mtx, ovhd_mtx;
 
@@ -67,7 +65,7 @@ public:
 
     void overhead(int o);
 
-    void write_file() override;
+    void write_logfiles() override;
 };
 
 #endif  // BENCH_QUEUELOG_H

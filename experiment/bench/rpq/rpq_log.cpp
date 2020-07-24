@@ -122,19 +122,10 @@ void rpq_log::overhead(int o)
     overhead_log.emplace_back(num, o);
 }
 
-void rpq_log::write_file()
+void rpq_log::write_logfiles()
 {
-    ostringstream stream;
-    stream << dir << "/ovhd.csv";
-    ofstream ovhd(stream.str(), ios::out | ios::trunc);
-    for (auto &o : overhead_log)
-        ovhd << get<0>(o) << "," << get<1>(o) << "\n";
-
-    stream.str("");
-    stream << dir << "/max.csv";
-    ofstream max(stream.str(), ios::out | ios::trunc);
-    for (auto &o : max_log)
-        max << get<0>(o) << "," << get<1>(o) << "," << get<2>(o) << "," << get<3>(o) << "\n";
+    write_one_logfile("ovhd.csv", overhead_log);
+    write_one_logfile("max.csv", max_log);
 }
 
 int rpq_log::random_get()

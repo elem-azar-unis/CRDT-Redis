@@ -11,13 +11,16 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <list>
 #include <map>
 #include <mutex>
 #include <random>
 #include <sstream>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <unordered_set>
+#include <vector>
 
 #include "constants.h"
 #include "exp_setting.h"
@@ -195,6 +198,8 @@ public:
 class rdt_log
 {
 private:
+    string dir;
+
     static inline void bench_mkdir(const string &path)
     {
 #if defined(_WIN32)
@@ -204,9 +209,22 @@ private:
 #endif
     }
 
-protected:
-    string dir;
+    template <size_t I = 0, typename... Tp>
+    static inline typename enable_if<I == sizeof...(Tp) - 1, void>::type write_tuple(
+        ofstream &ofs, tuple<Tp...> &t)
+    {
+        ofs << get<I>(t) << "\n";
+    }
 
+    template <size_t I = 0, typename... Tp>
+    static inline typename enable_if<I < sizeof...(Tp) - 1, void>::type write_tuple(
+        ofstream &ofs, tuple<Tp...> &t)
+    {
+        ofs << get<I>(t) << ",";
+        write_tuple<I + 1, Tp...>(ofs, t);
+    }
+
+protected:
     rdt_log(const char *CRDT_name, const string &type)
     {
         ostringstream stream;
@@ -230,7 +248,18 @@ protected:
 
 public:
     volatile int write_op_executed = 0;
-    virtual void write_file() = 0;
+
+    virtual void write_logfiles() = 0;
+
+    template <typename... Tp>
+    void write_one_logfile(const char *filename, list<tuple<Tp...>> &log)
+    {
+        ostringstream stream;
+        stream << dir << "/" << filename;
+        ofstream fout(stream.str(), ios::out | ios::trunc);
+        for (auto &o : log)
+            write_tuple(fout, o);
+    }
 };
 
 class rdt_exp

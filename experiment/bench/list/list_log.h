@@ -5,11 +5,8 @@
 #ifndef BENCH_LIST_LOG_H
 #define BENCH_LIST_LOG_H
 
-#include <list>
 #include <mutex>
-#include <tuple>
 #include <unordered_map>
-#include <vector>
 
 #include "../util.h"
 
@@ -46,9 +43,9 @@ private:
     list<unique_ptr<element>> document;
 
     // len, distance
-    vector<tuple<int, double>> distance_log;
+    list<tuple<int, double>> distance_log;
     // num, overhead
-    vector<tuple<int, int>> overhead_log;
+    list<tuple<int, int>> overhead_log;
 
     mutex mtx, dis_mtx, ovhd_mtx;
 
@@ -68,7 +65,7 @@ public:
 
     void overhead(int o);
 
-    void write_file() override;
+    void write_logfiles() override;
 };
 
 #endif  // BENCH_LIST_LOG_H

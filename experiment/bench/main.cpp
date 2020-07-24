@@ -124,7 +124,7 @@ void test_local(rpq_type zt)
     max.join();
     overhead.join();
     gen.stop_and_join();
-    qlog.write_file(rpq_type_str[zt]);
+    qlog.write_logfiles(rpq_type_str[zt]);
 }
 
 void test_count_dis_one(const char *ip, const int port, rpq_type zt)

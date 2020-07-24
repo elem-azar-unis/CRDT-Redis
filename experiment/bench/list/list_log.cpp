@@ -60,19 +60,10 @@ void list_log::overhead(int o)
     overhead_log.emplace_back(num, o);
 }
 
-void list_log::write_file()
+void list_log::write_logfiles()
 {
-    ostringstream stream;
-    stream << dir << "/ovhd.csv";
-    ofstream ovhd(stream.str(), ios::out | ios::trunc);
-    for (auto &o : overhead_log)
-        ovhd << get<0>(o) << "," << get<1>(o) << "\n";
-
-    stream.str("");
-    stream << dir << "/distance.csv";
-    ofstream distance(stream.str(), ios::out | ios::trunc);
-    for (auto &o : distance_log)
-        distance << get<0>(o) << "," << get<1>(o) << "\n";
+    write_one_logfile("ovhd.csv",overhead_log);
+    write_one_logfile("distance.csv",distance_log);
 }
 
 void list_log::insert(string &prev, string &name, string &content, int font, int size, int color,

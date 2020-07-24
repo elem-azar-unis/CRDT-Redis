@@ -198,7 +198,7 @@ public:
             ovhd_thread.join();
         }
 
-        log.write_file();
+        log.write_logfiles();
     }
 };
 
