@@ -79,8 +79,9 @@ void list_log::insert(string &prev, string &name, string &content, int font, int
                       bool bold, bool italic, bool underline)
 {
     lock_guard<mutex> lk(mtx);
-    if (ele_map.find(prev) == ele_map.end() || ele_map.find(name) != ele_map.end()) return;
-    auto it_next = prev.empty() ? document.begin() : ele_map[prev];
+    if (prev != "null" && ele_map.find(prev) == ele_map.end()) return;
+    if (ele_map.find(name) != ele_map.end()) return;
+    auto it_next = prev == "null" ? document.begin() : ele_map[prev];
     if (it_next != document.begin()) it_next++;
     document.emplace(it_next, new element(content, font, size, color, bold, italic, underline));
     it_next--;
