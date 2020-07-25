@@ -28,14 +28,11 @@ private:
 public:
     rpq_add_cmd(const string &type, rpq_log &pq, int element, double value)
         : rpq_cmd(type, pq, "add"), element(element), value(value)
-    {}
-
-    void exec(redis_client &c) override
     {
-        add(element).add(value);
-        auto r = c.exec(stream.str());
-        pq.add(element, value);
+        add_args(element, value);
     }
+
+    void handle_redis_return(const redisReply_ptr &r) override { pq.add(element, value); }
 };
 
 class rpq_incrby_cmd : public rpq_cmd
@@ -47,14 +44,11 @@ private:
 public:
     rpq_incrby_cmd(const string &type, rpq_log &pq, int element, double value)
         : rpq_cmd(type, pq, "incrby"), element(element), value(value)
-    {}
-
-    void exec(redis_client &c) override
     {
-        add(element).add(value);
-        auto r = c.exec(stream.str());
-        pq.inc(element, value);
+        add_args(element, value);
     }
+
+    void handle_redis_return(const redisReply_ptr &r) override { pq.inc(element, value); }
 };
 
 class rpq_remove_cmd : public rpq_cmd
@@ -65,14 +59,11 @@ private:
 public:
     rpq_remove_cmd(const string &type, rpq_log &pq, int element)
         : rpq_cmd(type, pq, "rem"), element(element)
-    {}
-
-    void exec(redis_client &c) override
     {
-        add(element);
-        auto r = c.exec(stream.str());
-        pq.rem(element);
+        add_args(element);
     }
+
+    void handle_redis_return(const redisReply_ptr &r) override { pq.rem(element); }
 };
 
 class rpq_max_cmd : public rpq_cmd
@@ -80,9 +71,8 @@ class rpq_max_cmd : public rpq_cmd
 public:
     rpq_max_cmd(const string &type, rpq_log &pq) : rpq_cmd(type, pq, "max") {}
 
-    void exec(redis_client &c) override
+    void handle_redis_return(const redisReply_ptr &r) override
     {
-        auto r = c.exec(stream.str());
         int k = -1;
         double v = -1;
         if (r->elements == 2)
@@ -99,9 +89,8 @@ class rpq_overhead_cmd : public rpq_cmd
 public:
     rpq_overhead_cmd(const string &type, rpq_log &pq) : rpq_cmd(type, pq, "overhead") {}
 
-    void exec(redis_client &c) override
+    void handle_redis_return(const redisReply_ptr &r) override
     {
-        auto r = c.exec(stream.str());
         pq.overhead(static_cast<int>(r->integer));
     }
 };
@@ -111,9 +100,8 @@ class rpq_opcount_cmd : public rpq_cmd
 public:
     rpq_opcount_cmd(const string &type, rpq_log &pq) : rpq_cmd(type, pq, "opcount") {}
 
-    void exec(redis_client &c) override
+    void handle_redis_return(const redisReply_ptr &r) override
     {
-        auto r = c.exec(stream.str());
         cout << r->integer << " operations actually executed on redis." << endl;
     }
 };

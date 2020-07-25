@@ -61,7 +61,7 @@ public:
 
     void remove(string &name);
 
-    void read_list(redisReply_ptr &r);
+    void read_list(const redisReply_ptr &r);
 
     void overhead(int o);
 

@@ -16,7 +16,7 @@ double list_log::diff(const list_log::element &e, const redisReply *r)
     return 0;
 }
 
-void list_log::read_list(redisReply_ptr &r)
+void list_log::read_list(const redisReply_ptr &r)
 {
     list<element *> doc_read;
     {
@@ -62,8 +62,8 @@ void list_log::overhead(int o)
 
 void list_log::write_logfiles()
 {
-    write_one_logfile("ovhd.csv",overhead_log);
-    write_one_logfile("distance.csv",distance_log);
+    write_one_logfile("ovhd.csv", overhead_log);
+    write_one_logfile("distance.csv", distance_log);
 }
 
 void list_log::insert(string &prev, string &name, string &content, int font, int size, int color,

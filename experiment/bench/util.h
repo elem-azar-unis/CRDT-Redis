@@ -93,26 +93,27 @@ protected:
 
     cmd() = default;
 
+    template <typename T>
+    inline void add_args(const T &arg)
+    {
+        stream << " " << arg;
+    }
+
+    template <typename T, typename... Types>
+    inline void add_args(const T &arg, const Types &... args)
+    {
+        stream << " " << arg;
+        add_args(args...);
+    }
+
+    virtual void handle_redis_return(const redisReply_ptr &r) = 0;
+
 public:
-    inline cmd &add(const string &s)
+    void exec(redis_client &c)
     {
-        stream << " " << s;
-        return *this;
+        auto r = c.exec(stream.str());
+        if (r->type != REDIS_REPLY_ERROR) handle_redis_return(r);
     }
-
-    inline cmd &add(int s)
-    {
-        stream << " " << s;
-        return *this;
-    }
-
-    inline cmd &add(double s)
-    {
-        stream << " " << s;
-        return *this;
-    }
-
-    virtual void exec(redis_client &c) = 0;
 };
 
 class generator
