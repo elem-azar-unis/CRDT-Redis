@@ -23,10 +23,8 @@ void rpq_exp::exp_impl(const string& type, const string& pattern)
     rpq_generator gen(type, qlog, pattern);
     rpq_max_cmd read_max(type, qlog);
     rpq_overhead_cmd ovhd(type, qlog);
-    rpq_opcount_cmd opcount(type, qlog);
 
     exp_runner runner(qlog, gen);
-    runner.set_cmd_opcount(opcount);
     runner.set_cmd_ovhd(ovhd);
     runner.set_cmd_read(read_max);
     runner.run();

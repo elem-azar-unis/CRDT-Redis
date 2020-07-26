@@ -9,10 +9,12 @@
 
 #define CRDT_EXPERIMENT
 #ifdef CRDT_EXPERIMENT
+
 //#define CRDT_LOG
 #define CRDT_OVERHEAD
-#define CRDT_OPCOUNT
+//#define CRDT_OPCOUNT
 //#define CRDT_ELE_STATUS
+
 #endif
 
 #ifdef CRDT_LOG

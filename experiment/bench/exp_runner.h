@@ -57,7 +57,6 @@ private:
     generator &gen;
     cmd *read_cmd = nullptr;
     cmd *ovhd_cmd = nullptr;
-    cmd *opcount_cmd = nullptr;
 
     vector<thread> thds;
     vector<unique_ptr<task_queue>> tasks;
@@ -85,8 +84,6 @@ public:
     void set_cmd_read(cmd &readCmd) { read_cmd = &readCmd; }
 
     void set_cmd_ovhd(cmd &ovhdCmd) { ovhd_cmd = &ovhdCmd; }
-
-    void set_cmd_opcount(cmd &opcountCmd) { opcount_cmd = &opcountCmd; }
 
     void run()
     {
@@ -143,7 +140,6 @@ public:
                     this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
                     ovhd_cmd->exec(cl);
                 }
-                if (opcount_cmd != nullptr) opcount_cmd->exec(cl);
             });
         }
 
@@ -153,7 +149,7 @@ public:
             double progress;
             while (pb)
             {
-                progress = log.write_op_executed / ((double)exp_setting::total_ops);
+                progress = log.write_op_generated / ((double)exp_setting::total_ops);
                 cout << "\r[";
                 int pos = barWidth * progress;
                 for (int i = 0; i < barWidth; ++i)
@@ -185,7 +181,8 @@ public:
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        cout << time << " seconds, " << log.write_op_executed / time << " op/s" << endl;
+        cout << time << " seconds, " << log.write_op_executed / time << " op/s\n";
+        cout << log.write_op_executed << " operations actually executed on redis." << endl;
 
         if (read_thread.joinable())
         {

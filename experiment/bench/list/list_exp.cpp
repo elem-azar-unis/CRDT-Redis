@@ -22,12 +22,10 @@ void list_exp::exp_impl(const string& type, const string& pattern)
 {
     list_log list(type);
     list_generator gen(type, list, pattern);
-    list_opcount_cmd opcount(type, list);
     list_ovhd_cmd ovhd(type, list);
     list_read_cmd read(type, list);
 
     exp_runner runner(list, gen);
-    runner.set_cmd_opcount(opcount);
     runner.set_cmd_ovhd(ovhd);
     runner.set_cmd_read(read);
     runner.run();

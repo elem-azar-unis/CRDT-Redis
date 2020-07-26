@@ -30,6 +30,7 @@ public:
         : rpq_cmd(type, pq, "add"), element(element), value(value)
     {
         add_args(element, value);
+        pq.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { pq.add(element, value); }
@@ -46,6 +47,7 @@ public:
         : rpq_cmd(type, pq, "incrby"), element(element), value(value)
     {
         add_args(element, value);
+        pq.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { pq.inc(element, value); }
@@ -61,6 +63,7 @@ public:
         : rpq_cmd(type, pq, "rem"), element(element)
     {
         add_args(element);
+        pq.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { pq.rem(element); }
@@ -92,17 +95,6 @@ public:
     void handle_redis_return(const redisReply_ptr &r) override
     {
         pq.overhead(static_cast<int>(r->integer));
-    }
-};
-
-class rpq_opcount_cmd : public rpq_cmd
-{
-public:
-    rpq_opcount_cmd(const string &type, rpq_log &pq) : rpq_cmd(type, pq, "opcount") {}
-
-    void handle_redis_return(const redisReply_ptr &r) override
-    {
-        cout << r->integer << " operations actually executed on redis." << endl;
     }
 };
 
