@@ -95,6 +95,7 @@ public:
             conn_one_server_timed(IP_SERVER, BASE_PORT + i);
 
         thread timer([this] {
+            constexpr int barWidth = 50;
             auto start_time = chrono::steady_clock::now();
             for (int times = 0; times < OP_PER_THREAD; ++times)
             {
@@ -102,6 +103,21 @@ public:
                 {
                     t->add();
                 }
+
+                double progress = (double)(times + 1) / OP_PER_THREAD;
+                int pos = barWidth * progress;
+                cout << "\r[";
+                for (int i = 0; i < barWidth; ++i)
+                {
+                    if (i < pos)
+                        cout << "=";
+                    else if (i == pos)
+                        cout << ">";
+                    else
+                        cout << " ";
+                }
+                cout << "] " << (int)(progress * 100) << "%" << flush;
+
                 auto tar_time = start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
                 this_thread::sleep_until(tar_time);
                 /*
@@ -112,6 +128,7 @@ public:
                 this_thread::sleep_for(chrono::microseconds(slp_time));
                  */
             }
+            cout << "\n";
         });
 
         volatile bool rb, ob;
@@ -143,41 +160,9 @@ public:
             });
         }
 
-        volatile bool pb = true;
-        thread progress_thread([this, &pb] {
-            constexpr int barWidth = 50;
-            double progress;
-            while (pb)
-            {
-                progress = log.write_op_generated / ((double)exp_setting::total_ops);
-                cout << "\r[";
-                int pos = barWidth * progress;
-                for (int i = 0; i < barWidth; ++i)
-                {
-                    if (i < pos)
-                        cout << "=";
-                    else if (i == pos)
-                        cout << ">";
-                    else
-                        cout << " ";
-                }
-                cout << "] " << (int)(progress * 100) << "%" << flush;
-                this_thread::sleep_for(chrono::seconds(1));
-            }
-            cout << "\r[";
-            for (int i = 0; i < barWidth; ++i)
-                cout << "=";
-            cout << "] 100%" << endl;
-        });
-
         timer.join();
         for (auto &t : thds)
             t.join();
-        if (progress_thread.joinable())
-        {
-            pb = false;
-            progress_thread.join();
-        }
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();

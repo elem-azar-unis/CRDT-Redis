@@ -7,7 +7,6 @@
 
 #include <sys/stat.h>
 
-#include <atomic>
 #include <condition_variable>
 #include <cstdlib>
 #include <fstream>
@@ -249,8 +248,7 @@ protected:
     }
 
 public:
-    atomic<int> write_op_generated{0};
-    volatile int write_op_executed = 0;
+    int write_op_executed = 0;
 
     virtual void write_logfiles() = 0;
 
