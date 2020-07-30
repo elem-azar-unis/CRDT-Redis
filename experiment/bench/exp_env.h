@@ -96,7 +96,7 @@ private:
 
     static void remove_delay()
     {
-        shell_exec("tc filter del dev lo", true);
+        // shell_exec("tc filter del dev lo", true);
         shell_exec("tc qdisc del dev lo root", true);
     }
 
