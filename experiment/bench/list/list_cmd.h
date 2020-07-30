@@ -45,6 +45,7 @@ public:
         if (italic) property |= ITALIC;        // NOLINT
         if (underline) property |= UNDERLINE;  // NOLINT
         add_args(prev, id, content, font, size, color, property);
+        list.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override
@@ -64,6 +65,7 @@ public:
         : list_cmd(type, list, "update"), id(id), upd_type(upd_type), value(value)
     {
         add_args(id, upd_type, value);
+        list.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { list.update(id, upd_type, value); }
@@ -79,6 +81,7 @@ public:
         : list_cmd(type, list, "rem"), id(id)
     {
         add_args(id);
+        list.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { list.remove(id); }

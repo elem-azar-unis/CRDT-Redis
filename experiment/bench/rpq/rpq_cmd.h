@@ -30,6 +30,7 @@ public:
         : rpq_cmd(type, pq, "add"), element(element), value(value)
     {
         add_args(element, value);
+        pq.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { pq.add(element, value); }
@@ -46,6 +47,7 @@ public:
         : rpq_cmd(type, pq, "incrby"), element(element), value(value)
     {
         add_args(element, value);
+        pq.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { pq.inc(element, value); }
@@ -61,6 +63,7 @@ public:
         : rpq_cmd(type, pq, "rem"), element(element)
     {
         add_args(element);
+        pq.write_op_generated++;
     }
 
     void handle_redis_return(const redisReply_ptr &r) override { pq.rem(element); }
