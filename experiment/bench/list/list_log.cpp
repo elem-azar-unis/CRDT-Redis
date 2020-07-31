@@ -18,11 +18,11 @@ double list_log::diff(const list_log::element &e, const redisReply *r)
 
 void list_log::read_list(const redisReply_ptr &r)
 {
-    list<element *> doc_read;
+    list<element> doc_read;
     {
         lock_guard<mutex> lk(mtx);
         for (auto &e_p : document)
-            doc_read.emplace_back(e_p.get());
+            doc_read.emplace_back(*e_p);
     }
 
     int len = doc_read.size();
@@ -37,7 +37,7 @@ void list_log::read_list(const redisReply_ptr &r)
     for (int i = 1; i <= len; i++)
     {
         for (int j = 1; j <= r_len; j++)
-            dp[i][j] = min(dp[i - 1][j - 1] + diff(**iter, r->element[j - 1]),
+            dp[i][j] = min(dp[i - 1][j - 1] + diff(*iter, r->element[j - 1]),
                            min(dp[i][j - 1] + 1, dp[i - 1][j] + 1));
         iter++;
     }
