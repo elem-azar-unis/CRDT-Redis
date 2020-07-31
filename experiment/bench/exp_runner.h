@@ -29,50 +29,26 @@ using namespace std;
 class exp_runner
 {
 private:
-    class task_queue
-    {
-        int n = 0;
-        mutex m;
-        condition_variable cv;
-
-    public:
-        void worker()
-        {
-            unique_lock<mutex> lk(m);
-            cv.wait(lk, [this] { return n > 0; });
-            n--;
-        }
-
-        void add()
-        {
-            {
-                lock_guard<mutex> lk(m);
-                n++;
-            }
-            cv.notify_all();
-        }
-    };
-
     rdt_log &log;
     generator &gen;
     cmd *read_cmd = nullptr;
     cmd *ovhd_cmd = nullptr;
 
     vector<thread> thds;
-    vector<unique_ptr<task_queue>> tasks;
 
     void conn_one_server_timed(const char *ip, int port)
     {
         for (int i = 0; i < THREAD_PER_SERVER; ++i)
         {
-            tasks.emplace_back(new task_queue());
-            auto task = tasks.back().get();
-            thds.emplace_back([this, ip, port, task] {
+            thds.emplace_back([this, ip, port] {
                 redis_client c(ip, port);
+                auto start_time = chrono::steady_clock::now();
                 for (int times = 0; times < OP_PER_THREAD; ++times)
                 {
-                    task->worker();
                     gen.gen_and_exec(c);
+                    auto tar_time =
+                        start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
+                    this_thread::sleep_until(tar_time);
                 }
             });
         }
@@ -93,26 +69,6 @@ public:
 
         for (int i = 0; i < TOTAL_SERVERS; ++i)
             conn_one_server_timed(IP_SERVER, BASE_PORT + i);
-
-        thread timer([this] {
-            auto start_time = chrono::steady_clock::now();
-            for (int times = 0; times < OP_PER_THREAD; ++times)
-            {
-                for (auto &t : tasks)
-                {
-                    t->add();
-                }
-                auto tar_time = start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
-                this_thread::sleep_until(tar_time);
-                /*
-                gettimeofday(&tn, nullptr);
-                auto slp_time =
-                        (td.tv_sec - tn.tv_sec) * 1000000 + td.tv_usec - tn.tv_usec +
-                        (long) ((times + 1) * INTERVAL_TIME);
-                this_thread::sleep_for(chrono::microseconds(slp_time));
-                 */
-            }
-        });
 
         volatile bool rb, ob;
         thread read_thread, ovhd_thread;
@@ -170,7 +126,6 @@ public:
             cout << "] 100%" << endl;
         });
 
-        timer.join();
         for (auto &t : thds)
             t.join();
         if (progress_thread.joinable())
