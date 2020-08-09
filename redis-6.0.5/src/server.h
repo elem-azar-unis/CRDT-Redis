@@ -876,7 +876,7 @@ struct sharedObjectsStruct {
     *unsubscribebulk, *psubscribebulk, *punsubscribebulk, *del, *unlink,
     *rpop, *lpop, *lpush, *rpoplpush, *zpopmin, *zpopmax, *emptyscan,
     *multi, *exec,
-    *multi_cmd, *exec_cmd, *replhandshake, *ele_exist, *ele_nexist, //*alreadyexisterr,
+    *multi_cmd, *exec_cmd, *replhandshake, *ele_exist, *ele_nexist, *notreplerr, //*alreadyexisterr,
     *select[PROTO_SHARED_SELECT_CMDS],
     *integers[OBJ_SHARED_INTEGERS],
     *mbulkhdr[OBJ_SHARED_BULKHDR_LEN], /* "*<value>\r\n" */

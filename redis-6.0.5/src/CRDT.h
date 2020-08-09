@@ -135,6 +135,11 @@
     }                                                                  \
     if (c->flags & CLIENT_REPLICA_MESSAGE) { addReply(c, shared.ok); } \
     return;                                                            \
+    }                                                                  \
+    else                                                               \
+    {                                                                  \
+        addReply(c, shared.notreplerr);                                \
+        return;                                                        \
     }
 
 #endif  // REDIS_CRDT_H

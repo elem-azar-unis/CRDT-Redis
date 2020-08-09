@@ -2499,6 +2499,7 @@ void createSharedObjects(void) {
             "-Element already exists\r\n"));
     shared.ele_nexist = createObject(OBJ_STRING, sdsnew(
             "-Element does not exist\r\n"));
+    shared.notreplerr = createObject(OBJ_STRING, sdsnew("-Not replication mod\r\n"));
     /*shared.alreadyexisterr= createObject(OBJ_STRING,sdsnew(
             "-ERR the key already exists\r\n"));*/
 }
