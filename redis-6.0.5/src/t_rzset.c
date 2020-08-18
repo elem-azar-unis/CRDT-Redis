@@ -270,7 +270,7 @@ int readyCheck(rze *e, vc *t)
 // no memory free
 void insertFunc(rze *e, redisDb *db, robj *tname, robj *element, double value, vc *t)
 {
-    if (!insertCheck(e, t))return;
+    if (!addCheck(e, t))return;
     e->aid = t->id;
     e->innate = value;
     robj *zset = getZsetOrCreate(db, tname, element);

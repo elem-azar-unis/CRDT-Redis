@@ -66,7 +66,7 @@ void rwfzaddCommand(client *c)
             vc *t = CR_GET_LAST;
             rwfze *e = GET_RWFZE(rargv, 1);
             removeFunc(c, e, t);
-            if (insertCheck((reh *)e, t))
+            if (addCheck((reh *)e, t))
             {
                 PID(e) = t->id;
                 e->innate = v;

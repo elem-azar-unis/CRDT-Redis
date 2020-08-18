@@ -106,11 +106,11 @@ typedef struct RWF_element_header
     } while (0)
 
 /*
- * Three functions to check if it is ready for increase/remove/update.
+ * Three functions to check if it is ready for add/remove/update.
  * Do the corresponding check before you do the actual effect phase.
  * */
 
-static inline int insertCheck(reh *h, vc *t)
+static inline int addCheck(reh *h, vc *t)
 {
     if (!vc_equal(t, CURRENT(h))) return 0;
     return PID(h) < t->id;

@@ -191,7 +191,7 @@ void rwflinsertCommand(client *c)
             ovhd_inc(-rwfle_overhead(e));
 #endif
             removeFunc(c, e, t);
-            if (insertCheck((reh *)e, t))
+            if (addCheck((reh *)e, t))
             {
                 robj *ht = GET_LIST_HT(rargv, 1);
                 if (!EXISTS(e)) incrLen(ht, 1);

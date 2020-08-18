@@ -107,7 +107,7 @@
  *
  *             // Then do the effect phase of the command according to the algorithm.
  *
- *             // Remember to free the variables you malloc here.
+ *             // Remember to free the variables you malloced here.
  *     CRDT_END
  * }
  *
@@ -117,6 +117,7 @@
 #define CRDT_BEGIN        \
     if (REPLICATION_MODE) \
     {
+
 #define CRDT_PREPARE                  \
     if (!(c->flags & CLIENT_REPLICA)) \
     {                                 \
