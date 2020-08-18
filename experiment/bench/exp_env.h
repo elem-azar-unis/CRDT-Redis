@@ -11,6 +11,10 @@
 
 #include "constants.h"
 
+#define REDIS_SERVER "../../redis-6.0.5/src/redis-server"
+#define REDIS_CONF "../../redis-6.0.5/redis.conf"
+#define REDIS_CLIENT "../../redis-6.0.5/src/redis-cli"
+
 #define IP_BETWEEN_CLUSTER "127.0.0.3"
 #define IP_WITHIN_CLUSTER "127.0.0.2"
 #define IP_SERVER "127.0.0.1"
@@ -41,10 +45,15 @@ private:
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
             ostringstream stream;
-            stream << "redis-server ../../redis-6.0.5/redis.conf --protected-mode no "
-                   << "--daemonize yes --loglevel debug --port " << port << " --logfile " << port
-                   << ".log --dbfilename " << port << ".rdb --pidfile /var/run/redis_" << port
-                   << ".pid --io-threads 2";
+            stream << REDIS_SERVER << " " << REDIS_CONF << " "
+                   << "--protected-mode no "
+                   << "--daemonize yes "
+                   << "--loglevel debug "
+                   << "--io-threads 2 "
+                   << "--port " << port << " "
+                   << "--logfile " << port << ".log "
+                   << "--dbfilename " << port << ".rdb "
+                   << "--pidfile /var/run/redis_" << port << ".pid";
             shell_exec(stream.str(), false);
         }
     }
@@ -60,8 +69,9 @@ private:
             {
                 ostringstream cmd_stream;
                 int num = i * exp_setting::server_per_cluster + j;
-                cmd_stream << "redis-cli -h 127.0.0.1 -p " << BASE_PORT + num << " REPLICATE "
-                           << TOTAL_SERVERS << " " << num << " exp_local" << repl_stream.str();
+                cmd_stream << REDIS_CLIENT << " -h 127.0.0.1 -p " << BASE_PORT + num
+                           << " REPLICATE " << TOTAL_SERVERS << " " << num << " exp_local"
+                           << repl_stream.str();
                 shell_exec(cmd_stream.str(), false);
                 repl_stream << " " << IP_WITHIN_CLUSTER << " " << BASE_PORT + num;
             }
@@ -78,8 +88,8 @@ private:
                << "ms " << exp_setting::delay_low / 5.0 << "ms distribution normal limit 100000";
         shell_exec(stream.str(), true);
         shell_exec(
-            "tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst " IP_WITHIN_CLUSTER
-            " flowid 1:1",
+            "tc filter add dev lo protocol ip parent 1: "
+            "prio 1 u32 match ip dst " IP_WITHIN_CLUSTER " flowid 1:1",
             true);
 
         stream.str("");
@@ -87,8 +97,8 @@ private:
                << "ms " << exp_setting::delay / 5.0 << "ms distribution normal limit 100000";
         shell_exec(stream.str(), true);
         shell_exec(
-            "tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dst " IP_BETWEEN_CLUSTER
-            " flowid 1:2",
+            "tc filter add dev lo protocol ip parent 1: "
+            "prio 1 u32 match ip dst " IP_BETWEEN_CLUSTER " flowid 1:2",
             true);
 
         shell_exec("tc qdisc add dev lo parent 1:3 handle 30: pfifo_fast", true);
@@ -105,7 +115,7 @@ private:
         for (int port = BASE_PORT; port < BASE_PORT + TOTAL_SERVERS; ++port)
         {
             ostringstream stream;
-            stream << "redis-cli -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
+            stream << REDIS_CLIENT << " -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
             shell_exec(stream.str(), false);
         }
         std::this_thread::sleep_for(std::chrono::seconds(2));

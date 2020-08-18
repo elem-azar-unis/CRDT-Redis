@@ -11,7 +11,7 @@ bench: $(OBJS) $(HEADERS)
 .PHONY: stop clean run
 
 stop:
-	../redis_test/shutdown.sh 6379 6380 6381 6382 6383 6384 6385 6386 6387
+	../redis_test/shutdown.sh 6379 6380 6381 6382 6383 6384 6385 6386 6387 6388 6389 6390 6391 6392 6393
 	sudo tc qdisc del dev lo root
 
 clean:
