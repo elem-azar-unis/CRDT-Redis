@@ -129,7 +129,6 @@ static void removeFunc(client *c, rwfle *e, vc *t)
     {
         robj *ht = GET_LIST_HT(rargv, 0);
         if (EXISTS(e)) incrLen(ht, -1);
-        REH_RMV_FUNC(e, t);
 #define RMV_LC(p)            \
     if ((e->p##_t) != NULL)  \
     {                        \
@@ -195,7 +194,6 @@ void rwflinsertCommand(client *c)
             {
                 robj *ht = GET_LIST_HT(rargv, 1);
                 if (!EXISTS(e)) incrLen(ht, 1);
-                PID(e) = t->id;
                 // The element is newly inserted.
                 if (e->oid == NULL)
                 {

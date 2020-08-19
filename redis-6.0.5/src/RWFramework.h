@@ -11,7 +11,6 @@
 /*
  * The header of elements' metadata.
  * The construct macro.
- * The remove function macro of header.
  *
  * For the header, put it at the top of your actual struct to 'inherit' it.
  * e.g.
@@ -22,7 +21,7 @@
  *     double acquired;
  * } rwfze;
  *
- * And add the header construct macro to your actual construct function.
+ * And add the header constructor macro to your actual constructor function.
  * e.g.
  * rwfze *rwfzeNew()
  * {
@@ -33,20 +32,6 @@
  *     return e;
  * }
  *
- * And add the remove macro to your actual element remove effect function.
- * e.g.
- * static void removeFunc(client *c, rwfze *e, vc *t)
- * {
- *     if (removeCheck((reh *)e, t))
- *     {
- *         REH_RMV_FUNC(e, t);
- *         e->acquired = 0;
- *         e->innate = 0;
- *         robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
- *         zsetDel(zset, c->rargv[2]->ptr);
- *         server.dirty++;
- *     }
- * }
  * */
 
 typedef struct RWF_element_header
@@ -81,10 +66,11 @@ typedef struct RWF_element_header
 #define EXISTS(h) (PID(h) >= 0)
 
 /*
- * Precondition check for the prepare part.
+ * Precondition checks for the prepare part.
  * Add operation and non-add operations.
  * e is the metadata element.
  * */
+
 #define PREPARE_PRECOND_ADD(e)             \
     do                                     \
     {                                      \
@@ -113,7 +99,12 @@ typedef struct RWF_element_header
 static inline int addCheck(reh *h, vc *t)
 {
     if (!vc_equal(t, CURRENT(h))) return 0;
-    return PID(h) < t->id;
+    if (PID(h) < t->id)
+    {
+        PID(h) = t->id;
+        return 1;
+    }
+    return 0;
 }
 
 static inline int updateCheck(reh *h, vc *t) { return vc_equal(t, CURRENT(h)); }
@@ -121,7 +112,11 @@ static inline int updateCheck(reh *h, vc *t) { return vc_equal(t, CURRENT(h)); }
 static inline int removeCheck(reh *h, vc *t)
 {
     for (int i = 0; i < t->size; ++i)
-        if (CURRENT(h)->vector[i] < t->vector[i]) return 1;
+        if (CURRENT(h)->vector[i] < t->vector[i])
+        {
+            REH_RMV_FUNC(h, t);
+            return 1;
+        }
     return 0;
 }
 

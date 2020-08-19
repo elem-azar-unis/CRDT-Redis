@@ -42,7 +42,6 @@ static void removeFunc(client *c, rwfze *e, vc *t)
 {
     if (removeCheck((reh *)e, t))
     {
-        REH_RMV_FUNC(e, t);
         e->acquired = 0;
         e->innate = 0;
         robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
@@ -68,7 +67,6 @@ void rwfzaddCommand(client *c)
             removeFunc(c, e, t);
             if (addCheck((reh *)e, t))
             {
-                PID(e) = t->id;
                 e->innate = v;
                 robj *zset = getZsetOrCreate(c->db, c->rargv[1], c->rargv[2]);
                 int flags = ZADD_NONE;
