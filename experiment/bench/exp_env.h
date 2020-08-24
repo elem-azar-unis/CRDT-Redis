@@ -102,6 +102,9 @@ private:
             true);
 
         shell_exec("tc qdisc add dev lo parent 1:3 handle 30: pfifo_fast", true);
+        shell_exec(
+            "tc filter add dev lo protocol ip parent 1: prio 2 u32 match ip dst 0/0 flowid 1:3",
+            true);
     }
 
     static void remove_delay()
