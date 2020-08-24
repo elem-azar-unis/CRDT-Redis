@@ -14,16 +14,13 @@
 #define CRDT_OVERHEAD
 //#define CRDT_OPCOUNT
 //#define CRDT_ELE_STATUS
+//#define CRDT_TIME
 
 #endif
 
-#ifdef CRDT_LOG
+#if defined(CRDT_LOG) || defined(CRDT_TIME)
 
 #include <sys/time.h>
-
-#include "vector_clock.h"
-
-static FILE *__CRDT_log = NULL;
 
 static inline long currentTime()
 {
@@ -31,6 +28,28 @@ static inline long currentTime()
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000000 + tv.tv_usec;
 }
+
+#endif
+
+#ifdef CRDT_TIME
+
+#define TIME_ISTR_BEGIN long __begin__ = currentTime();
+
+#define TIME_ISTR_END \
+    serverLog(LL_NOTICE, "%s, %d: %ld", c->argv[0]->ptr, c->argc, currentTime() - __begin__);
+
+#else
+
+#define TIME_ISTR_BEGIN
+#define TIME_ISTR_END
+
+#endif
+
+#ifdef CRDT_LOG
+
+#include "vector_clock.h"
+
+static FILE *__CRDT_log = NULL;
 
 #define CHECK_FILE                                              \
     do                                                          \

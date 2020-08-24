@@ -116,7 +116,8 @@
 
 #define CRDT_BEGIN        \
     if (REPLICATION_MODE) \
-    {
+    {                     \
+        TIME_ISTR_BEGIN;
 
 #define CRDT_PREPARE                  \
     if (!(c->flags & CLIENT_REPLICA)) \
@@ -135,6 +136,7 @@
 #define CRDT_END                                                       \
     }                                                                  \
     if (c->flags & CLIENT_REPLICA_MESSAGE) { addReply(c, shared.ok); } \
+    TIME_ISTR_END;                                                     \
     return;                                                            \
     }                                                                  \
     else                                                               \
