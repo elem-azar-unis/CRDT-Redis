@@ -136,7 +136,7 @@ public:
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        cout << time << " seconds, " << log.write_op_executed / time << " op/s\n";
+        cout << time << " seconds, " << exp_setting::total_ops / time << " op/s\n";
         cout << log.write_op_executed << " operations actually executed on redis." << endl;
 
         if (read_thread.joinable())

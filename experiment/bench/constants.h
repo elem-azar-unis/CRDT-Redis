@@ -17,7 +17,7 @@
 constexpr int SPLIT_NUM = 10;
 #define SLP_TIME_MICRO (MAX_TIME_COLISION * 1000 / SPLIT_NUM)
 
-constexpr int THREAD_PER_SERVER = 3;
+constexpr int THREAD_PER_SERVER = 8;
 #define TOTAL_SERVERS (exp_setting::total_clusters * exp_setting::server_per_cluster)
 #define OP_PER_THREAD (exp_setting::total_ops / TOTAL_SERVERS / THREAD_PER_SERVER)
 
