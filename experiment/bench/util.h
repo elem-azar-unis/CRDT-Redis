@@ -23,7 +23,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "constants.h"
 #include "exp_setting.h"
 
 #if defined(__linux__)
@@ -35,6 +34,10 @@
 #include "../../redis-6.0.5/deps/hiredis/hiredis.h"
 
 #endif
+
+#define MAX_TIME_COLISION exp_setting::delay
+constexpr int SPLIT_NUM = 10;
+#define SLP_TIME_MICRO (MAX_TIME_COLISION * 1000 / SPLIT_NUM)
 
 using namespace std;
 

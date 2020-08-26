@@ -8,6 +8,8 @@
 #include <cassert>
 #include <iostream>
 
+#define TOTAL_SERVERS (exp_setting::total_clusters * exp_setting::server_per_cluster)
+
 using namespace std;
 
 class exp_setting

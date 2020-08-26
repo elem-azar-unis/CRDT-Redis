@@ -7,7 +7,7 @@
 
 #include <thread>
 
-#include "constants.h"
+#include "exp_setting.h"
 #include "exp_env.h"
 #include "util.h"
 
@@ -22,6 +22,14 @@
 #include "../../redis-6.0.5/deps/hiredis/hiredis.h"
 
 #endif
+
+constexpr int THREAD_PER_SERVER = 16;
+#define OP_PER_THREAD (exp_setting::total_ops / TOTAL_SERVERS / THREAD_PER_SERVER)
+
+// time in seconds
+#define INTERVAL_TIME ((double)TOTAL_SERVERS * THREAD_PER_SERVER / exp_setting::op_per_sec)
+constexpr int TIME_OVERHEAD = 1;
+constexpr int TIME_MAX = 1;
 
 using namespace std;
 // extern const char *ips[];

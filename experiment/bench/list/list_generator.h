@@ -5,7 +5,6 @@
 #ifndef BENCH_LIST_GENERATOR_H
 #define BENCH_LIST_GENERATOR_H
 
-#include "../constants.h"
 #include "../util.h"
 #include "list_cmd.h"
 #include "list_log.h"
