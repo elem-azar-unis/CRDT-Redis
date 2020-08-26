@@ -125,10 +125,11 @@ rwfle *rwfleNew()
 // This doesn't free t.
 static void removeFunc(client *c, rwfle *e, vc *t)
 {
+    int exist_tmp = EXISTS(e);
     if (removeCheck((reh *)e, t))
     {
         robj *ht = GET_LIST_HT(rargv, 0);
-        if (EXISTS(e)) incrLen(ht, -1);
+        if (exist_tmp) incrLen(ht, -1);
 #define RMV_LC(p)            \
     if ((e->p##_t) != NULL)  \
     {                        \
@@ -190,10 +191,11 @@ void rwflinsertCommand(client *c)
             ovhd_inc(-rwfle_overhead(e));
 #endif
             removeFunc(c, e, t);
+            int exist_tmp = EXISTS(e);
             if (addCheck((reh *)e, t))
             {
                 robj *ht = GET_LIST_HT(rargv, 1);
-                if (!EXISTS(e)) incrLen(ht, 1);
+                if (!exist_tmp) incrLen(ht, 1);
                 // The element is newly inserted.
                 if (e->oid == NULL)
                 {

@@ -94,6 +94,8 @@ typedef struct RWF_element_header
 /*
  * Three functions to check if it is ready for add/remove/update.
  * Do the corresponding check before you do the actual effect phase.
+ * If passes addCheck, the EXISTS(h) will become true.
+ * If passes removeCheck, the EXISTS(h) will become false.
  * */
 
 static inline int addCheck(reh *h, vc *t)
