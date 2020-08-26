@@ -29,7 +29,7 @@ constexpr int THREAD_PER_SERVER = 1;
 // time in seconds
 #define INTERVAL_TIME ((double)TOTAL_SERVERS * THREAD_PER_SERVER / exp_setting::op_per_sec)
 constexpr int TIME_OVERHEAD = 1;
-constexpr int TIME_MAX = 1;
+constexpr int TIME_READ = 1;
 
 using namespace std;
 // extern const char *ips[];
@@ -88,7 +88,7 @@ public:
                 redis_client cl(IP_SERVER, BASE_PORT);
                 while (rb)
                 {
-                    this_thread::sleep_for(chrono::seconds(TIME_MAX));
+                    this_thread::sleep_for(chrono::seconds(TIME_READ));
                     read_cmd->exec(cl);
                 }
             });

@@ -160,6 +160,7 @@ int getLen(robj *ht)
 
 void incrLen(robj *ht, int inc)
 {
+    if (inc == 0) return;
     sds hname = sdsnew("length");
     robj *value = hashTypeGetValueObject(ht, hname);
     int len;

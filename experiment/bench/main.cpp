@@ -97,7 +97,7 @@ void test_local(rpq_type zt)
 #pragma clang diagnostic ignored "-Wfor-loop-analysis"
         while (mb)
         {
-            this_thread::sleep_for(chrono::seconds(TIME_MAX));
+            this_thread::sleep_for(chrono::seconds(TIME_READ));
             c.exec(cl);
         }
 #pragma clang diagnostic pop
