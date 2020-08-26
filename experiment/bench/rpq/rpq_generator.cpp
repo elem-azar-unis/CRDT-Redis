@@ -40,13 +40,13 @@ void rpq_generator::gen_and_exec(redis_client& c)
 {
     int e;
     double rand = decide();
-    if (rand <= PA) { gen_add().exec(c); }
+    if (rand <= PA) { c.add_pipeline_cmd(gen_add()); }
     else if (rand <= PI)
     {
         e = ele.random_get();
-        if (e == -1) return gen_add().exec(c);
+        if (e == -1) return c.add_pipeline_cmd(gen_add());
         double d = doubleRand(-MAX_INCR, MAX_INCR);
-        rpq_incrby_cmd(zt, ele, e, d).exec(c);
+        c.add_pipeline_cmd(new rpq_incrby_cmd(zt, ele, e, d));
     }
     else
     {
@@ -57,7 +57,7 @@ void rpq_generator::gen_and_exec(redis_client& c)
             if (e == -1)
             {
                 e = ele.random_get();
-                if (e == -1) return gen_add().exec(c);
+                if (e == -1) return c.add_pipeline_cmd(gen_add());
             }
             rem.add(e);
         }
@@ -67,20 +67,20 @@ void rpq_generator::gen_and_exec(redis_client& c)
             if (e == -1)
             {
                 e = ele.random_get();
-                if (e == -1) return gen_add().exec(c);
+                if (e == -1) return c.add_pipeline_cmd(gen_add());
                 rem.add(e);
             }
         }
         else
         {
             e = ele.random_get();
-            if (e == -1) return gen_add().exec(c);
+            if (e == -1) return c.add_pipeline_cmd(gen_add());
             rem.add(e);
         }
-        rpq_remove_cmd(zt, ele, e).exec(c);
+        c.add_pipeline_cmd(new rpq_remove_cmd(zt, ele, e));
     }
 }
-rpq_add_cmd rpq_generator::gen_add()
+rpq_add_cmd* rpq_generator::gen_add()
 {
     int e;
     double d = doubleRand(0, MAX_INIT);
@@ -105,5 +105,5 @@ rpq_add_cmd rpq_generator::gen_add()
         e = intRand(MAX_ELE);
         add.add(e);
     }
-    return rpq_add_cmd(zt, ele, e, d);
+    return new rpq_add_cmd(zt, ele, e, d);
 }

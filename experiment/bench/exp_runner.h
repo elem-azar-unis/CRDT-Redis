@@ -23,7 +23,7 @@
 
 #endif
 
-constexpr int THREAD_PER_SERVER = 16;
+constexpr int THREAD_PER_SERVER = 1;
 #define OP_PER_THREAD (exp_setting::total_ops / TOTAL_SERVERS / THREAD_PER_SERVER)
 
 // time in seconds

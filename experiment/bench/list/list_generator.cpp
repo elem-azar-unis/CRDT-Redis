@@ -34,11 +34,11 @@ void list_generator::gen_and_exec(redis_client &c)
 {
     double rand = decide();
     // TODO conflicts?
-    if (rand <= PA) { gen_insert().exec(c); }
+    if (rand <= PA) { c.add_pipeline_cmd(gen_insert()); }
     else if (rand <= PU)
     {
         string id = list.random_get();
-        if (id == "null") return gen_insert().exec(c);
+        if (id == "null") return c.add_pipeline_cmd(gen_insert());
         string upd_type;
         int value;
         switch (intRand(6))
@@ -68,20 +68,20 @@ void list_generator::gen_and_exec(redis_client &c)
                 value = boolRand();
                 break;
         }
-        list_update_cmd(type, list, id, upd_type, value).exec(c);
+        c.add_pipeline_cmd(new list_update_cmd(type, list, id, upd_type, value));
     }
     else
     {
         string id = list.random_get();
-        if (id == "null") return gen_insert().exec(c);
-        list_remove_cmd(type, list, id).exec(c);
+        if (id == "null") return c.add_pipeline_cmd(gen_insert());
+        c.add_pipeline_cmd(new list_remove_cmd(type, list, id));
     }
 }
-list_insert_cmd list_generator::gen_insert()
+list_insert_cmd *list_generator::gen_insert()
 {
     string prev = list.random_get(), id = new_id.get(), content = strRand();
     int font = intRand(TOTAL_FONT_TYPE), size = intRand(MAX_FONT_SIZE), color = intRand(MAX_COLOR);
     bool bold = boolRand(), italic = boolRand(), underline = boolRand();
-    return list_insert_cmd(type, list, prev, id, content, font, size, color, bold, italic,
-                           underline);
+    return new list_insert_cmd(type, list, prev, id, content, font, size, color, bold, italic,
+                               underline);
 }

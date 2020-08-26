@@ -46,7 +46,7 @@ private:
 
     static list_op_gen_pattern &get_pattern(const string &name);
 
-    list_insert_cmd gen_insert();
+    list_insert_cmd *gen_insert();
 
 public:
     list_generator(const string &type, list_log &list, const string &p)

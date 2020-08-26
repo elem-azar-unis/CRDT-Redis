@@ -55,10 +55,18 @@ static inline double decide() { return doubleRand(0.0, 1.0); }
 
 using redisReply_ptr = unique_ptr<redisReply, decltype(freeReplyObject) *>;
 
+class cmd;
+
 class redis_client
 {
 private:
     redisContext *c;
+
+    mutex m;
+    condition_variable cv;
+    list<cmd *> cmds;
+    volatile bool run = false;
+    thread pipeline;
 
 public:
     redis_client(const char *ip, int port)
@@ -75,8 +83,15 @@ public:
         }
     }
 
+    void add_pipeline_cmd(cmd *command);
+
     redisReply_ptr exec(const string &cmd)
     {
+        if (run)
+        {
+            cout << "\nYou cannot use pipeline cmd and exec cmd at the same redis_client." << endl;
+            exit(-1);
+        }
         auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
         if (r == nullptr)
         {
@@ -87,7 +102,16 @@ public:
         return redisReply_ptr(r, freeReplyObject);
     }
 
-    ~redis_client() { redisFree(c); }
+    ~redis_client()
+    {
+        if (run)
+        {
+            run = false;
+            cv.notify_all();
+            if (pipeline.joinable()) pipeline.join();
+        }
+        redisFree(c);
+    }
 };
 
 class cmd
@@ -110,9 +134,11 @@ protected:
         add_args(args...);
     }
 
+public:
     virtual void handle_redis_return(const redisReply_ptr &r) = 0;
 
-public:
+    string get_cmd_str() { return stream.str(); }
+
     void exec(redis_client &c)
     {
         auto r = c.exec(stream.str());

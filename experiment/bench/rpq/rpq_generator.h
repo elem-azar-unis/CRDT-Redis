@@ -34,7 +34,7 @@ private:
     const string &zt;
 
     static rpq_op_gen_pattern &get_pattern(const string &name);
-    rpq_add_cmd gen_add();
+    rpq_add_cmd *gen_add();
 
 public:
     rpq_generator(const string &type, rpq_log &e, const string &p)
