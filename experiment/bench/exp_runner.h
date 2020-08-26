@@ -7,8 +7,8 @@
 
 #include <thread>
 
-#include "exp_setting.h"
 #include "exp_env.h"
+#include "exp_setting.h"
 #include "util.h"
 
 #if defined(__linux__)
