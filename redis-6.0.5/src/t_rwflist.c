@@ -213,7 +213,7 @@ void rwflinsertCommand(client *c)
                     {
                         rwfle *pre = GET_RWFLE(rargv, 0);
                         rwfle *p, *q;
-                        if (pre != NULL)
+                        if (pre != NULL && pre->pos_id != NULL)
                             p = pre;
                         else
                             p = head;

@@ -193,7 +193,7 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
         {
             rle *pre = GET_RLE(db, argv[0], argv[1], 0);
             rle *p, *q;
-            if (pre != NULL)
+            if (pre != NULL && pre->pos_id != NULL)
                 p = pre;
             else
                 p = head;
