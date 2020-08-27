@@ -9,12 +9,13 @@
 
 // TODO to be decided
 exp_setting::default_setting list_exp::list_setting{
+    .total_sec = 1000,
     .delay = 50,
     .delay_low = 10,
     .total_clusters = 3,
     .server_per_cluster = 3,
-    .op_per_sec = 10000,
-    .speed_e = {.start = 500, .end = 10000, .step = 100},
+    .op_per_sec = 1000,
+    .speed_e = {.start = 50, .end = 1000, .step = 50},
     .replica_e = {.start = 1, .end = 5, .step = 1},
     .delay_e = {.start = 20, .end = 380, .step = 40}};
 

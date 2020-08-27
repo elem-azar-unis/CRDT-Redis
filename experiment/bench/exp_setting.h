@@ -17,6 +17,8 @@ class exp_setting
 public:
     struct default_setting
     {
+        int total_sec;
+
         int delay;
         int delay_low;
         int total_clusters;
@@ -34,7 +36,6 @@ public:
 private:
     static const char *alg_type;
     static const char *rdt_type;
-    static constexpr int total_sec = 10000;
     static default_setting *default_p;
 
     static inline void apply_default()
@@ -109,7 +110,7 @@ public:
         apply_default();
         op_per_sec = speed;
         total_ops =
-            total_sec
+            default_p->total_sec
             * (default_p->speed_e.start + default_p->speed_e.step * default_p->speed_e.times() / 10)
             / default_p->speed_e.times();
         round_num = round;
@@ -121,7 +122,7 @@ public:
         apply_default();
         total_clusters = cluster;
         server_per_cluster = serverPCluster;
-        total_ops = total_sec * op_per_sec / default_p->replica_e.times();
+        total_ops = default_p->total_sec * op_per_sec / default_p->replica_e.times();
         round_num = round;
         type = exp_type::replica;
     }
@@ -131,7 +132,7 @@ public:
         apply_default();
         delay = hd;
         delay_low = ld;
-        total_ops = total_sec * op_per_sec / default_p->delay_e.times();
+        total_ops = default_p->total_sec * op_per_sec / default_p->delay_e.times();
         round_num = round;
         type = exp_type::delay;
     }
@@ -139,7 +140,7 @@ public:
     static inline void set_pattern(const string &name)
     {
         apply_default();
-        total_ops = total_sec * op_per_sec / 5;
+        total_ops = default_p->total_sec * op_per_sec / 5;
         pattern_name = name;
         type = exp_type::pattern;
     }
