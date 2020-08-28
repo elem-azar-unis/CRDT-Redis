@@ -277,7 +277,8 @@ protected:
         bench_mkdir(stream.str());
 
         stream << "/" << type << "_" << TOTAL_SERVERS << "," << exp_setting::op_per_sec << ",("
-               << exp_setting::delay << "," << exp_setting::delay_low << ")";
+               << exp_setting::delay << "," << exp_setting::delay_low << ")"
+               << (exp_setting::compare ? "cmp" : "");
         dir = stream.str();
         bench_mkdir(dir);
     }
