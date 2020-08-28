@@ -51,11 +51,10 @@ private:
             thds.emplace_back([this, ip, port] {
                 redis_client c(ip, port);
                 auto start_time = chrono::steady_clock::now();
-                for (int times = 0; times < OP_PER_THREAD; ++times)
+                for (int t = 1; t <= OP_PER_THREAD; ++t)
                 {
                     gen.gen_and_exec(c);
-                    auto tar_time =
-                        start_time + chrono::duration<double>((times + 1) * INTERVAL_TIME);
+                    auto tar_time = start_time + chrono::duration<double>(t * INTERVAL_TIME);
                     this_thread::sleep_until(tar_time);
                 }
             });
@@ -86,9 +85,13 @@ public:
             rb = true;
             read_thread = thread([this, &rb] {
                 redis_client cl(IP_SERVER, BASE_PORT);
+                auto start_time = chrono::steady_clock::now();
+                int i = 0;
                 while (rb)
                 {
-                    this_thread::sleep_for(chrono::seconds(TIME_READ));
+                    i++;
+                    auto tar_time = start_time + chrono::duration<double>(i * TIME_READ);
+                    this_thread::sleep_until(tar_time);
                     read_cmd->exec(cl);
                 }
             });
@@ -99,9 +102,13 @@ public:
             ob = true;
             ovhd_thread = thread([this, &ob] {
                 redis_client cl(IP_SERVER, BASE_PORT + 1);
+                auto start_time = chrono::steady_clock::now();
+                int i = 0;
                 while (ob)
                 {
-                    this_thread::sleep_for(chrono::seconds(TIME_OVERHEAD));
+                    i++;
+                    auto tar_time = start_time + chrono::duration<double>(i * TIME_OVERHEAD);
+                    this_thread::sleep_until(tar_time);
                     ovhd_cmd->exec(cl);
                 }
             });
