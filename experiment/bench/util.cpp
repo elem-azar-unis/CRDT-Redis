@@ -20,6 +20,8 @@ int exp_setting::server_per_cluster;
 int exp_setting::total_ops;
 int exp_setting::op_per_sec;
 
+bool exp_setting::compare = false;
+
 exp_setting::exp_type exp_setting::type;
 string exp_setting::pattern_name;
 int exp_setting::round_num;

@@ -135,3 +135,25 @@ int rpq_log::random_get()
     if (!heap.empty()) r = heap[intRand(static_cast<const int>(heap.size()))]->name;
     return r;
 }
+
+void rpq_log::log_compare(redisReply *r1, redisReply *r2)
+{
+    int k1 = -1;
+    double v1 = -1;
+    if (r1->elements == 2)
+    {
+        k1 = atoi(r1->element[0]->str);  // NOLINT
+        v1 = atof(r1->element[1]->str);  // NOLINT
+    }
+
+    int k2 = -1;
+    double v2 = -1;
+    if (r2->elements == 2)
+    {
+        k2 = atoi(r2->element[0]->str);  // NOLINT
+        v2 = atof(r2->element[1]->str);  // NOLINT
+    }
+
+    lock_guard<mutex> lk(max_mtx);
+    max_log.emplace_back(k1, v1, k2, v2);
+}

@@ -3,6 +3,16 @@
 //
 #include "list_log.h"
 
+double list_log::diff(const redisReply *e, const redisReply *r)
+{
+    if (e->element[1]->str != r->element[1]->str) return 1;
+    if (atoi(e->element[2]->str) != atoi(r->element[2]->str)) return 0.5;  // NOLINT
+    if (atoi(e->element[3]->str) != atoi(r->element[3]->str)) return 0.5;  // NOLINT
+    if (atoi(e->element[4]->str) != atoi(r->element[4]->str)) return 0.5;  // NOLINT
+    if (atoi(e->element[5]->str) != atoi(r->element[5]->str)) return 0.5;  // NOLINT
+    return 0;
+}
+
 double list_log::diff(const list_log::element &e, const redisReply *r)
 {
     if (e.content != r->element[1]->str) return 1;
@@ -122,4 +132,28 @@ string list_log::random_get()
     if (pos == ele_map.size()) return string("null");
     auto random_it = next(begin(ele_map), pos);
     return random_it->first;
+}
+
+void list_log::log_compare(redisReply *r1, redisReply *r2)
+{
+    int len1 = r1->elements;
+    int len2 = r2->elements;
+    // Levenshtein distance
+    vector<vector<double> > dp(len1 + 1, vector<double>(len2 + 1, 0));
+    for (int i = 1; i <= len1; i++)
+        dp[i][0] = i;
+    for (int j = 1; j <= len2; j++)
+        dp[0][j] = j;
+    for (int i = 1; i <= len1; i++)
+    {
+        for (int j = 1; j <= len2; j++)
+            dp[i][j] = min(dp[i - 1][j - 1] + diff(r1->element[i - 1], r2->element[j - 1]),
+                           min(dp[i][j - 1] + 1, dp[i - 1][j] + 1));
+    }
+    double distance = dp[len1][len2];
+
+    {
+        lock_guard<mutex> lk(dis_mtx);
+        distance_log.emplace_back(len1, distance);
+    }
 }

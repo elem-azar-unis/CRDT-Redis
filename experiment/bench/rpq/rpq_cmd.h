@@ -76,14 +76,17 @@ public:
 
     void handle_redis_return(const redisReply_ptr &r) override
     {
-        int k = -1;
-        double v = -1;
-        if (r->elements == 2)
+        if (!exp_setting::compare)
         {
-            k = atoi(r->element[0]->str);  // NOLINT
-            v = atof(r->element[1]->str);  // NOLINT
+            int k = -1;
+            double v = -1;
+            if (r->elements == 2)
+            {
+                k = atoi(r->element[0]->str);  // NOLINT
+                v = atof(r->element[1]->str);  // NOLINT
+            }
+            pq.max(k, v);
         }
-        pq.max(k, v);
     }
 };
 

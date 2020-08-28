@@ -92,7 +92,10 @@ class list_read_cmd : public list_cmd
 public:
     list_read_cmd(const string &type, list_log &list) : list_cmd(type, list, "list") {}
 
-    void handle_redis_return(const redisReply_ptr &r) override { list.read_list(r); }
+    void handle_redis_return(const redisReply_ptr &r) override
+    {
+        if (!exp_setting::compare) list.read_list(r);
+    }
 };
 
 class list_ovhd_cmd : public list_cmd

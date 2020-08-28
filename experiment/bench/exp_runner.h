@@ -84,7 +84,8 @@ public:
         {
             rb = true;
             read_thread = thread([this, &rb] {
-                redis_client cl(IP_SERVER, BASE_PORT);
+                redis_client c1(IP_SERVER, BASE_PORT);
+                redis_client c2(IP_SERVER, BASE_PORT);
                 auto start_time = chrono::steady_clock::now();
                 int i = 0;
                 while (rb)
@@ -92,7 +93,19 @@ public:
                     i++;
                     auto tar_time = start_time + chrono::duration<double>(i * TIME_READ);
                     this_thread::sleep_until(tar_time);
-                    read_cmd->exec(cl);
+                    if (!exp_setting::compare)
+                        read_cmd->exec(c1);
+                    else
+                    {
+                        redisReply *r1, *r2;
+                        thread t1([this, &r1, &c1] { r1 = c1.exec_raw(read_cmd->get_cmd_str()); });
+                        thread t2([this, &r2, &c2] { r2 = c2.exec_raw(read_cmd->get_cmd_str()); });
+                        t1.join();
+                        t2.join();
+                        log.log_compare(r1, r2);
+                        freeReplyObject(r1);
+                        freeReplyObject(r2);
+                    }
                 }
             });
         }

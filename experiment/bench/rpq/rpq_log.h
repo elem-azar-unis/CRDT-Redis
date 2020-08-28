@@ -66,6 +66,8 @@ public:
     void overhead(int o);
 
     void write_logfiles() override;
+
+    void log_compare(redisReply *r1, redisReply *r2) override;
 };
 
 #endif  // BENCH_QUEUELOG_H

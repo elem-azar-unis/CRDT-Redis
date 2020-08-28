@@ -56,6 +56,8 @@ public:
     static int total_ops;
     static int op_per_sec;
 
+    static bool compare;
+
 #define EXP_TYPE_CODEC(ACTION) \
     ACTION(speed)              \
     ACTION(replica)            \

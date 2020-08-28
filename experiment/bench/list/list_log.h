@@ -37,6 +37,8 @@ private:
         {}
     };
 
+    static double diff(const redisReply *e, const redisReply *r);
+
     static double diff(const element &e, const redisReply *r);
 
     unordered_map<string, list<unique_ptr<element>>::iterator> ele_map;
@@ -66,6 +68,8 @@ public:
     void overhead(int o);
 
     void write_logfiles() override;
+
+    void log_compare(redisReply *r1, redisReply *r2) override;
 };
 
 #endif  // BENCH_LIST_LOG_H
