@@ -3,9 +3,11 @@
 //
 #include "list_log.h"
 
+#include <cstring>
+
 double list_log::diff(const redisReply *e, const redisReply *r)
 {
-    if (e->element[1]->str != r->element[1]->str) return 1;
+    if (strcmp(e->element[1]->str, r->element[1]->str) != 0) return 1;
     if (atoi(e->element[2]->str) != atoi(r->element[2]->str)) return 0.5;  // NOLINT
     if (atoi(e->element[3]->str) != atoi(r->element[3]->str)) return 0.5;  // NOLINT
     if (atoi(e->element[4]->str) != atoi(r->element[4]->str)) return 0.5;  // NOLINT
