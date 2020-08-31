@@ -264,7 +264,7 @@ protected:
     rdt_log(const char *CRDT_name, const string &type)
     {
         ostringstream stream;
-        stream << "../result/" << CRDT_name;
+        stream << "../result/" << CRDT_name << (exp_setting::compare ? ",cmp" : "");
         bench_mkdir(stream.str());
 
         if (exp_setting::type == exp_setting::exp_type::pattern)
@@ -277,8 +277,7 @@ protected:
         bench_mkdir(stream.str());
 
         stream << "/" << type << "_" << TOTAL_SERVERS << "," << exp_setting::op_per_sec << ",("
-               << exp_setting::delay << "," << exp_setting::delay_low << ")"
-               << (exp_setting::compare ? "cmp" : "");
+               << exp_setting::delay << "," << exp_setting::delay_low << ")";
         dir = stream.str();
         bench_mkdir(dir);
     }
