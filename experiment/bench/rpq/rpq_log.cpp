@@ -136,7 +136,7 @@ int rpq_log::random_get()
     return r;
 }
 
-void rpq_log::log_compare(redisReply *r1, redisReply *r2)
+void rpq_log::log_compare(redisReply_ptr &r1, redisReply_ptr &r2)
 {
     int k1 = -1;
     double v1 = -1;

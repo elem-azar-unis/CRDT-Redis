@@ -5,6 +5,7 @@
 #ifndef BENCH_EXP_RUNNER_H
 #define BENCH_EXP_RUNNER_H
 
+#include <future>
 #include <thread>
 
 #include "exp_env.h"
@@ -97,14 +98,11 @@ public:
                         read_cmd->exec(c1);
                     else
                     {
-                        redisReply *r1, *r2;
-                        thread t1([this, &r1, &c1] { r1 = c1.exec_raw(read_cmd->get_cmd_str()); });
-                        thread t2([this, &r2, &c2] { r2 = c2.exec_raw(read_cmd->get_cmd_str()); });
-                        t1.join();
-                        t2.join();
+                        auto at1 = async([this, &c1] { return c1.exec(*read_cmd); });
+                        auto at2 = async([this, &c2] { return c2.exec(*read_cmd); });
+                        auto r1 = at1.get();
+                        auto r2 = at2.get();
                         log.log_compare(r1, r2);
-                        freeReplyObject(r1);
-                        freeReplyObject(r2);
                     }
                 }
             });

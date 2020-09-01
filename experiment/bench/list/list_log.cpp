@@ -136,7 +136,7 @@ string list_log::random_get()
     return random_it->first;
 }
 
-void list_log::log_compare(redisReply *r1, redisReply *r2)
+void list_log::log_compare(redisReply_ptr &r1, redisReply_ptr &r2)
 {
     int len1 = r1->elements;
     int len2 = r2->elements;

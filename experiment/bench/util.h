@@ -85,7 +85,7 @@ public:
 
     void add_pipeline_cmd(cmd *command);
 
-    redisReply *exec_raw(const string &cmd)
+    redisReply_ptr exec(const string &cmd)
     {
         if (run)
         {
@@ -99,13 +99,10 @@ public:
                  << "executing " << cmd << endl;
             exit(-1);
         }
-        return r;
+        return redisReply_ptr(r, freeReplyObject);
     }
 
-    redisReply_ptr exec(const string &cmd)
-    {
-        return redisReply_ptr(exec_raw(cmd), freeReplyObject);
-    }
+    inline redisReply_ptr exec(const cmd &cmd) { return exec(cmd.stream.str()); }
 
     ~redis_client()
     {
@@ -139,10 +136,10 @@ protected:
         add_args(args...);
     }
 
+    friend class redis_client;
+
 public:
     virtual void handle_redis_return(const redisReply_ptr &r) = 0;
-
-    string get_cmd_str() { return stream.str(); }
 
     void exec(redis_client &c)
     {
@@ -287,7 +284,7 @@ public:
     volatile int write_op_executed = 0;
 
     virtual void write_logfiles() = 0;
-    virtual void log_compare(redisReply *r1, redisReply *r2) = 0;
+    virtual void log_compare(redisReply_ptr &r1, redisReply_ptr &r2) = 0;
 
     template <typename... Tp>
     void write_one_logfile(const char *filename, list<tuple<Tp...>> &log)
