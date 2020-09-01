@@ -82,9 +82,9 @@ void redis_client::add_pipeline_cmd(cmd *command)
                     }
                 }
                 for (auto &cw : waiting)
-                    if (redisAppendCommand(c, cw->get_cmd_str().c_str()) != REDIS_OK)
+                    if (redisAppendCommand(c, cw->stream.str().c_str()) != REDIS_OK)
                     {
-                        cout << "\nsomething wrong appending " << cw->get_cmd_str() << " to host "
+                        cout << "\nsomething wrong appending " << cw->stream.str() << " to host "
                              << c->tcp.host << ":" << c->tcp.port << endl;
                         exit(-1);
                     }
@@ -95,7 +95,7 @@ void redis_client::add_pipeline_cmd(cmd *command)
                     if (r == nullptr)
                     {
                         cout << "\nhost " << c->tcp.host << ":" << c->tcp.port << " terminated.\n"
-                             << "executing " << waiting.front()->get_cmd_str() << endl;
+                             << "executing " << waiting.front()->stream.str() << endl;
                         exit(-1);
                     }
                     redisReply_ptr reply(static_cast<redisReply *>(r), freeReplyObject);
@@ -107,3 +107,5 @@ void redis_client::add_pipeline_cmd(cmd *command)
         });
     }
 }
+
+redisReply_ptr redis_client::exec(const cmd &cmd) { return exec(cmd.stream.str()); }

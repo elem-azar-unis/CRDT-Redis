@@ -102,7 +102,7 @@ public:
         return redisReply_ptr(r, freeReplyObject);
     }
 
-    inline redisReply_ptr exec(const cmd &cmd) { return exec(cmd.stream.str()); }
+    redisReply_ptr exec(const cmd &cmd);
 
     ~redis_client()
     {
