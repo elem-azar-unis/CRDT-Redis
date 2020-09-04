@@ -303,6 +303,23 @@ private:
     const char *rdt_type;
     exp_setting::default_setting &rdt_exp_setting;
 
+protected:
+    vector<string> rdt_types;
+    vector<string> rdt_patterns;
+
+    void add_type(const char *type) { rdt_types.emplace_back(type); }
+
+    void add_pattern(const char *pattern) { rdt_patterns.emplace_back(pattern); }
+
+    explicit rdt_exp(exp_setting::default_setting &rdt_st, const char *rdt_type)
+        : rdt_exp_setting(rdt_st), rdt_type(rdt_type)
+    {}
+
+    virtual void exp_impl(const string &type, const string &pattern) = 0;
+
+    inline void exp_impl(const string &type) { exp_impl(type, "default"); }
+
+public:
     void test_delay(int round)
     {
         for (int delay = rdt_exp_setting.delay_e.start; delay <= rdt_exp_setting.delay_e.end;
@@ -326,24 +343,6 @@ private:
             for (auto &type : rdt_types)
                 speed_fix(speed, round, type);
     }
-
-protected:
-    vector<string> rdt_types;
-    vector<string> rdt_patterns;
-
-    void add_type(const char *type) { rdt_types.emplace_back(type); }
-
-    void add_pattern(const char *pattern) { rdt_patterns.emplace_back(pattern); }
-
-    explicit rdt_exp(exp_setting::default_setting &rdt_st, const char *rdt_type)
-        : rdt_exp_setting(rdt_st), rdt_type(rdt_type)
-    {}
-
-    virtual void exp_impl(const string &type, const string &pattern) = 0;
-
-    inline void exp_impl(const string &type) { exp_impl(type, "default"); }
-
-public:
     void delay_fix(int delay, int round, const string &type)
     {
         exp_setting::set_exp_subject(type.c_str(), rdt_type);
