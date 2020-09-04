@@ -4,6 +4,7 @@
 
 #include "util.h"
 
+#include "errno.h"
 #include "exp_env.h"
 #include "exp_setting.h"
 
@@ -94,8 +95,13 @@ void redis_client::add_pipeline_cmd(cmd *command)
                     redisGetReply(c, &r);
                     if (r == nullptr)
                     {
-                        cout << "\nhost " << c->tcp.host << ":" << c->tcp.port << " terminated.\n"
-                             << "executing " << waiting.front()->stream.str() << endl;
+                        cout << "\nSomething wrong for host " << c->tcp.host << ":" << c->tcp.port
+                             << "to execute " << waiting.front()->stream.str() << "\n";
+                        if (c->reader->err == REDIS_ERR_IO)
+                            cout << "IO error: " << strerror(errno) << endl;
+                        else
+                            cout << "errno: " << c->reader->err
+                                 << ", err str: " << c->reader->errstr << endl;
                         exit(-1);
                     }
                     redisReply_ptr reply(static_cast<redisReply *>(r), freeReplyObject);
