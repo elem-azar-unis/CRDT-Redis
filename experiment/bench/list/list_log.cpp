@@ -89,6 +89,7 @@ void list_log::insert(string &prev, string &name, string &content, int font, int
     document.emplace(it_next, new element(content, font, size, color, bold, italic, underline));
     it_next--;
     ele_map[name] = it_next;
+    if (ele_removed.find(name) != ele_removed.end()) ele_removed.erase(name);
     write_op_executed++;
 }
 
@@ -122,6 +123,7 @@ void list_log::remove(string &name)
         auto &e = ele_map[name];
         document.erase(e);
         ele_map.erase(name);
+        ele_removed.insert(name);
     }
     write_op_executed++;
 }
@@ -134,6 +136,14 @@ string list_log::random_get()
     if (pos == ele_map.size()) return string("null");
     auto random_it = next(begin(ele_map), pos);
     return random_it->first;
+}
+
+string list_log::random_get_removed()
+{
+    if (ele_removed.empty()) return {};
+    int pos = intRand(ele_removed.size());  // NOLINT
+    auto random_it = next(begin(ele_removed), pos);
+    return *random_it;
 }
 
 void list_log::log_compare(redisReply_ptr &r1, redisReply_ptr &r2)

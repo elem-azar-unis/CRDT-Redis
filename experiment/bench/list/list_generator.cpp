@@ -79,6 +79,16 @@ void list_generator::gen_and_exec(redis_client &c)
 }
 list_insert_cmd *list_generator::gen_insert()
 {
+    if (exp_setting::compare && decide() < 0.5)
+    {
+        string id_r = list.random_get_removed();
+        if (!id_r.empty())
+        {
+            string pre_t = "null", content_t = "NA";
+            return new list_insert_cmd(type, list, pre_t, id_r, content_t, 0, 0, 0, false, false,
+                                       false);
+        }
+    }
     string prev = list.random_get(), id = new_id.get(), content = strRand();
     int font = intRand(TOTAL_FONT_TYPE), size = intRand(MAX_FONT_SIZE), color = intRand(MAX_COLOR);
     bool bold = boolRand(), italic = boolRand(), underline = boolRand();

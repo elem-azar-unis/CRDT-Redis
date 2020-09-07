@@ -6,6 +6,7 @@
 #define BENCH_LIST_LOG_H
 
 #include <mutex>
+#include <set>
 #include <unordered_map>
 
 #include "../util.h"
@@ -41,6 +42,7 @@ private:
 
     static double diff(const element &e, const redisReply *r);
 
+    set<string> ele_removed;
     unordered_map<string, list<unique_ptr<element>>::iterator> ele_map;
     list<unique_ptr<element>> document;
 
@@ -55,6 +57,8 @@ public:
     explicit list_log(const string &type) : rdt_log("list", type) {}
 
     string random_get();
+
+    string random_get_removed();
 
     void insert(string &prev, string &name, string &content, int font, int size, int color,
                 bool bold, bool italic, bool underline);
