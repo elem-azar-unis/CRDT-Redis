@@ -76,7 +76,7 @@ private:
                 repl_stream << " " << IP_WITHIN_CLUSTER << " " << BASE_PORT + num;
             }
         }
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(4));
     }
 
     static void set_delay()
@@ -121,7 +121,7 @@ private:
             stream << REDIS_CLIENT << " -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
             shell_exec(stream.str(), false);
         }
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(4));
     }
 
     static void clean() { shell_exec("rm -rf *.rdb *.log", false); }

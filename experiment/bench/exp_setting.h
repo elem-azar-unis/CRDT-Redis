@@ -113,7 +113,7 @@ public:
         op_per_sec = speed;
         total_ops =
             default_p->total_sec
-            * (default_p->speed_e.start + default_p->speed_e.step * default_p->speed_e.times() / 10)
+            * (default_p->speed_e.start + default_p->speed_e.step * default_p->speed_e.times() / 5)
             / default_p->speed_e.times();
         round_num = round;
         type = exp_type::speed;
@@ -125,6 +125,7 @@ public:
         total_clusters = cluster;
         server_per_cluster = serverPCluster;
         total_ops = default_p->total_sec * op_per_sec / default_p->replica_e.times();
+        op_per_sec = op_per_sec / 10 * TOTAL_SERVERS;
         round_num = round;
         type = exp_type::replica;
     }

@@ -9,7 +9,7 @@
 
 // TODO to be decided
 exp_setting::default_setting list_exp::list_setting{
-    .total_sec = 1000,
+    .total_sec = 2000,
     .delay = 50,
     .delay_low = 10,
     .total_clusters = 3,
