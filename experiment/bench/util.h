@@ -95,8 +95,8 @@ public:
         auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
         if (r == nullptr)
         {
-            cout << "\nhost " << c->tcp.host << ":" << c->tcp.port << " terminated.\n"
-                 << "executing " << cmd << endl;
+            cout << "\nerror for host " << c->tcp.host << ":" << c->tcp.port << " to execute "
+                 << cmd << ",\nerror code: " << c->err << ", error message: " << c->errstr << endl;
             exit(-1);
         }
         return redisReply_ptr(r, freeReplyObject);

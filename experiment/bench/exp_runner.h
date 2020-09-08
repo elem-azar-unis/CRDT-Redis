@@ -86,7 +86,7 @@ public:
             rb = true;
             read_thread = thread([this, &rb] {
                 redis_client c1(IP_SERVER, BASE_PORT);
-                redis_client c2(IP_SERVER, BASE_PORT);
+                redis_client c2(IP_SERVER, BASE_PORT + 1);
                 auto start_time = chrono::steady_clock::now();
                 int i = 0;
                 while (rb)
