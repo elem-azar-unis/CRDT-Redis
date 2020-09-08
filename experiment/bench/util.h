@@ -320,6 +320,13 @@ protected:
     inline void exp_impl(const string &type) { exp_impl(type, "default"); }
 
 public:
+    void test_patterns()
+    {
+        for (auto &p : rdt_patterns)
+            for (auto &t : rdt_types)
+                pattern_fix(p, t);
+    }
+
     void test_delay(int round)
     {
         for (int delay = rdt_exp_setting.delay_e.start; delay <= rdt_exp_setting.delay_e.end;
@@ -387,9 +394,7 @@ public:
     {
         auto start = chrono::steady_clock::now();
 
-        for (auto &p : rdt_patterns)
-            for (auto &t : rdt_types)
-                pattern_fix(p, t);
+        test_patterns();
 
         for (int i = 0; i < rounds; i++)
         {

@@ -21,7 +21,7 @@ public:
         // ! List types: "r", "rwf"
         add_type("r");
         add_type("rwf");
-        // TODO add_pattern("???");
+        add_pattern("upddominant");
     }
 };
 

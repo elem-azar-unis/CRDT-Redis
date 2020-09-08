@@ -13,9 +13,9 @@ constexpr int MAX_COLOR = 1u << 25u;
 
 list_generator::list_op_gen_pattern &list_generator::get_pattern(const string &name)
 {
-    // TODO patterns?
     static map<string, list_op_gen_pattern> patterns{
-        {"default", {.PR_ADD = 0.41, .PR_UPD = 0.2, .PR_REM = 0.39}}};
+        {"default", {.PR_ADD = 0.41, .PR_UPD = 0.2, .PR_REM = 0.39}},
+        {"upddominant", {.PR_ADD = 0.11, .PR_UPD = 0.8, .PR_REM = 0.09}}};
     if (patterns.find(name) == patterns.end()) return patterns["default"];
     return patterns[name];
 }

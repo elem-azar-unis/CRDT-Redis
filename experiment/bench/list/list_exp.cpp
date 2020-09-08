@@ -7,7 +7,6 @@
 #include "../exp_runner.h"
 #include "list_generator.h"
 
-// TODO to be decided
 exp_setting::default_setting list_exp::list_setting{
     .total_sec = 2000,
     .delay = 50,
