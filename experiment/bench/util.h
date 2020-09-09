@@ -60,7 +60,9 @@ class cmd;
 class redis_client
 {
 private:
-    redisContext *c;
+    const char *ip;
+    const int port;
+    redisContext *c = nullptr;
 
     mutex m;
     condition_variable cv;
@@ -68,20 +70,22 @@ private:
     volatile bool run = false;
     thread pipeline;
 
-public:
-    redis_client(const char *ip, int port)
+    void connect()
     {
+        if (c != nullptr) redisFree(c);
         c = redisConnect(ip, port);
         if (c == nullptr || c->err)
         {
-            if (c) { cout << "Error: " << c->errstr << ", ip:" << ip << ", port:" << port << endl; }
+            if (c)
+                cout << "\nError: " << c->errstr << ", ip:" << ip << ", port:" << port << endl;
             else
-            {
-                cout << "Can't allocate redis context" << endl;
-            }
+                cout << "\nCan't allocate redis context" << endl;
             exit(-1);
         }
     }
+
+public:
+    redis_client(const char *ip, int port) : ip(ip), port(port) { connect(); }
 
     void add_pipeline_cmd(cmd *command);
 
@@ -92,9 +96,17 @@ public:
             cout << "\nYou cannot use pipeline cmd and exec cmd at the same redis_client." << endl;
             exit(-1);
         }
+        bool retryed = false;
         auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
-        if (r == nullptr)
+        while (r == nullptr)
         {
+            if (!retryed)
+            {
+                connect();
+                retryed = true;
+                r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
+                continue;
+            }
             cout << "\nerror for host " << c->tcp.host << ":" << c->tcp.port << " to execute "
                  << cmd << ",\nerror code: " << c->err << ", error message: " << c->errstr << endl;
             exit(-1);
