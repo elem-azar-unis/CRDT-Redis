@@ -77,7 +77,8 @@ private:
         if (c == nullptr || c->err)
         {
             if (c)
-                cout << "\nError: " << c->errstr << ", ip:" << ip << ", port:" << port << endl;
+                cout << "\nError for redisConnect: " << c->errstr << ", ip:" << ip
+                     << ", port:" << port << endl;
             else
                 cout << "\nCan't allocate redis context" << endl;
             exit(-1);
@@ -124,7 +125,7 @@ public:
             cv.notify_all();
             if (pipeline.joinable()) pipeline.join();
         }
-        redisFree(c);
+        if (c != nullptr) redisFree(c);
     }
 };
 
