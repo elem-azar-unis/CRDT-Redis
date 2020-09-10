@@ -355,6 +355,12 @@ public:
                 pattern_fix(p, t);
     }
 
+    void test_default_settings()
+    {
+        for (auto &t : rdt_types)
+            pattern_fix("default", t);
+    }
+
     void test_delay(int round)
     {
         for (int delay = rdt_exp_setting.delay_e.start; delay <= rdt_exp_setting.delay_e.end;
