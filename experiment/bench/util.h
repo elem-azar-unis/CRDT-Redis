@@ -77,13 +77,21 @@ private:
         if (c == nullptr || c->err)
         {
             if (c)
+            {
                 cout << "\nError for redisConnect: " << c->errstr << ", ip:" << ip
                      << ", port:" << port << endl;
+                redisFree(c);
+                c = nullptr;
+            }
             else
                 cout << "\nCan't allocate redis context" << endl;
             exit(-1);
         }
     }
+
+    void reply_error(const string &cmd);
+
+    redisReply_ptr exec();
 
 public:
     redis_client(const char *ip, int port) : ip(ip), port(port) { connect(); }
@@ -108,9 +116,7 @@ public:
                 r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
                 continue;
             }
-            cout << "\nerror for host " << c->tcp.host << ":" << c->tcp.port << " to execute "
-                 << cmd << ",\nerror code: " << c->err << ", error message: " << c->errstr << endl;
-            exit(-1);
+            reply_error(cmd);
         }
         return redisReply_ptr(r, freeReplyObject);
     }

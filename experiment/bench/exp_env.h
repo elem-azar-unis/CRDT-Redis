@@ -48,7 +48,7 @@ private:
             stream << REDIS_SERVER << " " << REDIS_CONF << " "
                    << "--protected-mode no "
                    << "--daemonize yes "
-                   << "--loglevel notice "
+                   << "--loglevel debug "
                    << "--io-threads 2 "
                    << "--port " << port << " "
                    << "--logfile " << port << ".log "

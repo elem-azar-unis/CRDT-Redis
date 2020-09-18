@@ -61,6 +61,7 @@ double doubleRand(double min, double max)
     uniform_real_distribution<double> distribution(min, max);
     return distribution(*rand_gen);
 }
+
 void redis_client::add_pipeline_cmd(cmd *command)
 {
     {
@@ -91,24 +92,12 @@ void redis_client::add_pipeline_cmd(cmd *command)
                              << c->tcp.host << ":" << c->tcp.port << endl;
                         exit(-1);
                     }
-                void *r;
                 while (!waiting.empty())
                 {
-                    redisGetReply(c, &r);
-                    if (r == nullptr)
-                    {
-                        cout << "\nSomething wrong for host " << c->tcp.host << ":" << c->tcp.port
-                             << "to execute " << waiting.front()->stream.str() << "\n";
-                        if (c->reader->err == REDIS_ERR_IO)
-                            cout << "IO error: " << strerror(errno) << endl;
-                        else
-                            cout << "errno: " << c->reader->err
-                                 << ", err str: " << c->reader->errstr << endl;
-                        exit(-1);
-                    }
-                    redisReply_ptr reply(static_cast<redisReply *>(r), freeReplyObject);
-                    auto &cw = waiting.front();
-                    if (reply->type != REDIS_REPLY_ERROR) cw->handle_redis_return(reply);
+                    auto reply = exec();
+                    if (reply == nullptr) reply_error(waiting.front()->stream.str());
+                    if (reply->type != REDIS_REPLY_ERROR)
+                        waiting.front()->handle_redis_return(reply);
                     waiting.pop_front();
                 }
             }
@@ -117,3 +106,21 @@ void redis_client::add_pipeline_cmd(cmd *command)
 }
 
 redisReply_ptr redis_client::exec(const cmd &cmd) { return exec(cmd.stream.str()); }
+
+void redis_client::reply_error(const string &cmd)
+{
+    cout << "\nSomething wrong for host " << c->tcp.host << ":" << c->tcp.port << "to execute "
+         << cmd << "\n";
+    if (c->reader->err == REDIS_ERR_IO)
+        cout << "IO error: " << strerror(errno) << endl;
+    else
+        cout << "errno: " << c->reader->err << ", err str: " << c->reader->errstr << endl;
+    exit(-1);
+}
+
+redisReply_ptr redis_client::exec()
+{
+    void *r;
+    redisGetReply(c, &r);
+    return redisReply_ptr(static_cast<redisReply *>(r), freeReplyObject);
+}
