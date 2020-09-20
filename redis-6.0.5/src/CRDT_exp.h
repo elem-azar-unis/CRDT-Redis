@@ -14,7 +14,7 @@
 #define CRDT_OVERHEAD
 //#define CRDT_OPCOUNT
 //#define CRDT_ELE_STATUS
-//#define CRDT_TIME
+#define CRDT_TIME
 
 #endif
 
@@ -22,32 +22,14 @@
 
 #include <sys/time.h>
 
+#include "vector_clock.h"
+
 static inline long currentTime()
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000000 + tv.tv_usec;
 }
-
-#endif
-
-#ifdef CRDT_TIME
-
-#define TIME_ISTR_BEGIN long __begin__ = currentTime();
-
-#define TIME_ISTR_END \
-    serverLog(LL_NOTICE, "%s, %d: %ld", c->argv[0]->ptr, c->argc, currentTime() - __begin__);
-
-#else
-
-#define TIME_ISTR_BEGIN
-#define TIME_ISTR_END
-
-#endif
-
-#ifdef CRDT_LOG
-
-#include "vector_clock.h"
 
 static FILE *__CRDT_log = NULL;
 
@@ -58,6 +40,37 @@ static FILE *__CRDT_log = NULL;
         sprintf(fname, "server%d_crdt.log", CURRENT_PID);       \
         if (__CRDT_log == NULL) __CRDT_log = fopen(fname, "a"); \
     } while (0)
+
+static void CRDT_log(const char *fmt, ...)
+{
+    va_list ap;
+    char msg[LOG_MAX_LEN];
+
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, ap);
+    va_end(ap);
+
+    CHECK_FILE;
+    fprintf(__CRDT_log, "%ld, user_log: %s\n", currentTime(), msg);
+    fflush(__CRDT_log);
+}
+
+#endif
+
+#ifdef CRDT_TIME
+
+#define TIME_ISTR_BEGIN long __begin__ = currentTime();
+
+#define TIME_ISTR_END CRDT_log("%s, %d: %ld", c->argv[0]->ptr, c->argc, currentTime() - __begin__);
+
+#else
+
+#define TIME_ISTR_BEGIN
+#define TIME_ISTR_END
+
+#endif
+
+#ifdef CRDT_LOG
 
 #define LOG_ISTR_PRE                                               \
     do                                                             \
@@ -84,20 +97,6 @@ static FILE *__CRDT_log = NULL;
         fprintf(__CRDT_log, "\n");                                  \
         fflush(__CRDT_log);                                         \
     } while (0)
-
-static void CRDT_log(const char *fmt, ...)
-{
-    va_list ap;
-    char msg[LOG_MAX_LEN];
-
-    va_start(ap, fmt);
-    vsnprintf(msg, sizeof(msg), fmt, ap);
-    va_end(ap);
-
-    CHECK_FILE;
-    fprintf(__CRDT_log, "%ld, user_log: %s\n", currentTime(), msg);
-    fflush(__CRDT_log);
-}
 
 #else
 #define LOG_ISTR_PRE
