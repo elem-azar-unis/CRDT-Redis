@@ -188,7 +188,41 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    rpq_exp().exp_start_all(30);
+    rpq_exp re;
+    list_exp le;
+
+    exp_setting::compare = false;
+    re.test_default_settings();
+    re.test_patterns();
+    le.test_default_settings();
+    le.test_patterns();
+    exp_setting::compare = true;
+    le.test_default_settings();
+    le.test_patterns();
+
+    exp_setting::compare = false;
+
+    for (int i = 0; i < 16; i++)
+    {
+        re.test_delay(i);
+        re.test_replica(i);
+        re.test_speed(i);
+    }
+
+    for (int i = 0; i < 16; i++)
+    {
+        le.test_delay(i);
+        le.test_replica(i);
+        le.test_speed(i);
+    }
+
+    exp_setting::compare = true;
+    for (int i = 0; i < 16; i++)
+    {
+        le.test_delay(i);
+        le.test_replica(i);
+        le.test_speed(i);
+    }
 
     return 0;
 }
