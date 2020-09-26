@@ -82,7 +82,8 @@ public:
 
     static inline void print_settings()
     {
-        cout << "exp subject: [" << alg_type << "-" << rdt_type << "]\n";
+        cout << "exp subject: [" << alg_type << "-" << rdt_type << "]"
+             << (exp_setting::compare ? ", cmp" : "") << "\n";
         cout << "exp on ";
         if (type != exp_type::pattern)
         {

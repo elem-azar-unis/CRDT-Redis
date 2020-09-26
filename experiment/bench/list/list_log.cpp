@@ -140,6 +140,7 @@ string list_log::random_get()
 
 string list_log::random_get_removed()
 {
+    lock_guard<mutex> lk(mtx);
     if (ele_removed.empty()) return {};
     int pos = intRand(ele_removed.size());  // NOLINT
     auto random_it = next(begin(ele_removed), pos);
