@@ -54,7 +54,8 @@ void rwfzaddCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
+            CHECK_ARGC(4);
+            CHECK_CONTAINER_TYPE(OBJ_ZSET);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             rwfze *e = GET_RWFZE(argv, 1);
             PREPARE_PRECOND_ADD(e);
@@ -81,7 +82,8 @@ void rwfzincrbyCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
+            CHECK_ARGC(4);
+            CHECK_CONTAINER_TYPE(OBJ_ZSET);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             rwfze *e = GET_RWFZE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
@@ -108,7 +110,8 @@ void rwfzremCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
+            CHECK_ARGC(3);
+            CHECK_CONTAINER_TYPE(OBJ_ZSET);
             rwfze *e = GET_RWFZE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
             ADD_CR_RMV(e);

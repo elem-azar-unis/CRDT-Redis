@@ -147,7 +147,8 @@ void rwflinsertCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 9);
+            CHECK_ARGC(9);
+            CHECK_CONTAINER_TYPE(OBJ_HASH);
             for (int i = 5; i < 9; ++i)
                 CHECK_ARG_TYPE_INT(c->argv[i]);
             rwfle *pre = GET_RWFLE(argv, 0);
@@ -261,7 +262,8 @@ void rwflupdateCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 5);
+            CHECK_ARGC(5);
+            CHECK_CONTAINER_TYPE(OBJ_HASH);
             CHECK_ARG_TYPE_INT(c->argv[4]);
             rwfle *e = GET_RWFLE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
@@ -296,7 +298,8 @@ void rwflremCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 3);
+            CHECK_ARGC(3);
+            CHECK_CONTAINER_TYPE(OBJ_HASH);
             rwfle *e = GET_RWFLE(argv, 0);
             PREPARE_PRECOND_NON_ADD(e);
             ADD_CR_RMV(e);

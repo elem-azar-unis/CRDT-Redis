@@ -362,7 +362,8 @@ void rzaddCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
+            CHECK_ARGC(4);
+            CHECK_CONTAINER_TYPE(OBJ_ZSET);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             rze *e = GET_RZE(argv, 1);
             if (LOOKUP(e))
@@ -394,7 +395,8 @@ void rzincrbyCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 4);
+            CHECK_ARGC(4);
+            CHECK_CONTAINER_TYPE(OBJ_ZSET);
             CHECK_ARG_TYPE_DOUBLE(c->argv[3]);
             rze *e = GET_RZE(argv, 0);
             if (e == NULL || !LOOKUP(e))
@@ -426,7 +428,8 @@ void rzremCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_ZSET, 3);
+            CHECK_ARGC(3);
+            CHECK_CONTAINER_TYPE(OBJ_ZSET);
             rze *e = GET_RZE(argv, 0);
             if (e == NULL || !LOOKUP(e))
             {

@@ -31,7 +31,7 @@
  * */
 
 // Add one additional arg to rargv type robj*. Will NOT delete the obj.
-#define RARGV_ADD(obj)                                                    \
+#define _RARGV_ADD(obj)                                                    \
     do                                                                    \
     {                                                                     \
         if (!c->rargv) INIT_RARGV;                                        \
@@ -44,24 +44,30 @@
         c->rargc++;                                                       \
     } while (0)
 
-// Add one additional arg to rargv, type sds. Will DELETE the sds.
-#define RARGV_ADD_SDS(str) RARGV_ADD(createObject(OBJ_STRING, str))
+// Add one additional arg to rargv, type sds. Take the ownership of the sds.
+#define RARGV_ADD_SDS(str) _RARGV_ADD(createObject(OBJ_STRING, str))
 
 // Check the argc and the container type. You may use this at the start of the prepare phase.
-#define CHECK_ARGC_AND_CONTAINER_TYPE(_type, _max)  \
-    do                                              \
-    {                                               \
-        if (c->argc > _max || c->argc < 2)          \
-        {                                           \
-            addReply(c, shared.syntaxerr);          \
-            return;                                 \
-        }                                           \
-        robj *o = lookupKeyRead(c->db, c->argv[1]); \
-        if (o != NULL && o->type != _type)          \
-        {                                           \
-            addReply(c, shared.wrongtypeerr);       \
-            return;                                 \
-        }                                           \
+
+#define CHECK_ARGC(_max)                   \
+    do                                     \
+    {                                      \
+        if (c->argc > _max || c->argc < 2) \
+        {                                  \
+            addReply(c, shared.syntaxerr); \
+            return;                        \
+        }                                  \
+    } while (0)
+
+#define CHECK_CONTAINER_TYPE(_type)                  \
+    do                                               \
+    {                                                \
+        robj *_o = lookupKeyRead(c->db, c->argv[1]); \
+        if (_o != NULL && _o->type != _type)         \
+        {                                            \
+            addReply(c, shared.wrongtypeerr);        \
+            return;                                  \
+        }                                            \
     } while (0)
 
 // Check the type of the arg, int / double.
@@ -91,18 +97,20 @@
  *     CRDT_BEGIN
  *         CRDT_PREPARE
  *             // Do the prepare phase, such as:
- *             // - check correctness of 1. the format of the command from the cliend and
- *                  2. the type of the targeted CRDT using CHECK_ARGC_AND_CONTAINER_TYPE macro
+ *             // - check correctness of
+ *                  1. the format of the command from the cliend and
+ *                  2. the type of the targeted CRDT
+ *                  using CHECK_ARGC, CHECK_CONTAINER_TYPE,
+ *                  CHECK_ARG_TYPE_INT and CHECK_ARG_TYPE_DOUBLE macros
  *             // - check the precondition of the prepare phase, read the local state
- *             // - add additional parameters to broadcast using RARGV_ADD or RARGV_ADD_SDS macros
+ *             // - add additional parameters to broadcast using RARGV_ADD_SDS macro
  *             // Will automatically reply an "OK" message to the client if
  *             // the prepare phase ends successfully.
  *         CRDT_EFFECT
  *             // Get the parameters from c->rargv, c->rargc is the number of paremeters.
  *             // The order of the parameters in c->rargv is: The parameters of the initial client
  *             // calling this command, then the additional parameters from the prepare phase,
- *             // in the order of calling
- *             // RARGV_ADD or RARGV_ADD_SDS macros.
+ *             // in the order of calling RARGV_ADD_SDS macros.
  *             // Trust the correctness of these parameters. Here we do no further check.
  *
  *             // Then do the effect phase of the command according to the algorithm.

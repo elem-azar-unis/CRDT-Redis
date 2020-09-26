@@ -387,7 +387,8 @@ void rlinsertCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 9);
+            CHECK_ARGC(9);
+            CHECK_CONTAINER_TYPE(OBJ_HASH);
             for (int i = 5; i < 9; ++i)
                 CHECK_ARG_TYPE_INT(c->argv[i]);
             rle *pre = GET_RLE(c->db, c->argv[1], c->argv[2], 0);
@@ -449,7 +450,8 @@ void rlupdateCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 5);
+            CHECK_ARGC(5);
+            CHECK_CONTAINER_TYPE(OBJ_HASH);
             CHECK_ARG_TYPE_INT(c->argv[4]);
             rle *e = GET_RLE(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
@@ -480,7 +482,8 @@ void rlremCommand(client *c)
 {
     CRDT_BEGIN
         CRDT_PREPARE
-            CHECK_ARGC_AND_CONTAINER_TYPE(OBJ_HASH, 3);
+            CHECK_ARGC(3);
+            CHECK_CONTAINER_TYPE(OBJ_HASH);
             rle *e = GET_RLE(c->db, c->argv[1], c->argv[2], 0);
             if (e == NULL || !LOOKUP(e))
             {
