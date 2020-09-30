@@ -82,9 +82,9 @@ void list_log::insert(string &prev, string &name, string &content, int font, int
                       bool bold, bool italic, bool underline)
 {
     lock_guard<mutex> lk(mtx);
-    if (prev != "null" && ele_map.find(prev) == ele_map.end()) return;
+    if (prev != "null" && prev != "readd" && ele_map.find(prev) == ele_map.end()) return;
     if (ele_map.find(name) != ele_map.end()) return;
-    auto it_next = prev == "null" ? document.begin() : ele_map[prev];
+    auto it_next = (prev == "null" || prev == "readd") ? document.begin() : ele_map[prev];
     if (it_next != document.begin()) it_next++;
     document.emplace(it_next, new element(content, font, size, color, bold, italic, underline));
     it_next--;
@@ -131,9 +131,9 @@ void list_log::remove(string &name)
 string list_log::random_get()
 {
     lock_guard<mutex> lk(mtx);
-    if (ele_map.empty()) return string("null");
+    if (ele_map.empty()) return {};
     int pos = intRand(ele_map.size() + 1);  // NOLINT
-    if (pos == ele_map.size()) return string("null");
+    if (pos == ele_map.size()) return {};
     auto random_it = next(begin(ele_map), pos);
     return random_it->first;
 }

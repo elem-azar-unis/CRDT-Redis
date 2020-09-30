@@ -38,7 +38,7 @@ void list_generator::gen_and_exec(redis_client &c)
     else if (rand <= PU)
     {
         string id = list.random_get();
-        if (id == "null") return c.add_pipeline_cmd(gen_insert());
+        if (id.empty()) return c.add_pipeline_cmd(gen_insert());
         string upd_type;
         int value;
         switch (intRand(6))
@@ -73,7 +73,7 @@ void list_generator::gen_and_exec(redis_client &c)
     else
     {
         string id = list.random_get();
-        if (id == "null") return c.add_pipeline_cmd(gen_insert());
+        if (id.empty()) return c.add_pipeline_cmd(gen_insert());
         c.add_pipeline_cmd(new list_remove_cmd(type, list, id));
     }
 }
@@ -84,7 +84,7 @@ list_insert_cmd *list_generator::gen_insert()
         string id_r = list.random_get_removed();
         if (!id_r.empty())
         {
-            string pre_t = "null", content_t = "NA";
+            string pre_t = "readd", content_t = "NA";
             return new list_insert_cmd(type, list, pre_t, id_r, content_t, 0, 0, 0, false, false,
                                        false);
         }

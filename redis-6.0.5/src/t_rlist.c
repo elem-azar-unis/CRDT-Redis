@@ -395,7 +395,7 @@ void rlinsertCommand(client *c)
             if (pre == NULL)
             {
                 sdstolower(c->argv[2]->ptr);
-                if (strcmp(c->argv[2]->ptr, "null") != 0)
+                if (strcmp(c->argv[2]->ptr, "null") != 0 && strcmp(c->argv[2]->ptr, "readd") != 0)
                 {
                     sds errs =
                         sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
@@ -411,6 +411,14 @@ void rlinsertCommand(client *c)
             }
             if (e->oid == NULL)
             {
+                if (strcmp(c->argv[2]->ptr, "readd") == 0)
+                {
+                    sds errs = sdscatfmt(sdsempty(),
+                                         "-Element %S hasn't been added, can't be readded.\r\n",
+                                         c->argv[3]->ptr);
+                    addReplySds(c, errs);
+                    return;
+                }
                 leid *left = pre == NULL ? NULL : pre->pos_id;
                 leid *right;
                 if (pre == NULL)
