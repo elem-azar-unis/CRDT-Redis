@@ -14,7 +14,7 @@
 #define CRDT_OVERHEAD
 //#define CRDT_OPCOUNT
 //#define CRDT_ELE_STATUS
-#define CRDT_TIME
+//#define CRDT_TIME
 
 #endif
 
