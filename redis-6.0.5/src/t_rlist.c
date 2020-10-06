@@ -222,6 +222,21 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 
     listNode *ln;
     listIter li;
+    int ase_removed = 0;
+
+    listRewind(e->aset, &li);
+    while ((ln = listNext(&li)))
+    {
+        rl_ase *ae = ln->value;
+        if (vc_cmp(ae->t, t) == VC_LESS)
+        {
+            listDelNode(e->aset, ln);
+            if (e->value == ae) e->value = NULL;
+            rl_aseDelete(ae);
+            ase_removed = 1;
+        }
+    }
+
     listRewind(e->rset, &li);
     while ((ln = listNext(&li)))
     {
@@ -233,6 +248,16 @@ static void insertFunc(redisDb *db, robj *ht, robj **argv, vc *t)
 #ifdef CRDT_OVERHEAD
             ovhd_inc(-RLE_RSE_SIZE);
 #endif
+        }
+    }
+
+    if(ase_removed && e->value == NULL)
+    {
+        listRewind(e->aset, &li);
+        while ((ln = listNext(&li)))
+        {
+            rl_ase *ae = ln->value;
+            if (e->value == NULL || e->value->t->id < ae->t->id) e->value = ae;
         }
     }
     if (e->value == NULL || e->value->t->id < t->id) e->value = a;
