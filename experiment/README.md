@@ -50,4 +50,4 @@ cd ../result
 python result.py
 ```
 
-For more details of our implementation and experiment, please read the *Performance measurements* section of [the technical report](https://arxiv.org/abs/1905.01403) and [the article](document/add-win-RPQ.pdf).
+For more details of our implementation and experiment, please read the *Performance measurements* section of [the technical report](https://arxiv.org/abs/1905.01403) and [the article](../document/add-win-RPQ.pdf).
