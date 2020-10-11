@@ -33,7 +33,7 @@ The results will be written in the *results* folder in different subfolders acco
 
 ## Perform the Experiment
 
-To perform our CRDT experiments, follow the instructions below. First you need to [compile the CRDT-Redis](../Readme.md#build). You can modify the IP settings at *bench/exp_env.h* if you want to use other IPs for servers. Then start the experiment:
+To perform our CRDT experiments, follow the instructions below. First you need to [compile the CRDT-Redis](../README.md#build). You can modify the IP settings at *bench/exp_env.h* if you want to use other IPs for servers. Then start the experiment:
 
 ```bash
 cd bench
