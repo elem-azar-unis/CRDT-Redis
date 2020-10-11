@@ -11,7 +11,7 @@ Things we do for such implementation:
 The CRDTs currently implemented:
 
 * Replicated Priority Queue (RPQ)
-  * [Add-Win RPQ](document/add-win-RPQ.pdf)
+  * [Add-Win RPQ](document/add-win-crpq.pdf)
   * [Remove-Win RPQ](document/rwf-tr.pdf)
   * [RWF-RPQ](document/rwf-tr.pdf)
 * List
