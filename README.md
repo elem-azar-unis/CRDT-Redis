@@ -70,7 +70,7 @@ Finally, you can **remove** the Redis database files (.rdb files) and log files 
 ./clean.sh
 ```
 
-To further redo the experiment of our work our please check [here](experiment/Readme.md).
+To further redo the experiment of our work our please check [here](experiment/README.md).
 
 ## CRDT Operations
 
