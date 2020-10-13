@@ -17,7 +17,8 @@ matplotlib.rcParams['ytick.labelsize'] = 8
 def dt_read(root_dir, dt_type, server, speed, delay, low_delay, diff_file, lambda_diff):
     def read_one_round(data_dir):
         global data_skipped
-        ovhd_max = -1
+        ovhd = -1
+        ovhd_c = 0
         diff = 0
         diff_c = 0
         with open(data_dir + "/ovhd.csv", "r") as file:
@@ -26,8 +27,8 @@ def dt_read(root_dir, dt_type, server, speed, delay, low_delay, diff_file, lambd
                 if tmp[0] > err_sp or tmp[1] > err_sp:
                     data_skipped += 1
                     continue
-                if ovhd_max < tmp[1] / tmp[0]:
-                    ovhd_max = tmp[1] / tmp[0]
+                ovhd += tmp[1] / tmp[0]
+                ovhd_c += 1
         with open(data_dir + "/"+diff_file, "r") as file:
             for line in file.readlines():
                 tmp = [float(x) for x in line.split(',')]
@@ -37,7 +38,7 @@ def dt_read(root_dir, dt_type, server, speed, delay, low_delay, diff_file, lambd
                 else:
                     diff += lambda_diff(tmp)
                     diff_c += 1
-        return diff/diff_c, ovhd_max
+        return diff/diff_c, ovhd/ovhd_c
     diff_return = 0
     ovhd_return = 0
     for rounds in range(total_rounds):
@@ -65,12 +66,12 @@ def plot_bar(r_data, rwf_data, name, x_lable, y_lable, s_name=None):
     index2 = [x + bar_width for x in range(len(name))]
     index = [x + bar_width / 2 for x in range(len(name))]
 
-    l1 = plt.bar(index1, r_data, bar_width, tick_label=s_name)
-    l2 = plt.bar(index2, rwf_data, bar_width, tick_label=s_name)
+    l1 = plt.bar(index1, r_data, bar_width)
+    l2 = plt.bar(index2, rwf_data, bar_width)
     plt.xlabel(x_lable)
     plt.ylabel(y_lable)
     plt.legend(handles=[l1, l2, ], labels=['Rmv-Win', 'RWF'])
-    plt.xticks(index)
+    plt.xticks(index, s_name)
 
 
 def plot_line(r_data, rwf_data, name, x_lable, y_lable):
@@ -104,7 +105,7 @@ def plot_generic(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read
 
     plt.subplot(1, 2, 2)
     plot_bar(r_ovhd, rwf_ovhd, name, xlable,
-             'average max overhead per element: bytes')
+             'average overhead per element: bytes')
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname))
@@ -124,7 +125,7 @@ def cmp_replica(root_dir, read_func, ylable_read, pnane_prefix, base_speed):
     replicas = [3, 6, 9, 12, 15]
     exp_settings = [[r, r*base_speed, 50, 10] for r in replicas]
     a, b, c, d = gather_plot_data(root_dir+"/replica", exp_settings, read_func)
-    plot_generic(a, b, c, d,  replicas, ylable_read,
+    plot_generic(a, b, c, d, replicas, ylable_read,
                  "num of replicas", pnane_prefix+"_replica")
 
 
@@ -132,7 +133,7 @@ def cmp_speed(root_dir, read_func, ylable_read, pnane_prefix, low, high, step):
     speeds = [x for x in range(low, high+step, step)]
     exp_settings = [[9, n, 50, 10] for n in speeds]
     a, b, c, d = gather_plot_data(root_dir+"/speed", exp_settings, read_func)
-    speed_plot(a, b, c, d,  speeds, ylable_read, pnane_prefix)
+    speed_plot(a, b, c, d, speeds, ylable_read, pnane_prefix)
 
 
 def speed_plot(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read, pnane_prefix):
@@ -140,7 +141,7 @@ def speed_plot(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read, 
     pname = pnane_prefix+'_op_speed'
     s_name = [x for x in name]
     for i in range(len(s_name)):
-        if (i - 500) % 10 != 0:
+        if i % int(len(s_name)/9) != 0:
             s_name[i] = ''
 
     fig = plt.figure(figsize=(11, 4))
