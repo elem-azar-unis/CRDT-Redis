@@ -152,7 +152,7 @@ def speed_plot(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read, 
 
     plt.subplot(1, 2, 2)
     plot_bar(r_ovhd, rwf_ovhd, name, xlable,
-             'average max overhead per element: bytes', s_name=s_name)
+             'average overhead per element: bytes', s_name=s_name)
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname))
