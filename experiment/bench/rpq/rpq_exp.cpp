@@ -8,7 +8,7 @@
 #include "rpq_generator.h"
 
 exp_setting::default_setting rpq_exp::rpq_setting{
-    .total_sec = 2000,
+    .total_sec = 1500,
     .delay = 50,
     .delay_low = 10,
     .total_clusters = 3,
