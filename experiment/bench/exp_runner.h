@@ -25,7 +25,7 @@
 #endif
 
 constexpr int THREAD_PER_SERVER = 1;
-#define OP_PER_THREAD (exp_setting::total_ops / TOTAL_SERVERS / THREAD_PER_SERVER)
+#define RUN_CONDITION log.write_op_executed < exp_setting::total_ops
 
 // time in seconds
 #define INTERVAL_TIME ((double)TOTAL_SERVERS * THREAD_PER_SERVER / exp_setting::op_per_sec)
@@ -52,7 +52,7 @@ private:
             thds.emplace_back([this, ip, port] {
                 redis_client c(ip, port);
                 auto start_time = chrono::steady_clock::now();
-                for (int t = 1; t <= OP_PER_THREAD; ++t)
+                for (int t = 1; RUN_CONDITION; ++t)
                 {
                     gen.gen_and_exec(c);
                     auto tar_time = start_time + chrono::duration<double>(t * INTERVAL_TIME);
@@ -78,18 +78,16 @@ public:
         for (int i = 0; i < TOTAL_SERVERS; ++i)
             conn_one_server_timed(IP_SERVER, BASE_PORT + i);
 
-        volatile bool rb, ob;
         thread read_thread, ovhd_thread;
 
         if (read_cmd != nullptr)
         {
-            rb = true;
-            read_thread = thread([this, &rb] {
+            read_thread = thread([this] {
                 redis_client c1(IP_SERVER, BASE_PORT);
                 redis_client c2(IP_SERVER, BASE_PORT + 1);
                 auto start_time = chrono::steady_clock::now();
                 int i = 0;
-                while (rb)
+                while (RUN_CONDITION)
                 {
                     i++;
                     auto tar_time = start_time + chrono::duration<double>(i * TIME_READ);
@@ -110,12 +108,11 @@ public:
 
         if (ovhd_cmd != nullptr)
         {
-            ob = true;
-            ovhd_thread = thread([this, &ob] {
+            ovhd_thread = thread([this] {
                 redis_client cl(IP_SERVER, BASE_PORT + 1);
                 auto start_time = chrono::steady_clock::now();
                 int i = 0;
-                while (ob)
+                while (RUN_CONDITION)
                 {
                     i++;
                     auto tar_time = start_time + chrono::duration<double>(i * TIME_OVERHEAD);
@@ -125,13 +122,12 @@ public:
             });
         }
 
-        volatile bool pb = true;
-        thread progress_thread([this, &pb] {
+        thread progress_thread([this] {
             constexpr int barWidth = 50;
             double progress;
-            while (pb)
+            while (RUN_CONDITION)
             {
-                progress = log.write_op_generated / ((double)exp_setting::total_ops);
+                progress = log.write_op_executed / ((double)exp_setting::total_ops);
                 cout << "\r[";
                 int pos = barWidth * progress;
                 for (int i = 0; i < barWidth; ++i)
@@ -153,28 +149,16 @@ public:
         });
 
         for (auto &t : thds)
-            t.join();
-        if (progress_thread.joinable())
-        {
-            pb = false;
-            progress_thread.join();
-        }
+            if (t.joinable()) t.join();
+        if (progress_thread.joinable()) progress_thread.join();
 
         auto end = chrono::steady_clock::now();
         auto time = chrono::duration_cast<chrono::duration<double>>(end - start).count();
-        cout << time << " seconds, " << exp_setting::total_ops / time << " op/s\n";
+        cout << time << " seconds, " << log.write_op_generated / time << " op/s\n";
         cout << log.write_op_executed << " operations actually executed on redis." << endl;
 
-        if (read_thread.joinable())
-        {
-            rb = false;
-            read_thread.join();
-        }
-        if (ovhd_thread.joinable())
-        {
-            ob = false;
-            ovhd_thread.join();
-        }
+        if (read_thread.joinable()) read_thread.join();
+        if (ovhd_thread.joinable()) ovhd_thread.join();
 
         log.write_logfiles();
     }
