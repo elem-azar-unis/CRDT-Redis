@@ -27,7 +27,7 @@ def dt_read(root_dir, dt_type, server, speed, delay, low_delay, diff_file, lambd
                 if tmp[0] > err_sp or tmp[1] > err_sp:
                     data_skipped += 1
                     continue
-                ovhd += tmp[1] / tmp[0]
+                ovhd += tmp[1]
                 ovhd_c += 1
         with open(data_dir + "/"+diff_file, "r") as file:
             for line in file.readlines():
@@ -105,7 +105,7 @@ def plot_generic(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read
 
     plt.subplot(1, 2, 2)
     plot_bar(r_ovhd, rwf_ovhd, name, xlable,
-             'average overhead per element: bytes')
+             'overhead: byte')
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname))
@@ -152,7 +152,7 @@ def speed_plot(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read, 
 
     plt.subplot(1, 2, 2)
     plot_bar(r_ovhd, rwf_ovhd, name, xlable,
-             'average overhead per element: bytes', s_name=s_name)
+             'overhead: byte', s_name=s_name)
 
     plt.tight_layout()
     plt.savefig("{}.pdf".format(pname))
