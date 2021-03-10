@@ -2946,7 +2946,7 @@ void initServer(void) {
     server.clients_timeout_table = raxNew();
     /* Force to emit the first SELECT command. */
     server.slaveseldb = -1;
-    server.p2p_seldb = -1;
+    //server.p2p_seldb = -1;
     server.p2p_count = 0;
     server.p2p_id = -1;
     server.unblocked_clients = listCreate();
@@ -3497,7 +3497,8 @@ void call(client *c, int flags) {
     // Propagate the command to P2P replicas
     if (c->rargv && !(c->flags & CLIENT_REPLICA))
     {
-        replicationBroadcast(server.replicas, c->db->id, c->rargv, c->rargc);
+        // replicationBroadcast(server.replicas, c->db->id, c->rargv, c->rargc);
+        replicationBroadcast(server.replicas, c->rargv, c->rargc);
     }
     if (c->flags & CLIENT_REPLICA)
     {

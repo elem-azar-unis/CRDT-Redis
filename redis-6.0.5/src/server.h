@@ -1320,7 +1320,7 @@ struct redisServer {
     long long master_initial_offset;           /* Master PSYNC offset. */
     int repl_slave_lazy_flush;          /* Lazy FLUSHALL before loading DB? */
     /* Replication(P2P) */
-    int p2p_seldb;
+    //int p2p_seldb; // This should be in client struct, used for p2p select command.
     int p2p_count;
     int p2p_id;
     /* Replication script cache. */
@@ -1825,7 +1825,9 @@ void rdbPipeReadHandler(struct aeEventLoop *eventLoop, int fd, void *clientData,
 void rdbPipeWriteHandlerConnRemoved(struct connection *conn);
 
 /* P2P replication */
-void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc);
+//void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc);
+void replicationBroadcast(list *replicas, robj **argv, int argc);
+
 
 /* Generic persistence functions */
 void startLoadingFile(FILE* fp, char* filename, int rdbflags);

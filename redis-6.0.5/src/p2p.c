@@ -50,7 +50,6 @@ void repltestCommand(client *c)
     }
 
     c->flags |= CLIENT_REPLICA;
-    c->flags |= CLIENT_REPLICA_MESSAGE;
     c->authenticated = 1;
     if (c->argc == 1)
     {
@@ -60,6 +59,7 @@ void repltestCommand(client *c)
 
     if (c->argc == 3)
     {
+        c->flags |= CLIENT_REPLICA_MESSAGE;
         long id, size;
         getLongFromObjectOrReply(c, c->argv[1], &size, "invalid replica size.");
         getLongFromObjectOrReply(c, c->argv[2], &id, "invalid replica id.");
@@ -118,54 +118,59 @@ void replicateCommand(client *c)
     addReply(c, shared.ok);
 }
 
-void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc)
+//void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc)
+void replicationBroadcast(list *replicas, robj **argv, int argc)
 {
     listNode *ln;
     listIter li;
-    int j, selected = 0;
-    char llstr[LONG_STR_SIZE];
+    int j;
+//    int selected = 0;
+//    char llstr[LONG_STR_SIZE];
 
     if (listLength(replicas) == 0)
         return;
 
-    /* Send SELECT command to every replica if needed. */
-    if (server.p2p_seldb != dictid)
-    {
-        selected = 1;
-        robj *selectcmd;
+    /* Send SELECT command to every replica if needed.
+       Need to implement the p2p select command.
+       We assume all the replicas always use the same DB and
+       not implement the p2p select for now.*/
+    // if (server.p2p_seldb != dictid)
+    // {
+    //     selected = 1;
+    //     robj *selectcmd;
 
-        /* For a few DBs we have pre-computed SELECT command. */
-        if (dictid >= 0 && dictid < PROTO_SHARED_SELECT_CMDS)
-        {
-            selectcmd = shared.select[dictid];
-        }
-        else
-        {
-            int dictid_len;
+    //     /* For a few DBs we have pre-computed SELECT command. */
+    //     if (dictid >= 0 && dictid < PROTO_SHARED_SELECT_CMDS)
+    //     {
+    //         selectcmd = shared.select[dictid];
+    //     }
+    //     else
+    //     {
+    //         int dictid_len;
 
-            dictid_len = ll2string(llstr, sizeof(llstr), dictid);
-            selectcmd = createObject(OBJ_STRING,
-                                     sdscatprintf(sdsempty(),
-                                                  "*2\r\n$6\r\nSELECT\r\n$%d\r\n%s\r\n",
-                                                  dictid_len, llstr));
-        }
+    //         dictid_len = ll2string(llstr, sizeof(llstr), dictid);
+    //         selectcmd = createObject(OBJ_STRING,
+    //                                  sdscatprintf(sdsempty(),
+    //                                               "*2\r\n$6\r\nSELECT\r\n$%d\r\n%s\r\n",
+    //                                               dictid_len, llstr));
+    //     }
 
-        /* Send it to replicas. */
-        listRewind(replicas, &li);
-        while ((ln = listNext(&li)))
-        {
-            client *replica = ln->value;
-            // if (replica->replstate == SLAVE_STATE_WAIT_BGSAVE_START) continue;
-            replica->flags |= CLIENT_REPLICA_MESSAGE;
-            addReply(replica, shared.multi_cmd);
-            addReply(replica, selectcmd);
-            replica->flags &= ~CLIENT_REPLICA_MESSAGE;
-        }
+    //     /* Send it to replicas. */
+    //     listRewind(replicas, &li);
+    //     while ((ln = listNext(&li)))
+    //     {
+    //         client *replica = ln->value;
+    //         // if (replica->replstate == SLAVE_STATE_WAIT_BGSAVE_START) continue;
+    //         replica->flags |= CLIENT_REPLICA_MESSAGE;
+    //         addReply(replica, shared.multi_cmd);
+    //         addReply(replica, selectcmd);
+    //         replica->flags &= ~CLIENT_REPLICA_MESSAGE;
+    //     }
 
-        if (dictid < 0 || dictid >= PROTO_SHARED_SELECT_CMDS)
-            decrRefCount(selectcmd);
-    }
-    server.p2p_seldb = dictid;
+    //     if (dictid < 0 || dictid >= PROTO_SHARED_SELECT_CMDS)
+    //         decrRefCount(selectcmd);
+    // }
+    // server.p2p_seldb = dictid;
 
     /* Write the command to every replica. */
     listRewind(replicas, &li);
@@ -186,8 +191,8 @@ void replicationBroadcast(list *replicas, int dictid, robj **argv, int argc)
         for (j = 0; j < argc; j++)
             addReplyBulk(replica, argv[j]);
 
-        if (selected)
-            addReply(replica, shared.exec_cmd);
+//        if (selected)
+//            addReply(replica, shared.exec_cmd);
 
         replica->flags &= ~CLIENT_REPLICA_MESSAGE;
     }
