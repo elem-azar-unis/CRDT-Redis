@@ -6,12 +6,14 @@
 #define DMCK_REDIS_CONNECT_H
 
 #include <cerrno>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <thread>
 
 #if defined(__linux__)
 #include <hiredis/hiredis.h>
@@ -22,7 +24,50 @@
 
 #endif
 
+#define REDIS_SERVER "../redis-6.0.5/src/redis-server"
+#define REDIS_CONF "../redis-6.0.5/redis.conf"
+#define REDIS_CLIENT "../redis-6.0.5/src/redis-cli"
+
 using redisReply_ptr = std::unique_ptr<redisReply, decltype(freeReplyObject) *>;
+
+static void print_reply(redisReply *rpl, int depth)
+{
+    for (int i = 0; i < depth - 1; ++i)
+        std::cout << "  ";
+    switch (rpl->type)
+    {
+        case REDIS_REPLY_INTEGER:
+            std::cout << rpl->integer;
+            break;
+        case REDIS_REPLY_DOUBLE:
+            std::cout << rpl->dval;
+            if (rpl->str != nullptr) std::cout << rpl->str;
+            break;
+        case REDIS_REPLY_ERROR:
+            std::cout << "Error: " << rpl->str;
+            break;
+        case REDIS_REPLY_STRING:
+            std::cout << rpl->str;
+            break;
+        case REDIS_REPLY_VERB:
+            std::cout << "Verb_" << rpl->vtype << ": " << rpl->str;
+            break;
+        case REDIS_REPLY_ARRAY:
+            for (int i = 0; i < rpl->elements; ++i)
+                print_reply(rpl->element[i], depth + 1);
+            break;
+        case REDIS_REPLY_NIL:
+            std::cout << "NULL";
+            break;
+    }
+    if (rpl->type != REDIS_REPLY_ARRAY) std::cout << std::endl;
+}
+
+static void print_reply(redisReply_ptr &rpl)
+{
+    print_reply(rpl.get(), 0);
+    std::cout << "----" << std::endl;
+}
 
 class redis_connect
 {
@@ -118,6 +163,20 @@ public:
     redis_connect(const char *ip, int port, int size, int id)
         : ip(ip), port(port), size(size), id(id)
     {
+        std::ostringstream stream;
+        stream << REDIS_SERVER << " " << REDIS_CONF << " "
+               << "--protected-mode no "
+               << "--daemonize yes "
+               << "--loglevel debug "
+               << "--io-threads 2 "
+               << "--port " << port << " "
+               << "--logfile " << port << ".log "
+               << "--dbfilename " << port << ".rdb "
+               << "--pidfile /var/run/redis_" << port << ".pid "
+               << "1>/dev/null";
+        system(stream.str().c_str());
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
         connect_server_instruct();
         connect_server_listen();
         connect_client();
@@ -143,9 +202,13 @@ public:
 
     ~redis_connect()
     {
-        if (client != nullptr) redisFree(client);
         if (server_instruct != nullptr) redisFree(server_instruct);
         if (server_listen != nullptr) redisFree(server_listen);
+        if (client != nullptr) redisFree(client);
+
+        std::ostringstream stream;
+        stream << REDIS_CLIENT << " -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
+        system(stream.str().c_str());
     }
 };
 

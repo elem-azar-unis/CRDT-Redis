@@ -55,6 +55,9 @@ void repltestCommand(client *c)
     {
         listAddNodeTail(server.replicas, c);
         serverLog(LL_NOTICE, "A listening fake replica.");
+        c->flags |= CLIENT_REPLICA_MESSAGE;
+        addReply(c, shared.ok);
+        c->flags &= ~CLIENT_REPLICA_MESSAGE;
     }
 
     if (c->argc == 3)
@@ -66,8 +69,8 @@ void repltestCommand(client *c)
         server.p2p_count = (int)size;
         server.p2p_id = (int)id;
         serverLog(LL_NOTICE, "An instructing fake replica.");
+        addReply(c, shared.ok);
     }
-    addReply(c, shared.ok);
 }
 
 void replicateCommand(client *c)
