@@ -354,5 +354,7 @@ Spec == Init /\ [][Next]_vars
 
 \* END TRANSLATION 
 
+SEC == \A p1, p2 \in Procs: (p1 /= p2 /\ op_exed[p1] = op_exed[p2]) => 
+                            (e_set[p1] = e_set[p2] /\ t_set[p1] = t_set[p2])
 
 ================================================================================
