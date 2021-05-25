@@ -1,16 +1,17 @@
 import subprocess
 import platform
-import re
+
+
+def extract(text):
+    tmp = text.replace(r'\n', '').replace('\r', '').replace(' ', '')
+    return {line.split('=')[0]: line.split('=')[1] for line in tmp.split(r'/\\')[1:]}
+
 
 cmd = "gvpr \'N[outdegree == 1]{print($.label)}\' dot.dot"
 if platform.system() == "Windows":
     cmd = "powershell " + cmd
 result = subprocess.run(cmd, stdout=subprocess.PIPE)
-res = result.stdout.decode('utf-8').split('\n')
+result = [extract(r) for r in result.stdout.decode('utf-8').split('\n')[:-1]]
 
-for line in res:
-    match = re.search(r'history.+/\\\\', line)
-    if match:
-        print(match.group().replace("history = ", "").replace(
-            "\\n", "").replace("/\\\\", "").replace(" ", "")[2:-2])
-print(len(res))
+for key, val in result[-1].items():
+    print(key, ":", val)
