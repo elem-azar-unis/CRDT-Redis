@@ -2,3 +2,4 @@ states
 *.dot
 *.out
 *.old
+*.script
