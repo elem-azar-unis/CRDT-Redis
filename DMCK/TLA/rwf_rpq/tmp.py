@@ -32,7 +32,7 @@ def extract(text):
     rtnList = []
     rtnList.append("")
     for l in rtn["history"]:
-        rtnList[0] += l.replace(',', ' ') + ';'
+        rtnList[0] += l.replace(',', ' ') + ' ; '
     rtnList.append("")
     for i in range(len(rtn["e_set"])):
         tmpstr = ""
@@ -41,9 +41,9 @@ def extract(text):
         else:
             tmpstr += "n n n "
         if rtn["t_set"][i] != '':
-            tmpstr += f"{rtn['t_set'][i]['t']} ;"
+            tmpstr += f"{rtn['t_set'][i]['t']} ; "
         else:
-            tmpstr += "n ;"
+            tmpstr += "n ; "
         rtnList[1] += tmpstr
     return rtnList
 

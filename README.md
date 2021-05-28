@@ -87,7 +87,7 @@ The **[type]** prefix of different RPQs are:
 The operations of RPQs are:
 
 * **[type]zadd Q E V** : Add a new element *E* into the priority queue *Q* with initial value *V*.
-* **[type]zincby Q E I** : Add the increment *I* to the value of element *E* in the priority queue *Q*.
+* **[type]zincrby Q E I** : Add the increment *I* to the value of element *E* in the priority queue *Q*.
 * **[type]zrem Q E** : Remove element *E* from the priority queue *Q*.
 * **[type]zscore Q E** : Read the value of element *E* from the priority queue *Q*.
 * **[type]zmax Q** : Read the element with the largest value in the priority queue *Q*. Returns the element and its value.
