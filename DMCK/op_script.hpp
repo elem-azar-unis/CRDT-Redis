@@ -1,3 +1,10 @@
+//
+// Created by yqzhang on 2021/5/29.
+//
+
+#ifndef DMCK_OP_SCRIPT_HPP
+#define DMCK_OP_SCRIPT_HPP
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -107,3 +114,5 @@ private:
 public:
     rpq_op_script(std::string &str, int crdt_num) { full_construct(str, crdt_num); }
 };
+
+#endif  // DMCK_OP_SCRIPT_HPP

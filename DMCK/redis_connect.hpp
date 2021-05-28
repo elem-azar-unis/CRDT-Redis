@@ -2,8 +2,8 @@
 // Created by yqzhang on 2021/3/10.
 //
 
-#ifndef DMCK_REDIS_CONNECT_H
-#define DMCK_REDIS_CONNECT_H
+#ifndef DMCK_REDIS_CONNECT_HPP
+#define DMCK_REDIS_CONNECT_HPP
 
 #include <cerrno>
 #include <chrono>
@@ -212,4 +212,4 @@ public:
     }
 };
 
-#endif  // DMCK_REDIS_CONNECT_H
+#endif  // DMCK_REDIS_CONNECT_HPP
