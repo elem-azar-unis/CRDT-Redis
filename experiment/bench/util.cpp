@@ -4,9 +4,9 @@
 
 #include "util.h"
 
+#include <cerrno>
 #include <cstring>
 
-#include "errno.h"
 #include "exp_env.h"
 #include "exp_setting.h"
 

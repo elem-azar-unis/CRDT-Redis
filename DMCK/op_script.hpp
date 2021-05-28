@@ -22,14 +22,14 @@ protected:
     struct op
     {
         std::string full_op, effect_op;
-        op(const std::string &full_op) : full_op(full_op) {}
+        explicit op(std::string &&full_op) : full_op{std::move(full_op)} {}
     };
 
     struct step
     {
         phase type;
         int opid, pid;
-        step(const phase &type, const int &opid, const int &pid) : type(type), opid(opid), pid(pid)
+        step(const phase &type, const int &opid, const int &pid) : type{type}, opid{opid}, pid{pid}
         {}
     };
 
@@ -42,7 +42,7 @@ protected:
 
     void full_construct(std::string &str, int crdt_num)
     {
-        std::istringstream s(str);
+        std::istringstream s{str};
         int opid = 0, pid = 0;
         std::string type;
         while (s)

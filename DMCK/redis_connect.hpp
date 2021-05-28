@@ -75,7 +75,7 @@ private:
     const char *ip;
     const int port;
     int size, id;
-    redisContext *client = nullptr, *server_instruct = nullptr, *server_listen = nullptr;
+    redisContext *client{nullptr}, *server_instruct{nullptr}, *server_listen{nullptr};
 
     void connect(redisContext *&c)
     {
@@ -144,7 +144,7 @@ private:
     redisReply_ptr exec(const std::string &cmd, redisContext *&c)
     {
         bool retried = false;
-        auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
+        auto r{static_cast<redisReply *>(redisCommand(c, cmd.c_str()))};
         while (r == nullptr)
         {
             if (!retried)
@@ -161,7 +161,7 @@ private:
 
 public:
     redis_connect(const char *ip, int port, int size, int id)
-        : ip(ip), port(port), size(size), id(id)
+        : ip{ip}, port{port}, size{size}, id{id}
     {
         std::ostringstream stream;
         stream << REDIS_SERVER << " " << REDIS_CONF << " "

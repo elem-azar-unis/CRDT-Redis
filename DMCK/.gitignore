@@ -3,3 +3,4 @@ states
 *.out
 *.old
 *.script
+CMakeLists.txt
