@@ -2,13 +2,15 @@
 // Created by yqzhang on 2021/5/29.
 //
 
-#ifndef DMCK_OP_SCRIPT_HPP
-#define DMCK_OP_SCRIPT_HPP
+#ifndef DMCK_OP_SCRIPT_H
+#define DMCK_OP_SCRIPT_H
 
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "redis_connect.h"
 
 class op_script
 {
@@ -21,7 +23,8 @@ protected:
 
     struct op
     {
-        std::string full_op, effect_op;
+        std::string full_op;
+        redisReply_ptr effect_op{nullptr, nullptr};
         explicit op(std::string &&full_op) : full_op{std::move(full_op)} {}
     };
 
@@ -35,7 +38,6 @@ protected:
 
     std::vector<op> optable;
     std::vector<step> steps;
-    int next_step = 0;
 
     virtual bool construct_optable(std::istringstream &s, int crdt_num,
                                    const std::string &type) = 0;
@@ -64,18 +66,18 @@ protected:
                 }
             }
             while (s.peek() == ' ' || s.peek() == ';')
-                s.get();
+                s.ignore();
         }
     }
 
 public:
-    int replica_num = 0;
+    int replica_num{0};
 
     void print()
     {
         std::cout << "op_table:\n";
         for (auto &&tmp : optable)
-            std::cout << tmp.full_op << " " << tmp.effect_op << '\n';
+            std::cout << tmp.full_op << " ; " << inner_rpl_to_str(tmp.effect_op) << '\n';
         std::cout << "steps:\n";
         for (auto &&tmp : steps)
         {
@@ -83,6 +85,20 @@ public:
             std::cout << ' ' << tmp.opid << ' ' << tmp.pid << '\n';
         }
         std::cout << std::flush;
+    }
+
+    void run(std::vector<redis_connect> &conn)
+    {
+        for (auto &&stp : steps)
+        {
+            if (stp.type == phase::FULL)
+            {
+                conn[stp.pid].exec(optable[stp.opid].full_op);
+                optable[stp.opid].effect_op = conn[stp.pid].get_inner_msg();
+            }
+            else
+                conn[stp.pid].pass_inner_msg(optable[stp.opid].effect_op);
+        }
     }
 };
 
@@ -115,4 +131,4 @@ public:
     rpq_op_script(std::string &str, int crdt_num) { full_construct(str, crdt_num); }
 };
 
-#endif  // DMCK_OP_SCRIPT_HPP
+#endif  // DMCK_OP_SCRIPT_H

@@ -1,5 +1,6 @@
-#include "op_script.hpp"
-#include "redis_connect.hpp"
+#include "op_script.h"
+#include "oracle.h"
+#include "redis_connect.h"
 
 int main()
 {

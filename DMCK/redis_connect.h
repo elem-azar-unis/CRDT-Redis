@@ -2,8 +2,8 @@
 // Created by yqzhang on 2021/3/10.
 //
 
-#ifndef DMCK_REDIS_CONNECT_HPP
-#define DMCK_REDIS_CONNECT_HPP
+#ifndef DMCK_REDIS_CONNECT_H
+#define DMCK_REDIS_CONNECT_H
 
 #include <cerrno>
 #include <chrono>
@@ -67,6 +67,15 @@ static void print_reply(redisReply_ptr &rpl)
 {
     print_reply(rpl.get(), 0);
     std::cout << "----" << std::endl;
+}
+
+static std::string inner_rpl_to_str(redisReply_ptr &r)
+{
+    if (r == nullptr) return "";
+    std::ostringstream stream;
+    for (int i = 0; i < r->elements; ++i)
+        stream << (i != 0 ? " " : "") << r->element[i]->str;
+    return stream.str();
 }
 
 class redis_connect
@@ -182,13 +191,7 @@ public:
         connect_client();
     }
 
-    void pass_inner_msg(redisReply_ptr &r)
-    {
-        std::ostringstream stream;
-        for (int i = 0; i < r->elements; ++i)
-            stream << (i != 0 ? " " : "") << r->element[i]->str;
-        exec(stream.str(), server_instruct);
-    }
+    void pass_inner_msg(redisReply_ptr &r) { exec(inner_rpl_to_str(r), server_instruct); }
 
     inline redisReply_ptr exec(const std::string &cmd) { return exec(cmd, client); }
 
@@ -212,4 +215,4 @@ public:
     }
 };
 
-#endif  // DMCK_REDIS_CONNECT_HPP
+#endif  // DMCK_REDIS_CONNECT_H
