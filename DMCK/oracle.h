@@ -29,7 +29,7 @@ private:
         int p_ini{-1}, v_inn{0}, v_acq{0};
         std::string t;
 
-        void print()
+        void print() const
         {
             if (eset)
                 std::cout << p_ini << ' ' << v_inn << ' ' << v_acq << ' ';
@@ -72,7 +72,10 @@ public:
         }
     }
 
-    bool check(std::vector<redis_connect> &conn, int crdt_num) override;
+    bool check(std::vector<redis_connect> &conn, int crdt_num) override
+    {
+        // TODO
+    }
 
     void print() override
     {

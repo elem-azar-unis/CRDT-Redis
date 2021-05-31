@@ -24,11 +24,16 @@
 
 #endif
 
-#define REDIS_SERVER "../redis-6.0.5/src/redis-server"
-#define REDIS_CONF "../redis-6.0.5/redis.conf"
-#define REDIS_CLIENT "../redis-6.0.5/src/redis-cli"
+constexpr auto REDIS_SERVER = "../redis-6.0.5/src/redis-server";
+constexpr auto REDIS_CONF = "../redis-6.0.5/redis.conf";
+constexpr auto REDIS_CLIENT = "../redis-6.0.5/src/redis-cli";
 
 using redisReply_ptr = std::unique_ptr<redisReply, decltype(freeReplyObject) *>;
+
+static inline void wait_system(int milisec = 500)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(milisec));
+}
 
 static void print_reply(redisReply *rpl, int depth)
 {
@@ -69,7 +74,7 @@ static void print_reply(redisReply_ptr &rpl)
     std::cout << "----" << std::endl;
 }
 
-static std::string inner_rpl_to_str(redisReply_ptr &r)
+static std::string inner_rpl_to_str(const redisReply_ptr &r)
 {
     if (r == nullptr) return "";
     std::ostringstream stream;
@@ -184,7 +189,7 @@ public:
                << "--pidfile /var/run/redis_" << port << ".pid "
                << "1>/dev/null";
         system(stream.str().c_str());
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        wait_system();
 
         connect_server_instruct();
         connect_server_listen();

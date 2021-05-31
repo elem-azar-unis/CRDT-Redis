@@ -73,7 +73,7 @@ protected:
 public:
     int replica_num{0};
 
-    void print()
+    void print() const
     {
         std::cout << "op_table:\n";
         for (auto &&tmp : optable)
