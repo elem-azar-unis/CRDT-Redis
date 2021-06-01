@@ -14,8 +14,10 @@
 
 class oracle
 {
-public:
+protected:
     virtual void parse(const std::string &str) = 0;
+
+public:
     virtual bool check(std::vector<redis_connect> &conn, int crdt_num) = 0;
     virtual void print() = 0;
 };
@@ -44,7 +46,6 @@ private:
 
     std::vector<state> script, server;
 
-public:
     void parse(const std::string &str) override
     {
         std::istringstream s{str};
@@ -72,16 +73,23 @@ public:
         }
     }
 
+public:
+    rpq_oracle(const std::string &str) { parse(str); }
+
     bool check(std::vector<redis_connect> &conn, int crdt_num) override
     {
         // TODO
+        return true;
     }
 
     void print() override
     {
+        std::cout << "[script state] --  ";
         for (auto &&tmp : script)
             tmp.print();
         std::cout << '\n';
+
+        std::cout << "[server state] --  ";
         for (auto &&tmp : server)
             tmp.print();
         std::cout << std::endl;

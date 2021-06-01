@@ -35,7 +35,7 @@ private:
 public:
     exp_env(int replica_num) { construct_conn(replica_num); }
 
-    int round() { return round; }
+    int get_round() { return round; }
 
     std::vector<redis_connect>& get()
     {
@@ -49,14 +49,34 @@ public:
     }
 };
 
+template <
+    typename S, typename = typename std::enable_if<std::is_base_of<op_script, S>::value, S>::type,
+    typename O, typename = typename std::enable_if<std::is_base_of<oracle, O>::value, O>::type>
 static void run(const std::string& filename)
 {
     std::ifstream file(filename);
     std::string operations, states;
+
+    int replica_num{0};
+    file >> replica_num;
+    file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    exp_env env{replica_num};
+
     while (file && std::getline(file, operations))
     {
+        auto& conn = env.get();
+
+        S sc{operations, env.get_round()};
+        sc.run(conn);
+
         getline(file, states);
-        // TODO template ?extends...
+        O orcl{states};
+        if (!orcl.check(conn, env.get_round()))
+        {
+            std::cout << "Check failed!\n";
+            sc.print();
+            orcl.print();
+        }
     }
 }
 

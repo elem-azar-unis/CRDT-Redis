@@ -55,6 +55,7 @@ result = subprocess.run(cmd, stdout=subprocess.PIPE, shell=True)
 result = [extract(r) for r in result.stdout.decode('utf-8').split('\n')[:-1]]
 
 with open("rwf_rpq.script", "w") as file:
+    file.write(str(len(result[0][0].split(';')) - 1) + '\n')
     for rcd in result:
         for line in rcd:
             file.write(line + '\n')

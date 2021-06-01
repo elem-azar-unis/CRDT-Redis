@@ -50,7 +50,6 @@ protected:
         while (s)
         {
             s >> opid >> pid >> type;
-            replica_num = replica_num > pid ? replica_num : pid;
             opid--;
             pid--;
             if (type == "effect")
@@ -71,17 +70,15 @@ protected:
     }
 
 public:
-    int replica_num{0};
-
     void print() const
     {
-        std::cout << "op_table:\n";
+        std::cout << "[op_table]:\n";
         for (auto &&tmp : optable)
-            std::cout << tmp.full_op << " ; " << inner_rpl_to_str(tmp.effect_op) << '\n';
-        std::cout << "steps:\n";
+            std::cout << "  - " << tmp.full_op << " ; " << inner_rpl_to_str(tmp.effect_op) << '\n';
+        std::cout << "[steps]:\n";
         for (auto &&tmp : steps)
         {
-            std::cout << (tmp.type == phase::FULL ? "FULL" : "EFFECT");
+            std::cout << "  - " << (tmp.type == phase::FULL ? "FULL" : "EFFECT");
             std::cout << ' ' << tmp.opid << ' ' << tmp.pid << '\n';
         }
         std::cout << std::flush;
