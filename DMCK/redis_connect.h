@@ -157,8 +157,8 @@ private:
 
     redisReply_ptr exec(const std::string &cmd, redisContext *&c)
     {
-        bool retried = false;
-        auto r{static_cast<redisReply *>(redisCommand(c, cmd.c_str()))};
+        bool retried{false};
+        auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
         while (r == nullptr)
         {
             if (!retried)
@@ -170,7 +170,7 @@ private:
             }
             reply_error(cmd, c);
         }
-        return redisReply_ptr(r, freeReplyObject);
+        return redisReply_ptr{r, freeReplyObject};
     }
 
 public:
@@ -205,7 +205,7 @@ public:
         void *reply;
         if (redisGetReply(server_listen, &reply) != REDIS_OK)
             reply_error("func: get_inner_msg()", server_listen);
-        return redisReply_ptr(static_cast<redisReply *>(reply), freeReplyObject);
+        return redisReply_ptr{static_cast<redisReply *>(reply), freeReplyObject};
     }
 
     ~redis_connect()

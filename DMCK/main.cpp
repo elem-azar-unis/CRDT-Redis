@@ -12,7 +12,7 @@ int main()
     c1.exec("rzadd s a 1");
     c2.exec("rzadd s a 2");
 
-    auto r{c1.exec("rzscore s a")};
+    auto r = c1.exec("rzscore s a");
     print_reply(r);
     r = c2.exec("rzscore s a");
     print_reply(r);

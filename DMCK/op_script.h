@@ -45,7 +45,7 @@ protected:
     void full_construct(std::string &str, int crdt_num)
     {
         std::istringstream s{str};
-        int opid = 0, pid = 0;
+        int opid{0}, pid{0};
         std::string type;
         while (s)
         {

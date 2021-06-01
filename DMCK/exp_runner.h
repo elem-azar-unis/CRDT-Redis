@@ -33,9 +33,9 @@ private:
     }
 
 public:
-    exp_env(int replica_num) { construct_conn(replica_num); }
+    explicit exp_env(int replica_num) { construct_conn(replica_num); }
 
-    int get_round() { return round; }
+    int get_round() const { return round; }
 
     std::vector<redis_connect>& get()
     {
