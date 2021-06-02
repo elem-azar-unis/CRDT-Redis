@@ -42,8 +42,7 @@ def dt_read(root_dir, dt_type, server, speed, delay, low_delay, diff_file, lambd
     diff_return = 0
     ovhd_return = 0
     for rounds in range(total_rounds):
-        d = "{dir}/{r}/{t}_{s},{sp},({d},{ld})".format(dir=root_dir, r=rounds, t=dt_type,
-                                                       s=server, sp=speed, d=delay, ld=low_delay)
+        d = f"{root_dir}/{rounds}/{dt_type}_{server},{speed},({delay},{low_delay})"
         diff_one, ovhd_one = read_one_round(d)
         diff_return += diff_one
         ovhd_return += ovhd_one
@@ -108,13 +107,12 @@ def plot_generic(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read
              'overhead: byte')
 
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(pname))
+    plt.savefig(f"{pname}.pdf")
     plt.close(fig)
 
 
 def cmp_delay(root_dir, read_func, ylable_read, pnane_prefix, dft_speed):
-    delays = ["{hd}ms,\n{ld}ms".format(
-        hd=20 + x * 40, ld=4 + x * 8) for x in range(10)]
+    delays = [f"{20 + x * 40}ms,\n{4 + x * 8}ms" for x in range(10)]
     exp_settings = [[9, dft_speed, 20 + x * 40, 4 + x * 8] for x in range(10)]
     a, b, c, d = gather_plot_data(root_dir+"/delay", exp_settings, read_func)
     plot_generic(a, b, c, d,  delays, ylable_read,
@@ -155,7 +153,7 @@ def speed_plot(r_read_diff, r_ovhd, rwf_read_diff, rwf_ovhd, name, ylable_read, 
              'overhead: byte', s_name=s_name)
 
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(pname))
+    plt.savefig(f"{pname}.pdf")
     plt.close(fig)
 
 

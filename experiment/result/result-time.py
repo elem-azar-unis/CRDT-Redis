@@ -19,8 +19,7 @@ def freq(li):
 
 
 def dt_read(root_dir, pattern, dt_type, speed, diff_file, lambda_diff):
-    d = "{dir}/{p}/0/{t}_9,{s},(50,10)".format(dir=root_dir,
-                                               p=pattern, t=dt_type, s=speed)
+    d = f"{root_dir}/{pattern}/0/{dt_type}_9,{speed},(50,10)"
     global data_skipped
     ovhd = []
     diff = []
@@ -110,7 +109,7 @@ def cmp_r_rwf(name, read_lable, read_func, root_dir, updd_name, ard_name, step=1
     plt.legend()
 
     plt.tight_layout()
-    plt.savefig("{}.pdf".format(name))
+    plt.savefig(f"{name}.pdf")
     plt.close(fig)
 
     print(name)

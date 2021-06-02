@@ -72,7 +72,7 @@ private:
             script.emplace_back(new state);
             // I'm really sure not to use dynamic_cast
             auto &new_state = static_cast<state &>(*script.back());
-            
+
             if (s.peek() == 'n')
                 s.ignore(6);
             else
