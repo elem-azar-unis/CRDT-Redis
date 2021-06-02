@@ -21,7 +21,10 @@ protected:
         int p_ini{-1};
         std::string t;
 
-        virtual void print(std::ostream &out = std::cout) const = 0;
+        void print(std::ostream &out = std::cout) { virtual_print(out); }
+
+    protected:
+        virtual void virtual_print(std::ostream &out) const = 0;
     };
     std::vector<std::unique_ptr<state_interface>> script, server;
 
@@ -51,7 +54,8 @@ private:
     {
         int v_inn{0}, v_acq{0};
 
-        void print(std::ostream &out = std::cout) const override
+    private:
+        void virtual_print(std::ostream &out) const override
         {
             if (eset)
                 out << p_ini << ' ' << v_inn << ' ' << v_acq << ' ';
