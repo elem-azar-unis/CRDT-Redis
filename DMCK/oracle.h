@@ -21,7 +21,7 @@ protected:
         int p_ini{-1};
         std::string t;
 
-        virtual void print() const = 0;
+        virtual void print(std::ostream &out = std::cout) const = 0;
     };
     std::vector<std::unique_ptr<state_interface>> script, server;
 
@@ -30,17 +30,17 @@ protected:
 public:
     virtual bool check(std::vector<redis_connect> &conn, int crdt_num) = 0;
 
-    void print() const
+    void print(std::ostream &out = std::cout) const
     {
-        std::cout << "[script state] --  ";
+        out << "[script state] -- ";
         for (auto &&tmp : script)
             tmp->print();
-        std::cout << '\n';
+        out << '\n';
 
-        std::cout << "[server state] --  ";
+        out << "[server state] -- ";
         for (auto &&tmp : server)
             tmp->print();
-        std::cout << std::endl;
+        out << std::endl;
     }
 };
 
@@ -51,16 +51,16 @@ private:
     {
         int v_inn{0}, v_acq{0};
 
-        void print() const override
+        void print(std::ostream &out = std::cout) const override
         {
             if (eset)
-                std::cout << p_ini << ' ' << v_inn << ' ' << v_acq << ' ';
+                out << p_ini << ' ' << v_inn << ' ' << v_acq << ' ';
             else
-                std::cout << "n n n ";
+                out << "n n n ";
             if (tset)
-                std::cout << t << " ; ";
+                out << t << " ; ";
             else
-                std::cout << "n ; ";
+                out << "n ; ";
         }
     };
 

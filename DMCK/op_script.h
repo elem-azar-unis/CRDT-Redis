@@ -70,18 +70,18 @@ protected:
     }
 
 public:
-    void print() const
+    void print(std::ostream &out = std::cout) const
     {
-        std::cout << "[op_table]:\n";
+        out << "[op_table]:\n";
         for (auto &&tmp : optable)
-            std::cout << "  - " << tmp.full_op << " ; " << inner_rpl_to_str(tmp.effect_op) << '\n';
-        std::cout << "[steps]:\n";
+            out << "  - " << tmp.full_op << " ; " << inner_rpl_to_str(tmp.effect_op) << '\n';
+        out << "[steps]:\n";
         for (auto &&tmp : steps)
         {
-            std::cout << "  - " << (tmp.type == phase::FULL ? "FULL" : "EFFECT");
-            std::cout << ' ' << tmp.opid << ' ' << tmp.pid << '\n';
+            out << "  - " << (tmp.type == phase::FULL ? "FULL" : "EFFECT");
+            out << ' ' << tmp.opid << ' ' << tmp.pid << '\n';
         }
-        std::cout << std::flush;
+        out << std::flush;
     }
 
     void run(std::vector<redis_connect> &conn)
