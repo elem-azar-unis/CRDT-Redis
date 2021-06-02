@@ -59,7 +59,7 @@ protected:
                 steps.emplace_back(phase::FULL, opid, pid);
                 if (!construct_optable(s, crdt_num, type))
                 {
-                    std::cout << "Unknown input for op_script parsing: ";
+                    std::cout << "--Error: Unknown input for op_script parsing: ";
                     std::cout << opid << " " << pid << " " << type << std::endl;
                     exit(-1);
                 }

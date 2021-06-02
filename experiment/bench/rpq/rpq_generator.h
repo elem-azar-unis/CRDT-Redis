@@ -24,9 +24,9 @@ private:
         double PR_REM_CR;
     };
 
-    static constexpr int MAX_ELE = 200000;
-    static constexpr int MAX_INIT = 100;
-    static constexpr int MAX_INCR = 50;
+    static constexpr auto MAX_ELE = 200000;
+    static constexpr auto MAX_INIT = 100;
+    static constexpr auto MAX_INCR = 50;
 
     rpq_op_gen_pattern &pattern;
     record_for_collision<int> add, rem;

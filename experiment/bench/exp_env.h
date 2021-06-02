@@ -18,7 +18,7 @@
 #define IP_BETWEEN_CLUSTER "127.0.0.3"
 #define IP_WITHIN_CLUSTER "127.0.0.2"
 #define IP_SERVER "127.0.0.1"
-constexpr int BASE_PORT = 6379;
+constexpr auto BASE_PORT = 6379;
 
 class exp_env
 {

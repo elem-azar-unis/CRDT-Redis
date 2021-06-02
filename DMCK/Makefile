@@ -1,5 +1,5 @@
 CC = g++
-CPPFLAGS = -std=c++14 -O3
+CPPFLAGS = -std=c++17 -O3
 
 CPPFILES = $(shell find . -maxdepth 2 -name "*.cpp")
 OBJS = $(CPPFILES:.cpp=.o)

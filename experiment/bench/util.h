@@ -36,7 +36,7 @@
 #endif
 
 #define MAX_TIME_COLISION exp_setting::delay
-constexpr int SPLIT_NUM = 10;
+constexpr auto SPLIT_NUM = 10;
 #define SLP_TIME_MICRO (MAX_TIME_COLISION * 1000 / SPLIT_NUM)
 
 using namespace std;

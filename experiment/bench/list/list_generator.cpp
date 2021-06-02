@@ -4,9 +4,9 @@
 
 #include "list_generator.h"
 
-constexpr int MAX_FONT_SIZE = 100;
-constexpr int TOTAL_FONT_TYPE = 10;
-constexpr int MAX_COLOR = 1u << 25u;
+constexpr auto MAX_FONT_SIZE = 100;
+constexpr auto TOTAL_FONT_TYPE = 10;
+constexpr auto MAX_COLOR = 1u << 25u;
 
 #define PA (pattern.PR_ADD)
 #define PU (pattern.PR_ADD + pattern.PR_UPD)

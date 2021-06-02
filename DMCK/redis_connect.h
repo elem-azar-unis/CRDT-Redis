@@ -99,13 +99,13 @@ private:
         {
             if (c)
             {
-                std::cout << "\nError for redisConnect: " << c->errstr << ", ip:" << ip
+                std::cout << "\n--Error: When redisConnect: " << c->errstr << ", ip:" << ip
                           << ", port:" << port << std::endl;
                 redisFree(c);
                 c = nullptr;
             }
             else
-                std::cout << "\nCan't allocate redis context" << std::endl;
+                std::cout << "\n--Error: Can't allocate redis context" << std::endl;
             exit(-1);
         }
     }
@@ -138,19 +138,19 @@ private:
             connect_server_listen();
         else
         {
-            std::cout << "\nWhere does this redisContext come from?" << std::endl;
+            std::cout << "\n--Error: Where does this redisContext come from?" << std::endl;
             exit(-1);
         }
     }
 
     void reply_error(const std::string &cmd, redisContext *&c)
     {
-        std::cout << "\nSomething wrong for host " << c->tcp.host << ":" << c->tcp.port
+        std::cout << "\n--Error: Something wrong for host " << c->tcp.host << ":" << c->tcp.port
                   << "to execute " << (c != client ? "server inner message " : "") << cmd << "\n";
         if (c->reader->err == REDIS_ERR_IO)
-            std::cout << "IO error: " << strerror(errno) << std::endl;
+            std::cout << "  IO error: " << strerror(errno) << std::endl;
         else
-            std::cout << "errno: " << c->reader->err << ", err str: " << c->reader->errstr
+            std::cout << "  errno: " << c->reader->err << ", err str: " << c->reader->errstr
                       << std::endl;
         exit(-1);
     }

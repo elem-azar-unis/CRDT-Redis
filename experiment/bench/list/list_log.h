@@ -13,9 +13,9 @@
 
 using namespace std;
 
-constexpr int BOLD = 1u << 0u;
-constexpr int ITALIC = 1u << 1u;
-constexpr int UNDERLINE = 1u << 2u;
+constexpr auto BOLD = 1u << 0u;
+constexpr auto ITALIC = 1u << 1u;
+constexpr auto UNDERLINE = 1u << 2u;
 
 class list_log : public rdt_log
 {

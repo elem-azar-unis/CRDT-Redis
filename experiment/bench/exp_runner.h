@@ -24,13 +24,13 @@
 
 #endif
 
-constexpr int THREAD_PER_SERVER = 1;
+constexpr auto THREAD_PER_SERVER = 1;
 #define RUN_CONDITION log.write_op_executed < exp_setting::total_ops
 
 // time in seconds
 #define INTERVAL_TIME ((double)TOTAL_SERVERS * THREAD_PER_SERVER / exp_setting::op_per_sec)
-constexpr int TIME_OVERHEAD = 1;
-constexpr int TIME_READ = 1;
+constexpr auto TIME_OVERHEAD = 1;
+constexpr auto TIME_READ = 1;
 
 using namespace std;
 // extern const char *ips[];
@@ -123,7 +123,7 @@ public:
         }
 
         thread progress_thread([this] {
-            constexpr int barWidth = 50;
+            constexpr auto barWidth = 50;
             double progress;
             while (RUN_CONDITION)
             {

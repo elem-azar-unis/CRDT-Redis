@@ -4,3 +4,4 @@ states
 *.old
 *.script
 CMakeLists.txt
+dmck_run
