@@ -14,7 +14,7 @@
 class exp_env
 {
 private:
-    static constexpr auto MAX_ROUND = 100;
+    static constexpr auto MAX_ROUND = 1000;
 
     static constexpr auto IP = "127.0.0.1";
     static constexpr auto BASE_PORT = 6379;
@@ -44,6 +44,10 @@ public:
         {
             construct_conn(conn.size());
             round = 0;
+
+            static int loop = 1;
+            std::cout << "Passed " << loop * MAX_ROUND << " scripts." << std::endl;
+            loop++;
         }
         round++;
         return conn;
@@ -55,6 +59,8 @@ template <typename S, typename O,
           typename = typename std::enable_if<std::is_base_of<oracle, O>::value, O>::type>
 static void run(const std::string& filename)
 {
+    auto start = std::chrono::steady_clock::now();
+
     std::ifstream file(filename);
     if (!file)
     {
@@ -68,6 +74,7 @@ static void run(const std::string& filename)
     exp_env env{replica_num};
 
     std::string operations, states;
+    int count = 0;
     while (file && std::getline(file, operations))
     {
         auto& conn = env.get();
@@ -83,9 +90,13 @@ static void run(const std::string& filename)
             sc.print();
             orcl.print();
         }
+        count++;
     }
 
-    std::cout << "All check passed!" << std::endl;
+    std::cout << "All " << count << " script checks passed!\n";
+    auto end = std::chrono::steady_clock::now();
+    auto time = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+    std::cout << "total time: " << time << " seconds" << std::endl;
 }
 
 #endif  // DMCK_EXP_RUNNER_H

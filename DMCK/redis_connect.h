@@ -28,60 +28,98 @@ constexpr auto REDIS_SERVER = "../redis-6.0.5/src/redis-server";
 constexpr auto REDIS_CONF = "../redis-6.0.5/redis.conf";
 constexpr auto REDIS_CLIENT = "../redis-6.0.5/src/redis-cli";
 
-using redisReply_ptr = std::unique_ptr<redisReply, decltype(freeReplyObject) *>;
-
 static inline void wait_system(int milisec = 500)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(milisec));
 }
 
-static void print_reply(redisReply *rpl, int depth)
+class redis_reply
 {
-    for (int i = 0; i < depth - 1; ++i)
-        std::cout << "  ";
-    switch (rpl->type)
+private:
+    redisReply *r{nullptr};
+
+    void print(redisReply *rpl, int depth) const
     {
-        case REDIS_REPLY_INTEGER:
-            std::cout << rpl->integer;
-            break;
-        case REDIS_REPLY_DOUBLE:
-            std::cout << rpl->dval;
-            if (rpl->str != nullptr) std::cout << rpl->str;
-            break;
-        case REDIS_REPLY_ERROR:
-            std::cout << "Error: " << rpl->str;
-            break;
-        case REDIS_REPLY_STRING:
-            std::cout << rpl->str;
-            break;
-        case REDIS_REPLY_VERB:
-            std::cout << "Verb_" << rpl->vtype << ": " << rpl->str;
-            break;
-        case REDIS_REPLY_ARRAY:
-            for (int i = 0; i < rpl->elements; ++i)
-                print_reply(rpl->element[i], depth + 1);
-            break;
-        case REDIS_REPLY_NIL:
-            std::cout << "NULL";
-            break;
+        for (int i = 0; i < depth - 1; ++i)
+            std::cout << "  ";
+        switch (rpl->type)
+        {
+            case REDIS_REPLY_INTEGER:
+                std::cout << rpl->integer;
+                break;
+            case REDIS_REPLY_DOUBLE:
+                std::cout << rpl->dval;
+                if (rpl->str != nullptr) std::cout << rpl->str;
+                break;
+            case REDIS_REPLY_STATUS:
+                std::cout << "Status: " << rpl->str;
+                break;
+            case REDIS_REPLY_ERROR:
+                std::cout << "Error: " << rpl->str;
+                break;
+            case REDIS_REPLY_STRING:
+                std::cout << rpl->str;
+                break;
+            case REDIS_REPLY_VERB:
+                std::cout << "Verb_" << rpl->vtype << ": " << rpl->str;
+                break;
+            case REDIS_REPLY_ARRAY:
+                for (int i = 0; i < rpl->elements; ++i)
+                    print(rpl->element[i], depth + 1);
+                break;
+            case REDIS_REPLY_NIL:
+                std::cout << "NULL";
+                break;
+        }
+        if (rpl->type != REDIS_REPLY_ARRAY) std::cout << std::endl;
     }
-    if (rpl->type != REDIS_REPLY_ARRAY) std::cout << std::endl;
-}
 
-static void print_reply(redisReply_ptr &rpl)
-{
-    print_reply(rpl.get(), 0);
-    std::cout << "----" << std::endl;
-}
+public:
+    redis_reply() = default;
+    redis_reply(const redis_reply &) = delete;
+    redis_reply &operator=(const redis_reply &) = delete;
 
-static std::string inner_rpl_to_str(const redisReply_ptr &r)
-{
-    if (r == nullptr) return "";
-    std::ostringstream stream;
-    for (int i = 0; i < r->elements; ++i)
-        stream << (i != 0 ? " " : "") << r->element[i]->str;
-    return stream.str();
-}
+    redis_reply(redisReply *rpl) : r{rpl} {}
+
+    redis_reply(redis_reply &&rpl) : r{rpl.r} { rpl.r = nullptr; }
+
+    redis_reply &operator=(redis_reply &&rpl) noexcept
+    {
+        if (this != &rpl)
+        {
+            if (r != nullptr) freeReplyObject(r);
+            r = rpl.r;
+            rpl.r = nullptr;
+        }
+        return *this;
+    }
+
+    ~redis_reply() noexcept
+    {
+        if (r != nullptr) freeReplyObject(r);
+    }
+
+    std::string inner_rpl_str() const
+    {
+        if (r == nullptr) return "";
+        std::ostringstream stream;
+        for (int i = 0; i < r->elements; ++i)
+            stream << (i != 0 ? " " : "") << r->element[i]->str;
+        return stream.str();
+    }
+
+    bool is_ok() const
+    {
+        static const std::string ok{"OK"};
+        return r != nullptr && r->type == REDIS_REPLY_STATUS && ok == r->str;
+    }
+
+    void print() const
+    {
+        print(r, 0);
+        std::cout << "----" << std::endl;
+    }
+};
 
 class redis_connect
 {
@@ -156,7 +194,7 @@ private:
         exit(-1);
     }
 
-    redisReply_ptr exec(const std::string &cmd, redisContext *&c)
+    redis_reply exec(const std::string &cmd, redisContext *&c)
     {
         bool retried{false};
         auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
@@ -171,7 +209,7 @@ private:
             }
             reply_error(cmd, c);
         }
-        return redisReply_ptr{r, freeReplyObject};
+        return redis_reply{r};
     }
 
 public:
@@ -198,9 +236,11 @@ public:
         connect_client();
     }
 
-    redis_connect(const redis_connect &c) = delete;
+    redis_connect(const redis_connect &) = delete;
+    redis_connect &operator=(const redis_connect &) = delete;
+    redis_connect &operator=(redis_connect &&) = delete;
 
-    redis_connect(redis_connect &&c)
+    redis_connect(redis_connect &&c) noexcept
         : ip{c.ip},
           port{c.port},
           size{c.size},
@@ -216,19 +256,19 @@ public:
         c.server_running = false;
     }
 
-    void pass_inner_msg(redisReply_ptr &r) { exec(inner_rpl_to_str(r), server_instruct); }
+    void pass_inner_msg(redis_reply &r) { exec(r.inner_rpl_str(), server_instruct); }
 
-    inline redisReply_ptr exec(const std::string &cmd) { return exec(cmd, client); }
+    inline redis_reply exec(const std::string &cmd) { return exec(cmd, client); }
 
-    redisReply_ptr get_inner_msg()
+    redis_reply get_inner_msg()
     {
         void *reply;
         if (redisGetReply(server_listen, &reply) != REDIS_OK)
             reply_error("func: get_inner_msg()", server_listen);
-        return redisReply_ptr{static_cast<redisReply *>(reply), freeReplyObject};
+        return redis_reply{static_cast<redisReply *>(reply)};
     }
 
-    ~redis_connect()
+    ~redis_connect() noexcept
     {
         if (server_instruct != nullptr) redisFree(server_instruct);
         if (server_listen != nullptr) redisFree(server_listen);

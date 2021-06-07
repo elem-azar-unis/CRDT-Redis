@@ -24,7 +24,7 @@ protected:
     struct op
     {
         std::string full_op;
-        redisReply_ptr effect_op{nullptr, nullptr};
+        redis_reply effect_op;
         explicit op(std::string &&full_op) : full_op{std::move(full_op)} {}
     };
 
@@ -74,7 +74,7 @@ public:
     {
         out << "[op_table]:\n";
         for (auto &&tmp : optable)
-            out << "  - " << tmp.full_op << " ; " << inner_rpl_to_str(tmp.effect_op) << '\n';
+            out << "  - " << tmp.full_op << " ; " << tmp.effect_op.inner_rpl_str() << '\n';
         out << "[steps]:\n";
         for (auto &&tmp : steps)
         {
@@ -90,8 +90,8 @@ public:
         {
             if (stp.type == phase::FULL)
             {
-                conn[stp.pid].exec(optable[stp.opid].full_op);
-                optable[stp.opid].effect_op = conn[stp.pid].get_inner_msg();
+                auto r = conn[stp.pid].exec(optable[stp.opid].full_op);
+                if (r.is_ok()) optable[stp.opid].effect_op = conn[stp.pid].get_inner_msg();
             }
             else
                 conn[stp.pid].pass_inner_msg(optable[stp.opid].effect_op);
