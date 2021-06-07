@@ -90,6 +90,7 @@ private:
     const int port;
     int size, id;
     redisContext *client{nullptr}, *server_instruct{nullptr}, *server_listen{nullptr};
+    bool server_running{false};
 
     void connect(redisContext *&c)
     {
@@ -190,10 +191,29 @@ public:
                << "1>/dev/null";
         system(stream.str().c_str());
         wait_system();
+        server_running = true;
 
         connect_server_instruct();
         connect_server_listen();
         connect_client();
+    }
+
+    redis_connect(const redis_connect &c) = delete;
+
+    redis_connect(redis_connect &&c)
+        : ip{c.ip},
+          port{c.port},
+          size{c.size},
+          id{c.id},
+          client{c.client},
+          server_instruct{c.server_instruct},
+          server_listen{c.server_listen},
+          server_running(c.server_running)
+    {
+        c.client = nullptr;
+        c.server_instruct = nullptr;
+        c.server_listen = nullptr;
+        c.server_running = false;
     }
 
     void pass_inner_msg(redisReply_ptr &r) { exec(inner_rpl_to_str(r), server_instruct); }
@@ -214,9 +234,12 @@ public:
         if (server_listen != nullptr) redisFree(server_listen);
         if (client != nullptr) redisFree(client);
 
-        std::ostringstream stream;
-        stream << REDIS_CLIENT << " -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
-        system(stream.str().c_str());
+        if (server_running)
+        {
+            std::ostringstream stream;
+            stream << REDIS_CLIENT << " -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
+            system(stream.str().c_str());
+        }
     }
 };
 

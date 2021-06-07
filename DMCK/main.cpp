@@ -1,34 +1,39 @@
 #include "exp_runner.h"
+#include "op_script.h"
+#include "oracle.h"
 
 int main()
 {
     std::istream::sync_with_stdio(false);
     std::ostream::sync_with_stdio(false);
 
-    redis_connect c1{"127.0.0.1", 6379, 3, 0};
-    redis_connect c2{"127.0.0.1", 6380, 3, 1};
-    redis_connect c3{"127.0.0.1", 6381, 3, 2};
+    exp_env env{3};
 
-    c1.exec("rzadd s a 1");
-    c2.exec("rzadd s a 2");
+    auto& c = env.get();
 
-    auto r = c1.exec("rzscore s a");
+    c[0].exec("rwfzrem s a 1");
+    c[0].exec("rwfzadd s a 1");
+    c[1].exec("rwfzadd s a 2");
+
+    auto r = c[0].exec("rwfzscore s a");
     print_reply(r);
-    r = c2.exec("rzscore s a");
-    print_reply(r);
-
-    r = c2.get_inner_msg();
-    c1.pass_inner_msg(r);
-    r = c1.exec("rzscore s a");
+    r = c[1].exec("rwfzscore s a");
     print_reply(r);
 
-    r = c3.exec("rzscore s a");
+    r = c[1].get_inner_msg();
+    c[0].pass_inner_msg(r);
+    r = c[0].exec("rwfzscore s a");
     print_reply(r);
-    r = c1.get_inner_msg();
+
+    r = c[2].exec("rwfzscore s a");
     print_reply(r);
-    c3.pass_inner_msg(r);
-    r = c3.exec("rzscore s a");
+    r = c[0].get_inner_msg();
     print_reply(r);
+    c[2].pass_inner_msg(r);
+    r = c[2].exec("rwfzscore s a");
+    print_reply(r);
+
+    // run<rpq_op_script, rpq_oracle>("TLA/rwf_rpq/rwf_rpq.script");
 
     return 0;
 }
