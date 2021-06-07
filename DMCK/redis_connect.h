@@ -79,9 +79,9 @@ public:
     redis_reply(const redis_reply &) = delete;
     redis_reply &operator=(const redis_reply &) = delete;
 
-    redis_reply(redisReply *rpl) : r{rpl} {}
+    explicit redis_reply(redisReply *rpl) : r{rpl} {}
 
-    redis_reply(redis_reply &&rpl) : r{rpl.r} { rpl.r = nullptr; }
+    redis_reply(redis_reply &&rpl)  noexcept : r{rpl.r} { rpl.r = nullptr; }
 
     redis_reply &operator=(redis_reply &&rpl) noexcept
     {

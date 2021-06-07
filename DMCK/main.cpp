@@ -1,6 +1,4 @@
 #include "exp_runner.h"
-#include "op_script.h"
-#include "oracle.h"
 
 int main()
 {
