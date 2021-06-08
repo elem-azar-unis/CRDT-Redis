@@ -24,7 +24,7 @@ protected:
 
         state_interface() = default;
 
-        state_interface(redis_reply &rpl)
+        explicit state_interface(redis_reply &rpl)
         {
             if (rpl->type != REDIS_REPLY_ARRAY)
             {
@@ -73,8 +73,8 @@ protected:
         {
             if (typeid(*this) != typeid(other)) return false;
             if (eset != other.eset || tset != other.tset) return false;
-            if (eset == true && p_ini != other.p_ini) return false;
-            if (tset == true && t != other.t) return false;
+            if (eset && p_ini != other.p_ini) return false;
+            if (tset && t != other.t) return false;
             return equals(other);
         }
 
@@ -84,7 +84,7 @@ protected:
         virtual void virtual_print(std::ostream &out) const = 0;
         virtual bool equals(const state_interface &s) const = 0;
 
-        const char *value(redisReply *r)
+        static const char *value(redisReply *r)
         {
             if (r->type != REDIS_REPLY_STRING)
             {
@@ -128,7 +128,7 @@ private:
 
         state() = default;
 
-        state(redis_reply &rpl) : state_interface{rpl}
+        explicit state(redis_reply &rpl) : state_interface{rpl}
         {
             if (eset)
             {
@@ -156,7 +156,7 @@ private:
         {
             // will never throw, typeid checked by base class operator==
             auto v = static_cast<const state &>(s);
-            if (eset == true && (v_inn != v.v_inn || v_acq != v.v_acq)) return false;
+            if (eset && (v_inn != v.v_inn || v_acq != v.v_acq)) return false;
             return true;
         }
     };
