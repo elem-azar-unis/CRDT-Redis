@@ -81,7 +81,7 @@ public:
 
     explicit redis_reply(redisReply *rpl) : r{rpl} {}
 
-    redis_reply(redis_reply &&rpl)  noexcept : r{rpl.r} { rpl.r = nullptr; }
+    redis_reply(redis_reply &&rpl) noexcept : r{rpl.r} { rpl.r = nullptr; }
 
     redis_reply &operator=(redis_reply &&rpl) noexcept
     {
@@ -98,6 +98,14 @@ public:
     {
         if (r != nullptr) freeReplyObject(r);
     }
+
+    redisReply *get() { return r; }
+
+    // Overload * operator
+    redisReply &operator*() { return *r; }
+
+    // Overload -> operator
+    redisReply *operator->() { return r; }
 
     std::string inner_rpl_str() const
     {

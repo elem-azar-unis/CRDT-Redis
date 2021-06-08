@@ -13,7 +13,7 @@
 //#define CRDT_LOG
 #define CRDT_OVERHEAD
 //#define CRDT_OPCOUNT
-//#define CRDT_ELE_STATUS
+#define CRDT_ELE_STATUS
 //#define CRDT_TIME
 
 #endif

@@ -89,6 +89,7 @@ static void run(const std::string& filename)
             std::cout << "Check failed!\n";
             sc.print();
             orcl.print();
+            return;
         }
         count++;
     }

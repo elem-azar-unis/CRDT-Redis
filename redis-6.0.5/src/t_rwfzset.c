@@ -227,12 +227,14 @@ void rwfzestatusCommand(client *c)
     // addReplyArrayLen(c, len);
     addReplyArrayLen(c, 5);
 
-    addReplyBulkSds(c, sdscatprintf(sdsempty(), "innate:%f", e->innate));
-    addReplyBulkSds(c, sdscatprintf(sdsempty(), "acquired:%f", e->acquired));
     addReplyBulkSds(c, sdscatprintf(sdsempty(), "add id:%d", PID(e)));
-
     addReplyBulkSds(c, sdsnew("current:"));
     addReplyBulkSds(c, vcToSds(CURRENT(e)));
+
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "innate:%f", e->innate));
+    addReplyBulkSds(c, sdscatprintf(sdsempty(), "acquired:%f", e->acquired));
+
+    
 }
 #endif
 
