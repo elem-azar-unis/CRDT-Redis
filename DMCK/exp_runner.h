@@ -10,6 +10,7 @@
 
 #include "op_script.h"
 #include "oracle.h"
+#include "timer.h"
 
 class exp_env
 {
@@ -59,7 +60,7 @@ template <typename S, typename O,
           typename = typename std::enable_if<std::is_base_of<oracle, O>::value, O>::type>
 static void run(const std::string& filename)
 {
-    auto start = std::chrono::steady_clock::now();
+    timer time;
 
     std::ifstream file(filename);
     if (!file)
@@ -86,7 +87,7 @@ static void run(const std::string& filename)
         O orcl{states};
         if (!orcl.check(conn, env.get_round()))
         {
-            std::cout << "Check failed!\n";
+            std::cout << "Check failed for test No." << count + 1 << "!\n";
             sc.print();
             orcl.print();
             return;
@@ -94,10 +95,7 @@ static void run(const std::string& filename)
         count++;
     }
 
-    std::cout << "All " << count << " script checks passed!\n";
-    auto end = std::chrono::steady_clock::now();
-    auto time = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
-    std::cout << "total time: " << time << " seconds" << std::endl;
+    std::cout << "All " << count << " script checks passed!" << std::endl;
 }
 
 #endif  // DMCK_EXP_RUNNER_H
