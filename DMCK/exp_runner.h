@@ -65,9 +65,11 @@ static void run(const std::string& filename)
     std::ifstream file(filename);
     if (!file)
     {
-        std::cout << "--Error: No such file \"" << filename << "\"" << std::endl;
+        std::cout << "--Error: No such file \"" << filename << "\"!" << std::endl;
         exit(-1);
     }
+
+    std::cout << "Start checking for script \"" << filename << "\"." << std::endl;
 
     int replica_num{0};
     file >> replica_num;

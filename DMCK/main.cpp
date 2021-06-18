@@ -31,7 +31,8 @@ int main()
     // r = c[2].exec("rwfzscore s a");
     // r.print();
 
-    run<rpq_op_script, rpq_oracle>("TLA/rwf_rpq/rwf_rpq.script");
+    run<rpq_op_script, rpq_oracle>("TLA/rwf_rpq/rwf_rpq_2_4.script");
+    run<rpq_op_script, rpq_oracle>("TLA/rwf_rpq/rwf_rpq_3_3.script");
 
     return 0;
 }

@@ -64,7 +64,7 @@ protected:
                     exit(-1);
                 }
             }
-            while (s.peek() == ' ' || s.peek() == ';')
+            while (s.peek() == ' ' || s.peek() == ';' || s.peek() == '\r' || s.peek() == '\n')
                 s.ignore();
         }
     }
