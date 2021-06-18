@@ -64,7 +64,8 @@ private:
     }
 
 public:
-    timer(const std::string& purpose = "", std::ostream& os = std::cout) : os{os}, purpose{purpose}
+    explicit timer(const std::string& purpose = "", std::ostream& os = std::cout)
+        : os{os}, purpose{purpose}
     {}
 
     void print() { inner_print("Time spent"); }

@@ -23,9 +23,10 @@ def extract(text):
         tmp = tmp.replace('<<', '').replace('>>', '')[1:-1]
         if len(tmp) > 0:
             tmp = tmp.split(',')
-            # for 't|->0,1' is splited with ','
-            tmp[1] = tmp[1] + ',' + tmp[2]
-            tmp.pop()
+            # for 't|->0,1,0,1' is splited with ','
+            while len(tmp) > 2:
+                tmp[1] = tmp[1] + ',' + tmp[2]
+                tmp.pop()
             rtn["t_set"][i] = {a.split('|->')[0]: a.split('|->')[1]
                                for a in tmp}
 
