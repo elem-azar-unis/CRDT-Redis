@@ -44,6 +44,9 @@ typedef struct RWF_element_header
 #define REH_SIZE_ADDITIONAL VC_SIZE
 #endif
 
+#define PID_NEXIST (-1)
+#define PID_WAIT_INNATE (-2)
+
 // The access macro for fields in header.
 #define PID(h) (((reh *)(h))->pid)
 #define CURRENT(h) (((reh *)(h))->current)
@@ -52,18 +55,18 @@ typedef struct RWF_element_header
     do                         \
     {                          \
         CURRENT(h) = vc_new(); \
-        PID(h) = -1;           \
+        PID(h) = PID_NEXIST;   \
     } while (0)
 
 #define REH_RMV_FUNC(h, t)        \
     do                            \
     {                             \
         vc_update(CURRENT(h), t); \
-        PID(h) = -1;              \
+        PID(h) = PID_NEXIST;      \
     } while (0)
 
 // If the element is in the container.
-#define EXISTS(h) (PID(h) >= 0)
+#define EXISTS(h) (PID(h) != PID_NEXIST)
 
 /*
  * Precondition checks for the prepare part.
@@ -109,7 +112,12 @@ static inline int addCheck(reh *h, vc *t)
     return 0;
 }
 
-static inline int updateCheck(reh *h, vc *t) { return vc_equal(t, CURRENT(h)); }
+static inline int updateCheck(reh *h, vc *t)
+{
+    if (!vc_equal(t, CURRENT(h))) return 0;
+    if (!EXISTS(h)) PID(h) = PID_WAIT_INNATE;
+    return 1;
+}
 
 static inline int removeCheck(reh *h, vc *t)
 {
