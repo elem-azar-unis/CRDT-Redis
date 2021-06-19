@@ -36,8 +36,12 @@ protected:
         {}
     };
 
+    const bool verbose;
+    std::string check_op;
     std::vector<op> optable;
     std::vector<step> steps;
+
+    explicit op_script(bool verbose) : verbose{verbose} {}
 
     virtual bool construct_optable(std::istringstream &s, int crdt_num,
                                    const std::string &type) = 0;
@@ -95,6 +99,20 @@ public:
             }
             else
                 conn[stp.pid].pass_inner_msg(optable[stp.opid].effect_op);
+            if (verbose)
+            {
+                if (check_op.empty())
+                {
+                    std::cout << "--Error: Verbose script, check op not set" << std::endl;
+                    exit(-1);
+                }
+                std::cout << "server " << stp.pid << " executed ["
+                          << (stp.type == phase::FULL ? optable[stp.opid].full_op
+                                                      : optable[stp.opid].effect_op.inner_rpl_str())
+                          << "], state:\n";
+                auto r = conn[stp.pid].exec(check_op);
+                r.print();
+            }
         }
     }
 };
@@ -125,7 +143,16 @@ private:
     }
 
 public:
-    rpq_op_script(std::string &str, int crdt_num) { full_construct(str, crdt_num); }
+    rpq_op_script(std::string &str, int crdt_num, bool verbose) : op_script{verbose}
+    {
+        full_construct(str, crdt_num);
+        if (verbose)
+        {
+            std::ostringstream buf;
+            buf << "rwfzestatus set" << crdt_num << " e";
+            check_op = buf.str();
+        }
+    }
 };
 
 #endif  // DMCK_OP_SCRIPT_H

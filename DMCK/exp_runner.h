@@ -15,7 +15,7 @@
 class exp_env
 {
 private:
-    static constexpr auto MAX_ROUND = 1000;
+    static constexpr auto MAX_ROUND = 50000;
 
     static constexpr auto IP = "127.0.0.1";
     static constexpr auto BASE_PORT = 6379;
@@ -58,7 +58,7 @@ public:
 template <typename S, typename O,
           typename = typename std::enable_if<std::is_base_of<op_script, S>::value, S>::type,
           typename = typename std::enable_if<std::is_base_of<oracle, O>::value, O>::type>
-static void run(const std::string& filename)
+static void run(const std::string& filename, bool verbose = false)
 {
     timer time;
 
@@ -82,14 +82,15 @@ static void run(const std::string& filename)
     {
         auto& conn = env.get();
 
-        S sc{operations, env.get_round()};
+        S sc{operations, env.get_round(), verbose};
         sc.run(conn);
 
         getline(file, states);
         O orcl{states};
         if (!orcl.check(conn, env.get_round()))
         {
-            std::cout << "Check failed for test No." << count + 1 << "!\n";
+            std::cout << "Check failed for test No." << count + 1 << "! Line " << 2 + 2 * count
+                      << " in the file.\n";
             sc.print();
             orcl.print();
             return;
