@@ -9,6 +9,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -287,6 +288,10 @@ public:
             std::ostringstream stream;
             stream << REDIS_CLIENT << " -h 127.0.0.1 -p " << port << " SHUTDOWN NOSAVE";
             system(stream.str().c_str());
+
+            stream.str("");
+            stream << port << ".rdb";
+            std::filesystem::remove(stream.str());
         }
     }
 };

@@ -20,7 +20,7 @@ private:
     static constexpr auto IP = "127.0.0.1";
     static constexpr auto BASE_PORT = 6379;
 
-    int round{0};
+    int round{0}, loop{1};
     std::vector<redis_connect> conn;
 
     void construct_conn(int replica_num)
@@ -46,7 +46,6 @@ public:
             construct_conn(conn.size());
             round = 0;
 
-            static int loop = 1;
             std::cout << "Passed " << loop * MAX_ROUND << " scripts." << std::endl;
             loop++;
         }
