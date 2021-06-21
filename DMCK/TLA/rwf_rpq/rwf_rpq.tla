@@ -16,7 +16,6 @@ variables
     history = <<>>; \* history variable
 
 define \* prepare phases
-    Max(a, b) == IF a <= b THEN b ELSE a
     Max_RH(a, b) == [j \in Procs |-> IF a[j] <= b[j] THEN b[j] ELSE a[j]]
     _Lookup(e_set, e) == \E s \in e_set: s.key = e
     _ELEMENT(e_set, e) == IF \E s \in e_set: s.key = e THEN 
@@ -72,7 +71,7 @@ macro Add(e, x, p_ini, rh) begin
     with local_rh = _RH(t_set, e) do
         if \E j \in Procs: local_rh[j] < rh[j] then
             set_update(t_set, [key |-> e, t |-> local_rh],
-                       [key |-> e, t |-> [j \in Procs |-> Max(rh[j], local_rh[j])]]);
+                       [key |-> e, t |-> Max_RH(rh, local_rh)]);
             with ele = _ELEMENT(e_set, e) do
                 if rh = _RH(t_set, e) then
                     set_update(e_set, ele, [key |-> e, p_ini |-> p_ini, v_inn |-> x, v_acq |-> 0]);
@@ -94,7 +93,7 @@ macro Increase(e, i, rh) begin
     with local_rh = _RH(t_set, e) do
         if \E j \in Procs: local_rh[j] < rh[j] then
             set_update(t_set, [key |-> e, t |-> local_rh],
-                       [key |-> e, t |-> [j \in Procs |-> Max(rh[j], local_rh[j])]]);
+                       [key |-> e, t |-> Max_RH(rh, local_rh)]);
             with ele = _ELEMENT(e_set, e) do
                 if rh = _RH(t_set, e) then
                     set_update(e_set, ele, [key |-> e, p_ini |-> -1, v_inn |-> 0, v_acq |-> 0 + i]);
@@ -123,7 +122,7 @@ macro Update() begin
                 Increase(msg.p.key, msg.p.val, msg.p.rh);
             end if;
             history := Append(history, <<msg.num, self, "effect">>);
-            op_exed := op_exed \union {msg.num};
+            \* op_exed := op_exed \union {msg.num};
             ops[self] := ops[self] \ {msg}; \* clear processed operation
         end with;
     end if;
@@ -133,7 +132,7 @@ process Set \in Procs
 variables
     e_set = {}; \* local set of pairs [key |-> "", p_ini |-> "", v_inn |-> "", v_acq |-> ""]
     t_set = {}; \* local set of pairs [key |-> "", t |-> []]
-    op_exed = {}; \* executed operations
+    \* op_exed = {}; \* executed operations
 begin Main:
     while TRUE do
         either
@@ -145,7 +144,7 @@ begin Main:
                         if addp.key /= "null" then
                             Broadcast("A", addp);
                             Add(e, v, addp.p_ini, addp.rh);
-                            op_exed := op_exed \union {opcount};
+                            \* op_exed := op_exed \union {opcount};
                         end if;
                     end with;
                 or \* Remove
@@ -154,7 +153,7 @@ begin Main:
                         if rmvp.key /= "null" then
                             Broadcast("R", rmvp);
                             Remove(e, rmvp.rh);
-                            op_exed := op_exed \union {opcount};
+                            \* op_exed := op_exed \union {opcount};
                         end if;
                     end with;
                 or \* Increase
@@ -163,7 +162,7 @@ begin Main:
                         if incp.key /= "null" then
                             Broadcast("I", incp);
                             Increase(e, i, incp.rh);
-                            op_exed := op_exed \union {opcount};
+                            \* op_exed := op_exed \union {opcount};
                         end if;
                     end with;
                 end either;
@@ -174,11 +173,10 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "a96a5402" /\ chksum(tla) = "4e596614")
+\* BEGIN TRANSLATION (chksum(pcal) = "c2ee549" /\ chksum(tla) = "e57190c3")
 VARIABLES ops, opcount, history
 
 (* define statement *)
-Max(a, b) == IF a <= b THEN b ELSE a
 Max_RH(a, b) == [j \in Procs |-> IF a[j] <= b[j] THEN b[j] ELSE a[j]]
 _Lookup(e_set, e) == \E s \in e_set: s.key = e
 _ELEMENT(e_set, e) == IF \E s \in e_set: s.key = e THEN
@@ -204,9 +202,9 @@ _Remove(e_set, t_set, self, e) ==
                                                        ELSE _RH(t_set, e)[j]]]
     ELSE [key |-> "null", rh |-> [j \in Procs |-> -1]]
 
-VARIABLES e_set, t_set, op_exed
+VARIABLES e_set, t_set
 
-vars == << ops, opcount, history, e_set, t_set, op_exed >>
+vars == << ops, opcount, history, e_set, t_set >>
 
 ProcSet == (Procs)
 
@@ -217,7 +215,6 @@ Init == (* Global variables *)
         (* Process Set *)
         /\ e_set = [self \in Procs |-> {}]
         /\ t_set = [self \in Procs |-> {}]
-        /\ op_exed = [self \in Procs |-> {}]
 
 Set(self) == \/ /\ IF opcount < MaxOps
                       THEN /\ opcount' = opcount + 1
@@ -230,7 +227,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                 ELSE ops[j] \union {[op |-> "A", num |-> opcount', p |-> addp]}]
                                                      /\ LET local_rh == _RH(t_set[self], e) IN
                                                           IF \E j \in Procs: local_rh[j] < (addp.rh)[j]
-                                                             THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> e, t |-> local_rh])}) \union {([key |-> e, t |-> [j \in Procs |-> Max((addp.rh)[j], local_rh[j])]])}]
+                                                             THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> e, t |-> local_rh])}) \union {([key |-> e, t |-> Max_RH((addp.rh), local_rh)])}]
                                                                   /\ LET ele == _ELEMENT(e_set[self], e) IN
                                                                        IF (addp.rh) = _RH(t_set'[self], e)
                                                                           THEN /\ e_set' = [e_set EXCEPT ![self] = (e_set[self] \ {ele}) \union {([key |-> e, p_ini |-> (addp.p_ini), v_inn |-> v, v_acq |-> 0])}]
@@ -241,12 +238,10 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                           ELSE /\ TRUE
                                                                                /\ e_set' = e_set
                                                                   /\ t_set' = t_set
-                                                     /\ op_exed' = [op_exed EXCEPT ![self] = op_exed[self] \union {opcount'}]
                                                 ELSE /\ TRUE
                                                      /\ UNCHANGED << ops, 
                                                                      e_set, 
-                                                                     t_set, 
-                                                                     op_exed >>
+                                                                     t_set >>
                               \/ /\ \E e \in Elmts:
                                       LET rmvp == _Remove(e_set[self], t_set[self], self, e) IN
                                         /\ history' = Append(history, <<opcount', self, "Rmv", e>>)
@@ -254,7 +249,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                               THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
                                                                               ELSE ops[j] \union {[op |-> "R", num |-> opcount', p |-> rmvp]}]
                                                    /\ Assert((rmvp.rh) /= [j \in Procs |-> -1], 
-                                                             "Failure of assertion at line 60, column 5 of macro called at line 156, column 29.")
+                                                             "Failure of assertion at line 59, column 5 of macro called at line 155, column 29.")
                                                    /\ LET local_rh == _RH(t_set[self], e) IN
                                                         IF \E j \in Procs: local_rh[j] < (rmvp.rh)[j]
                                                            THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> e, t |-> local_rh])}) \union {([key |-> e, t |-> Max_RH((rmvp.rh), local_rh)])}]
@@ -262,12 +257,10 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                            ELSE /\ TRUE
                                                                 /\ UNCHANGED << e_set, 
                                                                                 t_set >>
-                                                   /\ op_exed' = [op_exed EXCEPT ![self] = op_exed[self] \union {opcount'}]
                                               ELSE /\ TRUE
                                                    /\ UNCHANGED << ops, 
                                                                    e_set, 
-                                                                   t_set, 
-                                                                   op_exed >>
+                                                                   t_set >>
                               \/ /\ \E e \in Elmts:
                                       \E i \in Increments:
                                         LET incp == _Increase(e_set[self], t_set[self], e, i) IN
@@ -277,7 +270,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                 ELSE ops[j] \union {[op |-> "I", num |-> opcount', p |-> incp]}]
                                                      /\ LET local_rh == _RH(t_set[self], e) IN
                                                           IF \E j \in Procs: local_rh[j] < (incp.rh)[j]
-                                                             THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> e, t |-> local_rh])}) \union {([key |-> e, t |-> [j \in Procs |-> Max((incp.rh)[j], local_rh[j])]])}]
+                                                             THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> e, t |-> local_rh])}) \union {([key |-> e, t |-> Max_RH((incp.rh), local_rh)])}]
                                                                   /\ LET ele == _ELEMENT(e_set[self], e) IN
                                                                        IF (incp.rh) = _RH(t_set'[self], e)
                                                                           THEN /\ e_set' = [e_set EXCEPT ![self] = (e_set[self] \ {ele}) \union {([key |-> e, p_ini |-> -1, v_inn |-> 0, v_acq |-> 0 + i])}]
@@ -288,21 +281,19 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                           ELSE /\ TRUE
                                                                                /\ e_set' = e_set
                                                                   /\ t_set' = t_set
-                                                     /\ op_exed' = [op_exed EXCEPT ![self] = op_exed[self] \union {opcount'}]
                                                 ELSE /\ TRUE
                                                      /\ UNCHANGED << ops, 
                                                                      e_set, 
-                                                                     t_set, 
-                                                                     op_exed >>
+                                                                     t_set >>
                       ELSE /\ TRUE
                            /\ UNCHANGED << ops, opcount, history, e_set, 
-                                           t_set, op_exed >>
+                                           t_set >>
              \/ /\ IF ops[self] /= {}
                       THEN /\ \E msg \in ops[self]:
                                 /\ IF msg.op = "A"
                                       THEN /\ LET local_rh == _RH(t_set[self], (msg.p.key)) IN
                                                 IF \E j \in Procs: local_rh[j] < (msg.p.rh)[j]
-                                                   THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> (msg.p.key), t |-> local_rh])}) \union {([key |-> (msg.p.key), t |-> [j \in Procs |-> Max((msg.p.rh)[j], local_rh[j])]])}]
+                                                   THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> (msg.p.key), t |-> local_rh])}) \union {([key |-> (msg.p.key), t |-> Max_RH((msg.p.rh), local_rh)])}]
                                                         /\ LET ele == _ELEMENT(e_set[self], (msg.p.key)) IN
                                                              IF (msg.p.rh) = _RH(t_set'[self], (msg.p.key))
                                                                 THEN /\ e_set' = [e_set EXCEPT ![self] = (e_set[self] \ {ele}) \union {([key |-> (msg.p.key), p_ini |-> (msg.p.p_ini), v_inn |-> (msg.p.val), v_acq |-> 0])}]
@@ -315,7 +306,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                         /\ t_set' = t_set
                                       ELSE /\ IF msg.op = "R"
                                                  THEN /\ Assert((msg.p.rh) /= [j \in Procs |-> -1], 
-                                                                "Failure of assertion at line 60, column 5 of macro called at line 171, column 12.")
+                                                                "Failure of assertion at line 59, column 5 of macro called at line 170, column 12.")
                                                       /\ LET local_rh == _RH(t_set[self], (msg.p.key)) IN
                                                            IF \E j \in Procs: local_rh[j] < (msg.p.rh)[j]
                                                               THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> (msg.p.key), t |-> local_rh])}) \union {([key |-> (msg.p.key), t |-> Max_RH((msg.p.rh), local_rh)])}]
@@ -326,7 +317,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                  ELSE /\ IF msg.op = "I"
                                                             THEN /\ LET local_rh == _RH(t_set[self], (msg.p.key)) IN
                                                                       IF \E j \in Procs: local_rh[j] < (msg.p.rh)[j]
-                                                                         THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> (msg.p.key), t |-> local_rh])}) \union {([key |-> (msg.p.key), t |-> [j \in Procs |-> Max((msg.p.rh)[j], local_rh[j])]])}]
+                                                                         THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> (msg.p.key), t |-> local_rh])}) \union {([key |-> (msg.p.key), t |-> Max_RH((msg.p.rh), local_rh)])}]
                                                                               /\ LET ele == _ELEMENT(e_set[self], (msg.p.key)) IN
                                                                                    IF (msg.p.rh) = _RH(t_set'[self], (msg.p.key))
                                                                                       THEN /\ e_set' = [e_set EXCEPT ![self] = (e_set[self] \ {ele}) \union {([key |-> (msg.p.key), p_ini |-> -1, v_inn |-> 0, v_acq |-> 0 + (msg.p.val)])}]
@@ -341,11 +332,9 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                  /\ UNCHANGED << e_set, 
                                                                                  t_set >>
                                 /\ history' = Append(history, <<msg.num, self, "effect">>)
-                                /\ op_exed' = [op_exed EXCEPT ![self] = op_exed[self] \union {msg.num}]
                                 /\ ops' = [ops EXCEPT ![self] = ops[self] \ {msg}]
                       ELSE /\ TRUE
-                           /\ UNCHANGED << ops, history, e_set, t_set, 
-                                           op_exed >>
+                           /\ UNCHANGED << ops, history, e_set, t_set >>
                 /\ UNCHANGED opcount
 
 Next == (\E self \in Procs: Set(self))
@@ -354,7 +343,8 @@ Spec == Init /\ [][Next]_vars
 
 \* END TRANSLATION 
 
-SEC == \A p1, p2 \in Procs: (p1 /= p2 /\ op_exed[p1] = op_exed[p2]) => 
+\* ops[p1] = ops[p2] => op_exed[p1] = op_exed[p2]
+SEC == \A p1, p2 \in Procs: (p1 /= p2 /\ ops[p1] = ops[p2]) => 
                             (e_set[p1] = e_set[p2] /\ t_set[p1] = t_set[p2])
 
 ================================================================================
