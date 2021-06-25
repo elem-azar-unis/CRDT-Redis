@@ -208,8 +208,8 @@ public:
             auto rpl = c.exec(cmd);
             server.emplace_back(new state{rpl});
         }
-        for (int i = 0; i < server.size(); i++)
-            if (*script != *server[i]) return false;
+        for (auto &s_state : server)
+            if (*script != *s_state) return false;
         return true;
     }
 };

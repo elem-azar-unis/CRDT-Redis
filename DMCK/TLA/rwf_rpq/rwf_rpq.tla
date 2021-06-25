@@ -14,9 +14,11 @@ variables
     ops = [j \in Procs |-> {}]; \* to broadcast operations
     opcount = 0;
     history = <<>>; \* history variable
+    printed = 0;
 
-define \* prepare phases
+define
     Max_RH(a, b) == [j \in Procs |-> IF a[j] <= b[j] THEN b[j] ELSE a[j]]
+    \* read operations
     _Lookup(e_set, e) == \E s \in e_set: s.key = e
     _ELEMENT(e_set, e) == IF \E s \in e_set: s.key = e THEN 
                           CHOOSE s \in e_set: s.key = e
@@ -26,6 +28,7 @@ define \* prepare phases
                      ELSE [j \in Procs |-> 0]
     _Get(set, e) == {struct \in set: struct.key = e}
     
+    \* prepare phases
     _Add(e_set, t_set, self, e, x) == 
         IF ~_Lookup(e_set, e) THEN
             [key |-> e, val |-> x, p_ini |-> self, rh |-> _RH(t_set, e)]
@@ -167,17 +170,25 @@ begin Main:
                     end with;
                 end either;
             end if;
-        or Update();
+        or 
+            Update();
+            if self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops = [j \in Procs |-> {}] then
+                print history;
+                print e_set;
+                print t_set;
+                printed := 1;
+            end if;
         end either;
     end while;
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "c2ee549" /\ chksum(tla) = "e57190c3")
-VARIABLES ops, opcount, history
+\* BEGIN TRANSLATION (chksum(pcal) = "c6081106" /\ chksum(tla) = "e56d449d")
+VARIABLES ops, opcount, history, printed
 
 (* define statement *)
 Max_RH(a, b) == [j \in Procs |-> IF a[j] <= b[j] THEN b[j] ELSE a[j]]
+
 _Lookup(e_set, e) == \E s \in e_set: s.key = e
 _ELEMENT(e_set, e) == IF \E s \in e_set: s.key = e THEN
                       CHOOSE s \in e_set: s.key = e
@@ -186,6 +197,7 @@ _RH(t_set, e) == IF \E s \in t_set: s.key = e THEN
                     CHOOSE t \in {s.t: s \in t_set}: TRUE
                  ELSE [j \in Procs |-> 0]
 _Get(set, e) == {struct \in set: struct.key = e}
+
 
 _Add(e_set, t_set, self, e, x) ==
     IF ~_Lookup(e_set, e) THEN
@@ -204,7 +216,7 @@ _Remove(e_set, t_set, self, e) ==
 
 VARIABLES e_set, t_set
 
-vars == << ops, opcount, history, e_set, t_set >>
+vars == << ops, opcount, history, printed, e_set, t_set >>
 
 ProcSet == (Procs)
 
@@ -212,6 +224,7 @@ Init == (* Global variables *)
         /\ ops = [j \in Procs |-> {}]
         /\ opcount = 0
         /\ history = <<>>
+        /\ printed = 0
         (* Process Set *)
         /\ e_set = [self \in Procs |-> {}]
         /\ t_set = [self \in Procs |-> {}]
@@ -249,7 +262,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                               THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
                                                                               ELSE ops[j] \union {[op |-> "R", num |-> opcount', p |-> rmvp]}]
                                                    /\ Assert((rmvp.rh) /= [j \in Procs |-> -1], 
-                                                             "Failure of assertion at line 59, column 5 of macro called at line 155, column 29.")
+                                                             "Failure of assertion at line 62, column 5 of macro called at line 158, column 29.")
                                                    /\ LET local_rh == _RH(t_set[self], e) IN
                                                         IF \E j \in Procs: local_rh[j] < (rmvp.rh)[j]
                                                            THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> e, t |-> local_rh])}) \union {([key |-> e, t |-> Max_RH((rmvp.rh), local_rh)])}]
@@ -288,6 +301,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                       ELSE /\ TRUE
                            /\ UNCHANGED << ops, opcount, history, e_set, 
                                            t_set >>
+                /\ UNCHANGED printed
              \/ /\ IF ops[self] /= {}
                       THEN /\ \E msg \in ops[self]:
                                 /\ IF msg.op = "A"
@@ -306,7 +320,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                         /\ t_set' = t_set
                                       ELSE /\ IF msg.op = "R"
                                                  THEN /\ Assert((msg.p.rh) /= [j \in Procs |-> -1], 
-                                                                "Failure of assertion at line 59, column 5 of macro called at line 170, column 12.")
+                                                                "Failure of assertion at line 62, column 5 of macro called at line 174, column 13.")
                                                       /\ LET local_rh == _RH(t_set[self], (msg.p.key)) IN
                                                            IF \E j \in Procs: local_rh[j] < (msg.p.rh)[j]
                                                               THEN /\ t_set' = [t_set EXCEPT ![self] = (t_set[self] \ {([key |-> (msg.p.key), t |-> local_rh])}) \union {([key |-> (msg.p.key), t |-> Max_RH((msg.p.rh), local_rh)])}]
@@ -335,6 +349,13 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                 /\ ops' = [ops EXCEPT ![self] = ops[self] \ {msg}]
                       ELSE /\ TRUE
                            /\ UNCHANGED << ops, history, e_set, t_set >>
+                /\ IF self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops' = [j \in Procs |-> {}]
+                      THEN /\ PrintT(history')
+                           /\ PrintT(e_set'[self])
+                           /\ PrintT(t_set'[self])
+                           /\ printed' = 1
+                      ELSE /\ TRUE
+                           /\ UNCHANGED printed
                 /\ UNCHANGED opcount
 
 Next == (\E self \in Procs: Set(self))
