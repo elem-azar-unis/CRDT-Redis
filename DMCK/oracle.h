@@ -98,7 +98,9 @@ protected:
             return ch + 1;
         }
     };
-    std::vector<std::unique_ptr<state_interface>> script, server;
+
+    std::unique_ptr<state_interface> script;
+    std::vector<std::unique_ptr<state_interface>> server;
 
     virtual void parse(const std::string &str) = 0;
 
@@ -108,8 +110,7 @@ public:
     void print(std::ostream &out = std::cout) const
     {
         out << "[script state] -- ";
-        for (auto &&tmp : script)
-            tmp->print();
+        script->print();
         out << '\n';
 
         out << "[server state] -- ";
@@ -166,9 +167,9 @@ private:
         std::istringstream s{str};
         while (s)
         {
-            script.emplace_back(new state);
+            script = std::unique_ptr<state_interface>(new state);
             // I'm really sure not to use dynamic_cast
-            auto &new_state = static_cast<state &>(*script.back());
+            auto &new_state = static_cast<state &>(*script);
 
             if (s.peek() == 'n')
                 s.ignore(6);
@@ -207,8 +208,8 @@ public:
             auto rpl = c.exec(cmd);
             server.emplace_back(new state{rpl});
         }
-        for (int i = 0; i < script.size(); i++)
-            if (*script[i] != *server[i]) return false;
+        for (int i = 0; i < server.size(); i++)
+            if (*script != *server[i]) return false;
         return true;
     }
 };
