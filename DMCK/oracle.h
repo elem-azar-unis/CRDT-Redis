@@ -24,7 +24,9 @@ protected:
 
         state_interface() = default;
 
-        explicit state_interface(redis_reply &rpl)
+        explicit state_interface(redis_reply &rpl) : state_interface{rpl.get()} {}
+
+        explicit state_interface(redisReply *rpl)
         {
             if (rpl->type != REDIS_REPLY_ARRAY)
             {
@@ -67,7 +69,7 @@ protected:
             }
         }
 
-        void print(std::ostream &out = std::cout) { virtual_print(out); }
+        virtual void print(std::ostream &out) const = 0;
 
         bool operator==(const state_interface &other) const
         {
@@ -81,7 +83,6 @@ protected:
         bool operator!=(const state_interface &other) const { return !(*this == other); }
 
     protected:
-        virtual void virtual_print(std::ostream &out) const = 0;
         virtual bool equals(const state_interface &s) const = 0;
 
         static const char *value(redisReply *r)
@@ -99,25 +100,12 @@ protected:
         }
     };
 
-    std::unique_ptr<state_interface> script;
-    std::vector<std::unique_ptr<state_interface>> server;
-
-    virtual void parse(const std::string &str) = 0;
+    virtual void virtual_print(std::ostream &out) const = 0;
 
 public:
     virtual bool check(std::vector<redis_connect> &conn, int crdt_num) = 0;
 
-    void print(std::ostream &out = std::cout) const
-    {
-        out << "[script state] -- ";
-        script->print();
-        out << '\n';
-
-        out << "[server state] -- ";
-        for (auto &&tmp : server)
-            tmp->print();
-        out << std::endl;
-    }
+    void print(std::ostream &out = std::cout) const { virtual_print(out); }
 };
 
 class rpq_oracle : public oracle
@@ -127,7 +115,29 @@ private:
     {
         int v_inn{0}, v_acq{0};
 
-        state() = default;
+        explicit state(const std::string &str)
+        {
+            std::istringstream s{str};
+
+            if (s.peek() == 'n')
+                s.ignore(6);
+            else
+            {
+                s >> p_ini >> v_inn >> v_acq;
+                p_ini--;
+                eset = true;
+            }
+
+            while (s.peek() == ' ')
+                s.ignore();
+            if (s.peek() == 'n')
+                s.ignore();
+            else
+            {
+                s >> t;
+                tset = true;
+            }
+        }
 
         explicit state(redis_reply &rpl) : state_interface{rpl}
         {
@@ -140,8 +150,7 @@ private:
             }
         }
 
-    private:
-        void virtual_print(std::ostream &out) const override
+        void print(std::ostream &out) const override
         {
             if (eset)
                 out << p_ini << ' ' << v_inn << ' ' << v_acq << ' ';
@@ -153,6 +162,7 @@ private:
                 out << "n ; ";
         }
 
+    private:
         bool equals(const state_interface &s) const override
         {
             // will never throw, typeid checked by base class operator==
@@ -162,41 +172,23 @@ private:
         }
     };
 
-    void parse(const std::string &str) override
+    state script;
+    std::vector<state> server;
+
+    void virtual_print(std::ostream &out) const override
     {
-        std::istringstream s{str};
-        while (s)
-        {
-            script = std::unique_ptr<state_interface>(new state);
-            // I'm really sure not to use dynamic_cast
-            auto &new_state = static_cast<state &>(*script);
+        out << "[script state] -- ";
+        script.print(out);
+        out << '\n';
 
-            if (s.peek() == 'n')
-                s.ignore(6);
-            else
-            {
-                s >> new_state.p_ini >> new_state.v_inn >> new_state.v_acq;
-                new_state.p_ini--;
-                new_state.eset = true;
-            }
-
-            while (s.peek() == ' ')
-                s.ignore();
-            if (s.peek() == 'n')
-                s.ignore();
-            else
-            {
-                s >> new_state.t;
-                new_state.tset = true;
-            }
-
-            while (s.peek() == ' ' || s.peek() == ';' || s.peek() == '\r' || s.peek() == '\n')
-                s.ignore();
-        }
+        out << "[server state] -- ";
+        for (auto &&tmp : server)
+            tmp.print(out);
+        out << std::endl;
     }
 
 public:
-    explicit rpq_oracle(const std::string &str) { parse(str); }
+    explicit rpq_oracle(const std::string &str) : script{str} {}
 
     bool check(std::vector<redis_connect> &conn, int crdt_num) override
     {
@@ -206,10 +198,10 @@ public:
         for (auto &c : conn)
         {
             auto rpl = c.exec(cmd);
-            server.emplace_back(new state{rpl});
+            server.emplace_back(rpl);
         }
         for (auto &s_state : server)
-            if (*script != *s_state) return false;
+            if (script != s_state) return false;
         return true;
     }
 };
