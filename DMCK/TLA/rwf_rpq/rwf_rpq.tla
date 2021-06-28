@@ -42,7 +42,7 @@ define
         IF _Lookup(e_set, e) THEN 
             [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN _RH(t_set, e)[j] + 1 
                                                            ELSE _RH(t_set, e)[j]]]
-        ELSE [key |-> "null", rh |-> [j \in Procs |-> -1]] 
+        ELSE [key |-> "null"] 
 end define;
 
 \* send an operation to all
@@ -183,7 +183,7 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "c6081106" /\ chksum(tla) = "e56d449d")
+\* BEGIN TRANSLATION (chksum(pcal) = "4c5eca6b" /\ chksum(tla) = "f26a18dc")
 VARIABLES ops, opcount, history, printed
 
 (* define statement *)
@@ -212,7 +212,7 @@ _Remove(e_set, t_set, self, e) ==
     IF _Lookup(e_set, e) THEN
         [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN _RH(t_set, e)[j] + 1
                                                        ELSE _RH(t_set, e)[j]]]
-    ELSE [key |-> "null", rh |-> [j \in Procs |-> -1]]
+    ELSE [key |-> "null"]
 
 VARIABLES e_set, t_set
 

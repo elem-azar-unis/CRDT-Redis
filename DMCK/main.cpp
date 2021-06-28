@@ -2,8 +2,8 @@
 
 int main()
 {
-    std::istream::sync_with_stdio(false);
-    std::ostream::sync_with_stdio(false);
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
 
     // exp_env env{3};
 
