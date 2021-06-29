@@ -26,7 +26,7 @@ define
                                 |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
 
     Leid(l_set, e) == IF e = 0 THEN 0 ELSE l_set[e]
-    Leid_Gen(p, level, self) == p + (self - 1) * (N ^ level)
+    Leid_Gen(p, level, self) == p + self * ((N + 1) ^ level)
     Leid_New(l_set, level, self, prev, e) == IF l_set[e] /= -1 THEN l_set[e]
                                              ELSE Leid_Gen(Leid(l_set, prev), level, self)
     
@@ -43,17 +43,17 @@ define
         THEN
             [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
              pos |-> Leid_New(l_set, level, self, prev, e), level |-> level - 1]
-        ELSE [key |-> "null"]
+        ELSE [key |-> -1]
     
     _Update(e_set, t_set, e, i, t, self) == 
         IF _Lookup(e_set, e) THEN [key |-> e, val |-> i, rh |-> t_set[e], lt |-> <<t+1, self>>]
-        ELSE [key |-> "null"]
+        ELSE [key |-> -1]
     
     _Remove(e_set, t_set, self, e) == 
         IF _Lookup(e_set, e) THEN 
             [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN t_set[e][j] + 1 
                                                            ELSE t_set[e][j]]]
-        ELSE [key |-> "null"] 
+        ELSE [key |-> -1] 
 end define;
 
 \* send an operation to all
@@ -92,17 +92,17 @@ macro Update(e, i, rh, lts) begin
     if \E j \in Procs: t_set[e][j] < rh[j] then
         t_set[e] := Max_RH(rh, t_set[e]);
         if rh = t_set[e] then
-            e_set[e] := [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> i, t |-> lts[0], id |-> lts[1]]];
+            e_set[e] := [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> i, t |-> lts[1], id |-> lts[2]]];
         else e_set[e] := Dft_eset_content;
         end if;
     else
         with old_acq = e_set[e].v_acq do
-            if rh = t_set[e] /\ (old_acq.t < lts[0] \/ (old_acq.t = lts[0] /\ old_acq.id < lts[1])) then
-                e_set[e] := [p_ini |-> e_set[e].p_ini, v_inn |-> e_set[e].v_inn, v_acq |-> [v |-> i, t |-> lts[0], id |-> lts[1]]];
+            if rh = t_set[e] /\ (old_acq.t < lts[1] \/ (old_acq.t = lts[1] /\ old_acq.id < lts[2])) then
+                e_set[e] := [p_ini |-> e_set[e].p_ini, v_inn |-> e_set[e].v_inn, v_acq |-> [v |-> i, t |-> lts[1], id |-> lts[2]]];
             end if;
         end with;
     end if;
-    lt_set[e] := Max(lt_set[e], lts[0]);
+    lt_set[e] := Max(lt_set[e], lts[1]);
 end macro;
 
 \* receive and process operations, one by one
@@ -142,7 +142,7 @@ begin Main:
                                 addp = _Add(e_set, t_set, l_set, level, self, prev, e, v) do 
                                 \* select a random not new element to add
                                 history := Append(history, <<opcount, self, "Add", prev, e, v>>);
-                                if addp.key /= "null" then
+                                if addp.key /= -1 then
                                     Broadcast("A", addp);
                                     Add(e, v, self, addp.rh, addp.pos, addp.level);
                                     elmtcount := elmtcount + 1;
@@ -155,7 +155,7 @@ begin Main:
                              v \in Values, prev \in {0} \union Elmts,
                              addp = _Add(e_set, t_set, l_set, level, self, prev, e, v) do 
                             history := Append(history, <<opcount, self, "Add", prev, e, v>>);
-                            if addp.key /= "null" then
+                            if addp.key /= -1 then
                                 Broadcast("A", addp);
                                 Add(e, v, self, addp.rh, addp.pos, addp.level);
                             end if;
@@ -164,7 +164,7 @@ begin Main:
                 or \* Remove: select a random element to remove
                     with e \in Elmts, rmvp = _Remove(e_set, t_set, self, e) do 
                         history := Append(history, <<opcount, self, "Rmv", e>>);
-                        if rmvp.key /= "null" then
+                        if rmvp.key /= -1 then
                             Broadcast("R", rmvp);
                             Remove(e, rmvp.rh);
                         end if;
@@ -173,7 +173,7 @@ begin Main:
                     with e \in Elmts, i \in Values,
                          updp = _Update(e_set, t_set, e, i, lt_set[e], self) do
                         history := Append(history, <<opcount, self, "Upd", e, i>>);
-                        if updp.key /= "null" then
+                        if updp.key /= -1 then
                             Broadcast("U", updp);
                             Update(e, i, updp.rh, updp.lt);
                         end if;
@@ -194,7 +194,7 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "611b6b" /\ chksum(tla) = "8e371ba0")
+\* BEGIN TRANSLATION (chksum(pcal) = "f012b9f4" /\ chksum(tla) = "82a3ed45")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
@@ -207,7 +207,7 @@ E_order(l_set) == [i \in DOMAIN Leid_order(l_set)
                             |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
 
 Leid(l_set, e) == IF e = 0 THEN 0 ELSE l_set[e]
-Leid_Gen(p, level, self) == p + (self - 1) * (N ^ level)
+Leid_Gen(p, level, self) == p + self * ((N + 1) ^ level)
 Leid_New(l_set, level, self, prev, e) == IF l_set[e] /= -1 THEN l_set[e]
                                          ELSE Leid_Gen(Leid(l_set, prev), level, self)
 
@@ -224,17 +224,17 @@ _Add(e_set, t_set, l_set, level, self, prev, e, x) ==
     THEN
         [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
          pos |-> Leid_New(l_set, level, self, prev, e), level |-> level - 1]
-    ELSE [key |-> "null"]
+    ELSE [key |-> -1]
 
 _Update(e_set, t_set, e, i, t, self) ==
     IF _Lookup(e_set, e) THEN [key |-> e, val |-> i, rh |-> t_set[e], lt |-> <<t+1, self>>]
-    ELSE [key |-> "null"]
+    ELSE [key |-> -1]
 
 _Remove(e_set, t_set, self, e) ==
     IF _Lookup(e_set, e) THEN
         [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN t_set[e][j] + 1
                                                        ELSE t_set[e][j]]]
-    ELSE [key |-> "null"]
+    ELSE [key |-> -1]
 
 VARIABLES e_set, t_set, l_set, level, lt_set
 
@@ -264,7 +264,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                          \E prev \in {0} \union Elmts:
                                                            LET addp == _Add(e_set[self], t_set[self], l_set[self], level[self], self, prev, e, v) IN
                                                              /\ history' = Append(history, <<opcount', self, "Add", prev, e, v>>)
-                                                             /\ IF addp.key /= "null"
+                                                             /\ IF addp.key /= -1
                                                                    THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
                                                                                                    ELSE ops[j] \union {[op |-> "A", num |-> opcount', p |-> addp]}]
                                                                         /\ IF \E j \in Procs: t_set[self][e][j] < (addp.rh)[j]
@@ -300,7 +300,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                               \E prev \in {0} \union Elmts:
                                                 LET addp == _Add(e_set[self], t_set[self], l_set[self], level[self], self, prev, e, v) IN
                                                   /\ history' = Append(history, <<opcount', self, "Add", prev, e, v>>)
-                                                  /\ IF addp.key /= "null"
+                                                  /\ IF addp.key /= -1
                                                         THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
                                                                                         ELSE ops[j] \union {[op |-> "A", num |-> opcount', p |-> addp]}]
                                                              /\ IF \E j \in Procs: t_set[self][e][j] < (addp.rh)[j]
@@ -326,7 +326,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                               \/ /\ \E e \in Elmts:
                                       LET rmvp == _Remove(e_set[self], t_set[self], self, e) IN
                                         /\ history' = Append(history, <<opcount', self, "Rmv", e>>)
-                                        /\ IF rmvp.key /= "null"
+                                        /\ IF rmvp.key /= -1
                                               THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
                                                                               ELSE ops[j] \union {[op |-> "R", num |-> opcount', p |-> rmvp]}]
                                                    /\ IF \E j \in Procs: t_set[self][e][j] < (rmvp.rh)[j]
@@ -344,21 +344,21 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                       \E i \in Values:
                                         LET updp == _Update(e_set[self], t_set[self], e, i, lt_set[self][e], self) IN
                                           /\ history' = Append(history, <<opcount', self, "Upd", e, i>>)
-                                          /\ IF updp.key /= "null"
+                                          /\ IF updp.key /= -1
                                                 THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
                                                                                 ELSE ops[j] \union {[op |-> "U", num |-> opcount', p |-> updp]}]
                                                      /\ IF \E j \in Procs: t_set[self][e][j] < (updp.rh)[j]
                                                            THEN /\ t_set' = [t_set EXCEPT ![self][e] = Max_RH((updp.rh), t_set[self][e])]
                                                                 /\ IF (updp.rh) = t_set'[self][e]
-                                                                      THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> i, t |-> (updp.lt)[0], id |-> (updp.lt)[1]]]]
+                                                                      THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> i, t |-> (updp.lt)[1], id |-> (updp.lt)[2]]]]
                                                                       ELSE /\ e_set' = [e_set EXCEPT ![self][e] = Dft_eset_content]
                                                            ELSE /\ LET old_acq == e_set[self][e].v_acq IN
-                                                                     IF (updp.rh) = t_set[self][e] /\ (old_acq.t < (updp.lt)[0] \/ (old_acq.t = (updp.lt)[0] /\ old_acq.id < (updp.lt)[1]))
-                                                                        THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> e_set[self][e].p_ini, v_inn |-> e_set[self][e].v_inn, v_acq |-> [v |-> i, t |-> (updp.lt)[0], id |-> (updp.lt)[1]]]]
+                                                                     IF (updp.rh) = t_set[self][e] /\ (old_acq.t < (updp.lt)[1] \/ (old_acq.t = (updp.lt)[1] /\ old_acq.id < (updp.lt)[2]))
+                                                                        THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> e_set[self][e].p_ini, v_inn |-> e_set[self][e].v_inn, v_acq |-> [v |-> i, t |-> (updp.lt)[1], id |-> (updp.lt)[2]]]]
                                                                         ELSE /\ TRUE
                                                                              /\ e_set' = e_set
                                                                 /\ t_set' = t_set
-                                                     /\ lt_set' = [lt_set EXCEPT ![self][e] = Max(lt_set[self][e], (updp.lt)[0])]
+                                                     /\ lt_set' = [lt_set EXCEPT ![self][e] = Max(lt_set[self][e], (updp.lt)[1])]
                                                 ELSE /\ TRUE
                                                      /\ UNCHANGED << ops, 
                                                                      e_set, 
@@ -398,15 +398,15 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                             THEN /\ IF \E j \in Procs: t_set[self][(msg.p.key)][j] < (msg.p.rh)[j]
                                                                        THEN /\ t_set' = [t_set EXCEPT ![self][(msg.p.key)] = Max_RH((msg.p.rh), t_set[self][(msg.p.key)])]
                                                                             /\ IF (msg.p.rh) = t_set'[self][(msg.p.key)]
-                                                                                  THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> (msg.p.val), t |-> (msg.p.lt)[0], id |-> (msg.p.lt)[1]]]]
+                                                                                  THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> (msg.p.val), t |-> (msg.p.lt)[1], id |-> (msg.p.lt)[2]]]]
                                                                                   ELSE /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = Dft_eset_content]
                                                                        ELSE /\ LET old_acq == e_set[self][(msg.p.key)].v_acq IN
-                                                                                 IF (msg.p.rh) = t_set[self][(msg.p.key)] /\ (old_acq.t < (msg.p.lt)[0] \/ (old_acq.t = (msg.p.lt)[0] /\ old_acq.id < (msg.p.lt)[1]))
-                                                                                    THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> e_set[self][(msg.p.key)].p_ini, v_inn |-> e_set[self][(msg.p.key)].v_inn, v_acq |-> [v |-> (msg.p.val), t |-> (msg.p.lt)[0], id |-> (msg.p.lt)[1]]]]
+                                                                                 IF (msg.p.rh) = t_set[self][(msg.p.key)] /\ (old_acq.t < (msg.p.lt)[1] \/ (old_acq.t = (msg.p.lt)[1] /\ old_acq.id < (msg.p.lt)[2]))
+                                                                                    THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> e_set[self][(msg.p.key)].p_ini, v_inn |-> e_set[self][(msg.p.key)].v_inn, v_acq |-> [v |-> (msg.p.val), t |-> (msg.p.lt)[1], id |-> (msg.p.lt)[2]]]]
                                                                                     ELSE /\ TRUE
                                                                                          /\ e_set' = e_set
                                                                             /\ t_set' = t_set
-                                                                 /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = Max(lt_set[self][(msg.p.key)], (msg.p.lt)[0])]
+                                                                 /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = Max(lt_set[self][(msg.p.key)], (msg.p.lt)[1])]
                                                             ELSE /\ TRUE
                                                                  /\ UNCHANGED << e_set, 
                                                                                  t_set, 
@@ -441,8 +441,9 @@ SEC == \A p1, p2 \in Procs: (p1 /= p2 /\ ops[p1] = ops[p2]) => (e_set[p1] = e_se
                                                                /\ l_set[p1] = l_set[p2]
                                                                /\ lt_set[p1] = lt_set[p2])
 
-Leid_TO == \A p \in Procs: \A i, j \in Elmts: l_set[p][i] = -1 \/ l_set[p][j] = -1 
-                                              \/ l_set[p][i] /= l_set[p][j]
+Leid_TO == \A p \in Procs: \A i, j \in Elmts: (i /= j) => (l_set[p][i] = -1 
+                                                          \/ l_set[p][j] = -1 
+                                                          \/ l_set[p][i] /= l_set[p][j])
 
 
 ================================================================================
