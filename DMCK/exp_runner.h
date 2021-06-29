@@ -57,7 +57,7 @@ public:
 template <typename S, typename O,
           typename = typename std::enable_if<std::is_base_of<op_script, S>::value, S>::type,
           typename = typename std::enable_if<std::is_base_of<oracle, O>::value, O>::type>
-static void run(const std::string& filename, bool verbose = false)
+static void run(std::string_view filename, bool verbose = false)
 {
     timer time;
 

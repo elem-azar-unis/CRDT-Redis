@@ -133,7 +133,7 @@ public:
 class redis_connect
 {
 private:
-    const char *ip;
+    const std::string ip;
     const int port;
     int size, id;
     redisContext *client{nullptr}, *server_instruct{nullptr}, *server_listen{nullptr};
@@ -142,7 +142,7 @@ private:
     void connect(redisContext *&c)
     {
         if (c != nullptr) redisFree(c);
-        c = redisConnect(ip, port);
+        c = redisConnect(ip.c_str(), port);
         if (c == nullptr || c->err)
         {
             if (c)
@@ -191,7 +191,7 @@ private:
         }
     }
 
-    void reply_error(const std::string &cmd, redisContext *&c)
+    void reply_error(std::string_view cmd, redisContext *&c)
     {
         std::cout << "\n--Error: Something wrong for host " << c->tcp.host << ":" << c->tcp.port
                   << "to execute " << (c != client ? "server inner message " : "") << cmd << "\n";
@@ -222,8 +222,8 @@ private:
     }
 
 public:
-    redis_connect(const char *ip, int port, int size, int id)
-        : ip{ip}, port{port}, size{size}, id{id}
+    redis_connect(const std::string ip, int port, int size, int id)
+        : ip{std::move(ip)}, port{port}, size{size}, id{id}
     {
         std::ostringstream stream;
         stream << REDIS_SERVER << " " << REDIS_CONF << " "
@@ -250,7 +250,7 @@ public:
     redis_connect &operator=(redis_connect &&) = delete;
 
     redis_connect(redis_connect &&c) noexcept
-        : ip{c.ip},
+        : ip{std::move(c.ip)},
           port{c.port},
           size{c.size},
           id{c.id},

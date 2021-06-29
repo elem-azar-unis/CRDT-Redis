@@ -54,18 +54,18 @@ class timer
 {
 private:
     std::ostream& os;
-    std::string purpose;
+    const std::string purpose;
     std::chrono::steady_clock::time_point start{std::chrono::steady_clock::now()};
 
-    void inner_print(const char* prefix)
+    void inner_print(std::string_view prefix)
     {
         os << prefix << (purpose.empty() ? "" : " for ") << purpose << ": ";
         os << std::setprecision(3) << std::chrono::steady_clock::now() - start << std::endl;
     }
 
 public:
-    explicit timer(const std::string& purpose = "", std::ostream& os = std::cout)
-        : os{os}, purpose{purpose}
+    explicit timer(const std::string purpose = "", std::ostream& os = std::cout)
+        : os{os}, purpose{std::move(purpose)}
     {}
 
     void print() { inner_print("Time spent"); }

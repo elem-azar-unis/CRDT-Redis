@@ -44,7 +44,7 @@ protected:
     explicit op_script(bool verbose) : verbose{verbose} {}
 
     virtual bool construct_optable(std::istringstream &s, int crdt_num,
-                                   const std::string &type) = 0;
+                                   std::string_view type) = 0;
 
     void full_construct(std::string &str, int crdt_num)
     {
@@ -120,7 +120,7 @@ public:
 class rpq_op_script : public op_script
 {
 private:
-    bool construct_optable(std::istringstream &s, int crdt_num, const std::string &type) override
+    bool construct_optable(std::istringstream &s, int crdt_num, std::string_view type) override
     {
         int param;
         std::ostringstream buf;
