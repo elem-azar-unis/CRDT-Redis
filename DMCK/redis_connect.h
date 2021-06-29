@@ -119,8 +119,8 @@ public:
 
     bool is_ok() const
     {
-        static const std::string ok{"OK"};
-        return r != nullptr && r->type == REDIS_REPLY_STATUS && ok == r->str;
+        using namespace std::literals;
+        return r != nullptr && r->type == REDIS_REPLY_STATUS && "OK"sv == r->str;
     }
 
     void print() const
@@ -203,17 +203,17 @@ private:
         exit(-1);
     }
 
-    redis_reply exec(const std::string &cmd, redisContext *&c)
+    redis_reply exec(std::string_view cmd, redisContext *&c)
     {
         bool retried{false};
-        auto r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
+        auto r = static_cast<redisReply *>(redisCommand(c, cmd.data()));
         while (r == nullptr)
         {
             if (!retried)
             {
                 reconnect(c);
                 retried = true;
-                r = static_cast<redisReply *>(redisCommand(c, cmd.c_str()));
+                r = static_cast<redisReply *>(redisCommand(c, cmd.data()));
                 continue;
             }
             reply_error(cmd, c);
@@ -267,7 +267,7 @@ public:
 
     void pass_inner_msg(redis_reply &r) { exec(r.inner_rpl_str(), server_instruct); }
 
-    inline redis_reply exec(const std::string &cmd) { return exec(cmd, client); }
+    inline redis_reply exec(std::string_view cmd) { return exec(cmd, client); }
 
     redis_reply get_inner_msg()
     {

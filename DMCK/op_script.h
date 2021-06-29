@@ -43,10 +43,9 @@ protected:
 
     explicit op_script(bool verbose) : verbose{verbose} {}
 
-    virtual bool construct_optable(std::istringstream &s, int crdt_num,
-                                   std::string_view type) = 0;
+    virtual bool construct_optable(std::istringstream &s, int crdt_num, std::string_view type) = 0;
 
-    void full_construct(std::string &str, int crdt_num)
+    void full_construct(const std::string &str, int crdt_num)
     {
         std::istringstream s{str};
         int opid{0}, pid{0};
@@ -143,7 +142,7 @@ private:
     }
 
 public:
-    rpq_op_script(std::string &str, int crdt_num, bool verbose) : op_script{verbose}
+    rpq_op_script(const std::string &str, int crdt_num, bool verbose) : op_script{verbose}
     {
         full_construct(str, crdt_num);
         if (verbose)

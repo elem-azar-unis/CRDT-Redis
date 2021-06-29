@@ -61,7 +61,7 @@ static void run(std::string_view filename, bool verbose = false)
 {
     timer time;
 
-    std::ifstream file(filename);
+    std::ifstream file(filename.data());
     if (!file)
     {
         std::cout << "--Error: No such file \"" << filename << "\"!" << std::endl;
