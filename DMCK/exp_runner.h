@@ -54,9 +54,9 @@ public:
     }
 };
 
-template <typename S, typename O,
-          typename = typename std::enable_if<std::is_base_of<op_script, S>::value, S>::type,
-          typename = typename std::enable_if<std::is_base_of<oracle, O>::value, O>::type>
+template <typename Scirpt, typename Oracle,
+          typename = std::enable_if_t<std::is_base_of<op_script, Scirpt>::value>,
+          typename = std::enable_if_t<std::is_base_of<oracle, Oracle>::value>>
 static void run(std::string_view filename, bool verbose = false)
 {
     timer time;
@@ -81,11 +81,11 @@ static void run(std::string_view filename, bool verbose = false)
     {
         auto& conn = env.get();
 
-        S sc{operations, env.get_round(), verbose};
+        Scirpt sc{operations, env.get_round(), verbose};
         sc.run(conn);
 
         getline(file, states);
-        O orcl{states};
+        Oracle orcl{states};
         if (!orcl.check(conn, env.get_round()))
         {
             std::cout << "Check failed for test No." << count + 1 << "! Line " << 2 + 2 * count
