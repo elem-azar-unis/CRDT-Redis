@@ -154,4 +154,52 @@ public:
     }
 };
 
+class list_op_script : public op_script
+{
+private:
+    bool construct_optable(std::istringstream &s, int crdt_num, std::string_view type) override
+    {
+        int oid;
+        std::ostringstream buf;
+        if (type == "Add")
+        {
+            int prev, value;
+            s >> prev >> oid >> value;
+            buf << "rwflinsert list" << crdt_num << " ";
+            if (prev == 0)
+                buf << "null ";
+            else
+                buf << prev << " ";
+            buf << oid << " e " << value << " 0 0 0";
+        }
+        else if (type == "Upd")
+        {
+            int value;
+            s >> oid >> value;
+            buf << "rwflupdate list" << crdt_num << " " << oid << " font " << value;
+        }
+        else if (type == "Rmv")
+        {
+            s >> oid;
+            buf << "rwflrem list" << crdt_num << " " << oid;
+        }
+        else
+            return false;
+        optable.emplace_back(buf.str());
+        return true;
+    }
+
+public:
+    list_op_script(const std::string &str, int crdt_num, bool verbose) : op_script{verbose}
+    {
+        full_construct(str, crdt_num);
+        if (verbose)
+        {
+            std::ostringstream buf;
+            buf << "rwflestatusall list" << crdt_num;
+            check_op = buf.str();
+        }
+    }
+};
+
 #endif  // DMCK_OP_SCRIPT_H
