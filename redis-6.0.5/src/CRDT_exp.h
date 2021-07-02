@@ -10,11 +10,11 @@
 #define CRDT_EXPERIMENT
 #ifdef CRDT_EXPERIMENT
 
-//#define CRDT_LOG
-#define CRDT_OVERHEAD
-//#define CRDT_OPCOUNT
+// #define CRDT_LOG
+// #define CRDT_OVERHEAD
+// #define CRDT_OPCOUNT
 #define CRDT_ELE_STATUS
-//#define CRDT_TIME
+// #define CRDT_TIME
 
 #endif
 
@@ -145,6 +145,7 @@ void rwflopcountCommand(client *c);
 void ozestatusCommand(client *c);
 void rzestatusCommand(client *c);
 void rwfzestatusCommand(client *c);
+void rwflestatusall(client *c);
 #endif
 
 #endif  // REDIS_CRDT_EXP_H

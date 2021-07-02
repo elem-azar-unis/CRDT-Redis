@@ -361,3 +361,10 @@ void rwflopcountCommand(client *c) { addReplyLongLong(c, op_count_get()); }
 #ifdef CRDT_OVERHEAD
 void rwfloverheadCommand(client *c) { addReplyLongLong(c, ovhd_get()); }
 #endif
+
+#ifdef CRDT_ELE_STATUS
+void rwflestatusall(client *c)
+{
+    // TODO
+}
+#endif

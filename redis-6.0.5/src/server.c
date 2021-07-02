@@ -1177,6 +1177,10 @@ struct redisCommand redisCommandTable[] = {
     {"rwfzestatus", rwfzestatusCommand, 3,
      "read-only fast",
      0, NULL, 1, 1, 1, 0, 0, 0},
+
+     {"rwflestatusall", rwflestatusall, 2,
+     "read-only fast",
+     0, NULL, 1, 1, 1, 0, 0, 0},
 #endif
 };
 
