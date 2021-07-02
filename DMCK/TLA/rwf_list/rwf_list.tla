@@ -150,7 +150,23 @@ begin Main:
                             end with;
                         end if;
                     or
-                        \* select randomly an old but not concurrent-init element to add
+                        \* Select randomly an old but not concurrent-init element to add:
+                        \*
+                        \* e \in {x \in Elmts : e_set[x] /= Dft_eset_content
+                        \*                      \/ t_set[x] /= [k \in Procs |-> 0]
+                        \*                      \/ l_set[x] /= -1},
+                        \*
+                        \* This means that there is not any update of element e executed on x. 
+                        \* However this will violate SEC. 
+                        \* This is a bug found in implementation. Not a bug of the algorithm, 
+                        \* since the algorithm assumes that all newly inserted element are unique. 
+                        \* The readd can only be called on the elements whose leid (position id) 
+                        \* is fixed, which is:
+                        \*
+                        \* e \in {x \in Elmts : l_set[x] /= -1}
+                        \*
+                        \* This has been fixed in the CRDT-Redis list implementations, with a 
+                        \* corner case checking.
                         with e \in {x \in Elmts : l_set[x] /= -1},
                              v \in Values, prev \in {0} \union Elmts,
                              addp = _Add(e_set, t_set, l_set, level, self, prev, e, v) do 
@@ -185,7 +201,8 @@ begin Main:
             if self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops = [j \in Procs |-> {}] then
                 assert E_count(l_set) = elmtcount;
                 print history;
-                print [i \in DOMAIN E_order(l_set) |-> <<e_set[E_order(l_set)[i]],
+                print [i \in DOMAIN E_order(l_set) |-> <<E_order(l_set)[i],
+                                                         e_set[E_order(l_set)[i]],
                                                          t_set[E_order(l_set)[i]]>>];
                 printed := 1;
             end if;
@@ -194,7 +211,7 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "f012b9f4" /\ chksum(tla) = "82a3ed45")
+\* BEGIN TRANSLATION (chksum(pcal) = "36ca5f5a" /\ chksum(tla) = "da45fa82")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
@@ -419,9 +436,10 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                            l_set, level, lt_set >>
                 /\ IF self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops' = [j \in Procs |-> {}]
                       THEN /\ Assert(E_count(l_set'[self]) = elmtcount, 
-                                     "Failure of assertion at line 186, column 17.")
+                                     "Failure of assertion at line 202, column 17.")
                            /\ PrintT(history')
-                           /\ PrintT([i \in DOMAIN E_order(l_set'[self]) |-> <<e_set'[self][E_order(l_set'[self])[i]],
+                           /\ PrintT([i \in DOMAIN E_order(l_set'[self]) |-> <<E_order(l_set'[self])[i],
+                                                                               e_set'[self][E_order(l_set'[self])[i]],
                                                                                t_set'[self][E_order(l_set'[self])[i]]>>])
                            /\ printed' = 1
                       ELSE /\ TRUE
