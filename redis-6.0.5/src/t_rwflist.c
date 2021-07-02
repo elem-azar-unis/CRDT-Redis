@@ -365,6 +365,29 @@ void rwfloverheadCommand(client *c) { addReplyLongLong(c, ovhd_get()); }
 #ifdef CRDT_ELE_STATUS
 void rwflestatusall(client *c)
 {
-    // TODO
+    robj *o = lookupKeyReadOrReply(c, c->argv[1], shared.emptyarray);
+    if (o == NULL || checkType(c, o, OBJ_HASH)) return;
+    rwfle *e = getHead(o);
+    int count = 0;
+    for (rwfle *tmp = e; tmp != NULL; tmp = tmp->next)
+        count++;
+    addReplyArrayLen(c, count);
+    while (e != NULL)
+    {
+        addReplyArrayLen(c, 6);
+
+        addReplyBulkSds(c, sdscatprintf(sdsempty(), "add id:%d", PID(e)));
+        addReplyBulkSds(c, sdsnew("current:"));
+        addReplyBulkSds(c, vcToSds(CURRENT(e)));
+
+        addReplyBulkCBuffer(c, e->oid, sdslen(e->oid));
+        addReplyBulkLongLong(c, e->font);
+        if (e->font_t == NULL)
+            addReplyBulkSds(c, sdsnew("null"));
+        else
+            addReplyBulkSds(c, lcToSds(e->font_t));
+
+        e = e->next;
+    }
 }
 #endif
