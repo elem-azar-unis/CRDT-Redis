@@ -29,18 +29,14 @@ def parse_oracle(o):
     if o == '<< >>':
         return 'n'
     o = o[4:-6].replace(' ', '').replace('[p_ini|->', '')
-    o = o.replace('v_inn|->', '').replace('v_acq|->[v|->', '')
+    o = o.replace('v|->', '').replace('\"', '')
     o = o.split('>>>>,<<')
     rtn = ""
     for e in o:
-        tmp_rh = e.split(']],<<')
-        tmp_acq = tmp_rh[0].split('t|->')
-        tmp_acq_id = tmp_acq[1].split(',id|->')
-        pid = int(tmp_acq_id[1])
-        if pid > 0:
-            pid -= 1
+        tmp_rh = e.split('],<<')
+        tmp_acq = tmp_rh[0].split('lt|->')
         rtn += tmp_acq[0].replace(',', ' ')
-        rtn += tmp_acq_id[0] + ',' + str(pid) + ' '
+        rtn += tmp_acq[1].replace('<<', '').replace('>>', '') + ' '
         rtn += tmp_rh[1]
         rtn += ' ; '
     return rtn[:-3]

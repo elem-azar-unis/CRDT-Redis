@@ -24,6 +24,8 @@ define
     Leid_order(l_set) == SortSeq([i \in 1..E_count(l_set) |-> l_set[i]], <)
     E_order(l_set) == [i \in DOMAIN Leid_order(l_set) 
                                 |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
+    Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
+    Lt(acq) == IF acq = [v |-> 0, t |-> -1, id |-> -1] THEN "null" ELSE <<acq.t, acq.id - 1>>
 
     Leid(l_set, e) == IF e = 0 THEN 0 ELSE l_set[e]
     Leid_Gen(p, level, self) == p + self * ((N + 1) ^ level)
@@ -201,9 +203,12 @@ begin Main:
             if self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops = [j \in Procs |-> {}] then
                 assert E_count(l_set) = elmtcount;
                 print history;
-                print [i \in DOMAIN E_order(l_set) |-> <<E_order(l_set)[i],
-                                                         e_set[E_order(l_set)[i]],
-                                                         t_set[E_order(l_set)[i]]>>];
+                print [i \in DOMAIN E_order(l_set) |-> 
+                                <<E_order(l_set)[i],
+                                [p_ini |-> e_set[E_order(l_set)[i]].p_ini,
+                                v |-> Value(e_set[E_order(l_set)[i]]),
+                                lt|-> Lt(e_set[E_order(l_set)[i]].v_acq)],
+                                t_set[E_order(l_set)[i]]>>];
                 printed := 1;
             end if;
         end either;
@@ -211,7 +216,7 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "36ca5f5a" /\ chksum(tla) = "da45fa82")
+\* BEGIN TRANSLATION (chksum(pcal) = "480345d0" /\ chksum(tla) = "a1ac8c8d")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
@@ -222,6 +227,8 @@ E_count(l_set) == Cardinality({x \in Elmts : l_set[x] /= -1})
 Leid_order(l_set) == SortSeq([i \in 1..E_count(l_set) |-> l_set[i]], <)
 E_order(l_set) == [i \in DOMAIN Leid_order(l_set)
                             |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
+Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
+Lt(acq) == IF acq = [v |-> 0, t |-> -1, id |-> -1] THEN "null" ELSE <<acq.t, acq.id - 1>>
 
 Leid(l_set, e) == IF e = 0 THEN 0 ELSE l_set[e]
 Leid_Gen(p, level, self) == p + self * ((N + 1) ^ level)
@@ -436,11 +443,14 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                            l_set, level, lt_set >>
                 /\ IF self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops' = [j \in Procs |-> {}]
                       THEN /\ Assert(E_count(l_set'[self]) = elmtcount, 
-                                     "Failure of assertion at line 202, column 17.")
+                                     "Failure of assertion at line 204, column 17.")
                            /\ PrintT(history')
-                           /\ PrintT([i \in DOMAIN E_order(l_set'[self]) |-> <<E_order(l_set'[self])[i],
-                                                                               e_set'[self][E_order(l_set'[self])[i]],
-                                                                               t_set'[self][E_order(l_set'[self])[i]]>>])
+                           /\ PrintT([i \in DOMAIN E_order(l_set'[self]) |->
+                                               <<E_order(l_set'[self])[i],
+                                               [p_ini |-> e_set'[self][E_order(l_set'[self])[i]].p_ini,
+                                               v |-> Value(e_set'[self][E_order(l_set'[self])[i]]),
+                                               lt|-> Lt(e_set'[self][E_order(l_set'[self])[i]].v_acq)],
+                                               t_set'[self][E_order(l_set'[self])[i]]>>])
                            /\ printed' = 1
                       ELSE /\ TRUE
                            /\ UNCHANGED printed
