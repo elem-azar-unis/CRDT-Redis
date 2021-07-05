@@ -41,7 +41,7 @@ private:
 
     void print(redisReply *rpl, int depth) const
     {
-        for (int i = 0; i < depth - 1; ++i)
+        for (size_t i = 0; i < depth - 1; ++i)
             std::cout << "  ";
         switch (rpl->type)
         {
@@ -65,7 +65,7 @@ private:
                 std::cout << "Verb_" << rpl->vtype << ": " << rpl->str;
                 break;
             case REDIS_REPLY_ARRAY:
-                for (int i = 0; i < rpl->elements; ++i)
+                for (size_t i = 0; i < rpl->elements; ++i)
                     print(rpl->element[i], depth + 1);
                 break;
             case REDIS_REPLY_NIL:
@@ -112,7 +112,7 @@ public:
     {
         if (r == nullptr) return "";
         std::ostringstream stream;
-        for (int i = 0; i < r->elements; ++i)
+        for (size_t i = 0; i < r->elements; ++i)
             stream << (i != 0 ? " " : "") << r->element[i]->str;
         return stream.str();
     }

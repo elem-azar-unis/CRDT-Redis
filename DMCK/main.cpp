@@ -33,7 +33,7 @@ int main()
 
     run<rpq_op_script, rpq_oracle>("TLA/rwf_rpq/rwf_rpq_2_4.script");
     run<rpq_op_script, rpq_oracle>("TLA/rwf_rpq/rwf_rpq_3_3.script");
-    // run<rpq_op_script, rpq_oracle>("rwf_rpq.script");
+    // run<rpq_op_script, rpq_oracle>("test.script");
 
     return 0;
 }

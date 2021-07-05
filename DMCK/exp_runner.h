@@ -30,7 +30,7 @@ private:
             conn.clear();
             wait_system();
         }
-        for (int i = 0; i < replica_num; i++)
+        for (size_t i = 0; i < replica_num; i++)
             conn.emplace_back(IP, BASE_PORT + i, replica_num, i);
     }
 

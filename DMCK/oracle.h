@@ -206,4 +206,132 @@ public:
     }
 };
 
+class list_oracle : public oracle
+{
+private:
+    struct state : public state_interface
+    {
+        static constexpr auto RESET = "\033[0m";
+        static constexpr auto BRIGHT_YELLOW = "\033[93m";
+        static constexpr auto GRAY = "\033[90m";
+
+        int oid, v;
+        std::string lt;
+
+        explicit state(std::istringstream &s)
+        {
+            s >> oid >> p_ini >> v >> lt >> t;
+
+            if (p_ini != -1) eset = true;
+
+            const char *ch_t = t.c_str();
+            while (*ch_t != '\0')
+            {
+                if (*ch_t != '0' && *ch_t != ',')
+                {
+                    tset = true;
+                    break;
+                }
+                ch_t++;
+            }
+
+            while (s.peek() == ' ' || s.peek() == ';' || s.peek() == '\r' || s.peek() == '\n')
+                s.ignore();
+        }
+
+        explicit state(redisReply *rpl) : state_interface{rpl}
+        {
+            oid = atoi(rpl->element[3]->str);
+            v = rpl->element[4]->integer;
+            lt = rpl->element[5]->str;
+        }
+
+        void print(std::ostream &out) const override
+        {
+            if (&out == &std::cout) out << BRIGHT_YELLOW;
+            out << oid << ' ';
+            if (&out == &std::cout) out << RESET;
+
+            if (&out == &std::cout && !eset) out << GRAY;
+            out << p_ini << ' ' << v << ' ';
+            if (lt == "null")
+                out << lt << ' ';
+            else
+                out << '(' << lt << ") ";
+            if (&out == &std::cout && !eset) out << RESET;
+
+            if (&out == &std::cout && !tset) out << GRAY;
+            out << '[' << t << "]";
+            if (&out == &std::cout && !tset) out << RESET;
+
+            out << " ; ";
+        }
+
+    private:
+        bool equals(const state_interface &s) const override
+        {
+            // will never throw, typeid checked by base class operator==
+            auto st = static_cast<const state &>(s);
+            if (eset && (oid != st.oid || v != st.v || lt != st.lt)) return false;
+            return true;
+        }
+    };
+
+    std::vector<state> script;
+    std::vector<std::vector<state>> server;
+
+    void virtual_print(std::ostream &out) const override
+    {
+        out << "[script state] -- ";
+        for (auto &&tmp : script)
+            tmp.print(out);
+        out << '\n';
+
+        const char *indent = "";
+        out << "[server state] -- ";
+        for (auto &&tmplst : server)
+        {
+            out << indent;
+            indent = "                  ";
+            for (auto &&tmp : tmplst)
+                tmp.print(out);
+            out << '\n';
+        }
+        if (server.empty()) out << '\n';
+        out << std::flush;
+    }
+
+public:
+    explicit list_oracle(const std::string &str)
+    {
+        std::istringstream s{str};
+        while (s)
+            script.emplace_back(s);
+    }
+
+    bool check(std::vector<redis_connect> &conn, int crdt_num) override
+    {
+        std::ostringstream buf;
+        buf << "rwflestatusall list" << crdt_num;
+        auto cmd = buf.str();
+        for (auto &c : conn)
+        {
+            auto rpl = c.exec(cmd);
+            for (size_t i = 0; i < rpl->elements; i++)
+            {
+                server.emplace_back();
+                for (size_t j = 0; j < rpl->element[i]->elements; j++)
+                    server[i].emplace_back(rpl->element[i]->element[j]);
+            }
+        }
+        for (auto &sv_list : server)
+        {
+            if (sv_list.size() != script.size()) return false;
+            for (size_t i = 0; i < script.size(); i++)
+                if (sv_list[i] != script[i]) return false;
+        }
+        return true;
+    }
+};
+
 #endif  // DMCK_ORACLE_H
