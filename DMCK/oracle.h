@@ -221,19 +221,16 @@ private:
         explicit state(std::istringstream &s)
         {
             s >> oid >> p_ini >> v >> lt >> t;
+            p_ini--;
 
-            if (p_ini != -1) eset = true;
+            if (p_ini >= 0) eset = true;
 
-            const char *ch_t = t.c_str();
-            while (*ch_t != '\0')
-            {
-                if (*ch_t != '0' && *ch_t != ',')
+            for (auto ch : t)
+                if (ch != '0' && ch != ',')
                 {
                     tset = true;
                     break;
                 }
-                ch_t++;
-            }
 
             while (s.peek() == ' ' || s.peek() == ';' || s.peek() == '\r' || s.peek() == '\n')
                 s.ignore();
@@ -242,7 +239,7 @@ private:
         explicit state(redisReply *rpl) : state_interface{rpl}
         {
             oid = atoi(rpl->element[3]->str);
-            v = rpl->element[4]->integer;
+            v = atoi(rpl->element[4]->str);
             lt = rpl->element[5]->str;
         }
 
@@ -304,9 +301,12 @@ private:
 public:
     explicit list_oracle(const std::string &str)
     {
-        std::istringstream s{str};
-        while (s)
-            script.emplace_back(s);
+        if (str.at(0) != 'n')
+        {
+            std::istringstream s{str};
+            while (s)
+                script.emplace_back(s);
+        }
     }
 
     bool check(std::vector<redis_connect> &conn, int crdt_num) override
@@ -317,12 +317,10 @@ public:
         for (auto &c : conn)
         {
             auto rpl = c.exec(cmd);
+            server.emplace_back();
+            auto &svlist = server.back();
             for (size_t i = 0; i < rpl->elements; i++)
-            {
-                server.emplace_back();
-                for (size_t j = 0; j < rpl->element[i]->elements; j++)
-                    server[i].emplace_back(rpl->element[i]->element[j]);
-            }
+                svlist.emplace_back(rpl->element[i]);
         }
         for (auto &sv_list : server)
         {

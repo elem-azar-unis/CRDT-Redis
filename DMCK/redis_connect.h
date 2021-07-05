@@ -41,8 +41,6 @@ private:
 
     void print(redisReply *rpl, int depth) const
     {
-        for (size_t i = 0; i < depth - 1; ++i)
-            std::cout << "  ";
         switch (rpl->type)
         {
             case REDIS_REPLY_INTEGER:
@@ -66,7 +64,13 @@ private:
                 break;
             case REDIS_REPLY_ARRAY:
                 for (size_t i = 0; i < rpl->elements; ++i)
+                {
+                    for (int j = 0; j < depth; ++j)
+                        std::cout << "   ";
+                    if (i == 0) std::cout << "\b\b\b";
+                    std::cout << i << ") ";
                     print(rpl->element[i], depth + 1);
+                }
                 break;
             case REDIS_REPLY_NIL:
                 std::cout << "NULL";
