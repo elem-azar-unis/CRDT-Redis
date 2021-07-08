@@ -54,10 +54,10 @@ public:
     }
 };
 
-template <typename Scirpt, typename Oracle,
-          typename = std::enable_if_t<std::is_base_of<op_script, Scirpt>::value>,
-          typename = std::enable_if_t<std::is_base_of<oracle, Oracle>::value>>
-static void run(std::string_view filename, bool verbose = false)
+template <typename Scirpt, typename Oracle>
+static std::enable_if_t<std::is_base_of<op_script, Scirpt>::value
+                        && std::is_base_of<oracle, Oracle>::value>
+run(std::string_view filename, bool verbose = false)
 {
     timer time;
 
