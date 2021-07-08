@@ -55,8 +55,7 @@ public:
 };
 
 template <typename Scirpt, typename Oracle>
-static std::enable_if_t<std::is_base_of<op_script, Scirpt>::value
-                        && std::is_base_of<oracle, Oracle>::value>
+static std::enable_if_t<std::is_base_of_v<op_script, Scirpt> && std::is_base_of_v<oracle, Oracle>>
 run(std::string_view filename, bool verbose = false)
 {
     timer time;
