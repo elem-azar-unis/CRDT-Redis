@@ -163,6 +163,13 @@ void rwflinsertCommand(client *c)
                     return;
                 }
             }
+            if (pre != NULL && (!EXISTS(pre) || pre->pos_id == NULL))
+            {
+                sds errs =
+                    sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
+                addReplySds(c, errs);
+                return;
+            }
             rwfle *e = GET_RWFLE_NEW(argv);
             PREPARE_PRECOND_ADD(e);
             if (e->oid == NULL)

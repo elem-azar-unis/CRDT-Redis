@@ -428,6 +428,13 @@ void rlinsertCommand(client *c)
                     return;
                 }
             }
+            if (pre != NULL && (!LOOKUP(pre) || pre->pos_id == NULL))
+            {
+                sds errs =
+                    sdscatfmt(sdsempty(), "-No pre element %S in the list.\r\n", c->argv[2]->ptr);
+                addReplySds(c, errs);
+                return;
+            }
             rle *e = GET_RLE(c->db, c->argv[1], c->argv[3], 1);
             if (LOOKUP(e))
             {

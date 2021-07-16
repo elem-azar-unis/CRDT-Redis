@@ -6,3 +6,4 @@ states
 CMakeLists.txt
 result.txt
 dmck_run
+*.tar.gz

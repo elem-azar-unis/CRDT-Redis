@@ -282,6 +282,7 @@ private:
         out << "[script state] -- ";
         for (auto &&tmp : script)
             tmp.print(out);
+        if (script.empty()) out << "empty";
         out << '\n';
 
         const char *indent = "";
@@ -292,6 +293,7 @@ private:
             indent = "                  ";
             for (auto &&tmp : tmplst)
                 tmp.print(out);
+            if (tmplst.empty()) out << "empty";
             out << '\n';
         }
         if (server.empty()) out << '\n';
@@ -358,7 +360,7 @@ public:
             for (size_t i = 0; i < rpl->elements; i++)
                 svlist.emplace_back(rpl->element[i]);
         }
-        return inner_check(false);
+        return inner_check(true);
     }
 };
 
