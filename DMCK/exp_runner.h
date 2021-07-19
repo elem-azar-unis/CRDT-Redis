@@ -20,7 +20,7 @@ private:
     static constexpr auto IP = "127.0.0.1";
     static constexpr auto BASE_PORT = 6379;
 
-    int round{0}, loop{1};
+    int round{0}, loop{1}, print_counter{0};
     std::vector<redis_connect> conn;
 
     void construct_conn(int replica_num)
@@ -46,7 +46,10 @@ public:
             construct_conn(conn.size());
             round = 0;
 
-            std::cout << "Passed " << loop * MAX_ROUND << " scripts." << std::endl;
+            print_counter = (print_counter + 1) % 10;
+            if (print_counter == 0)
+                std::cout << "Passed " << loop * MAX_ROUND << " scripts." << std::endl;
+
             loop++;
         }
         round++;
@@ -56,7 +59,8 @@ public:
 
 template <typename Scirpt, typename Oracle>
 static std::enable_if_t<std::is_base_of_v<op_script, Scirpt> && std::is_base_of_v<oracle, Oracle>>
-run(std::string_view filename, bool verbose = false)
+run(std::string_view filename, std::ostream& failure = std::cout, bool verbose = false,
+    int skipped = 0)
 {
     timer time;
 
@@ -74,8 +78,11 @@ run(std::string_view filename, bool verbose = false)
     file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     exp_env env{replica_num};
 
+    for (int i = 0; i < 2 * skipped; ++i)
+        file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
     std::string operations, states;
-    int count = 0;
+    int count = skipped;
     while (file && std::getline(file, operations))
     {
         auto& conn = env.get();
@@ -88,10 +95,16 @@ run(std::string_view filename, bool verbose = false)
         if (!orcl.check(conn, env.get_round()))
         {
             std::cout << "Check failed for test No." << count + 1 << "! Line " << 2 + 2 * count
-                      << " in the file.\n";
+                      << " in the file \"" << filename << "\"." << std::endl;
             sc.print();
             orcl.print();
-            return;
+
+            if (&failure != &std::cout)
+            {
+                failure << operations << '\n';
+                failure << states << std::endl;
+            }
+            if (&failure == &std::cout) return;
         }
         count++;
     }

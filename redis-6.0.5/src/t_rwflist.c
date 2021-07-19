@@ -381,7 +381,7 @@ void rwflestatusall(client *c)
     addReplyArrayLen(c, count);
     while (e != NULL)
     {
-        addReplyArrayLen(c, 6);
+        addReplyArrayLen(c, 7);
 
         addReplyBulkSds(c, sdscatprintf(sdsempty(), "add id:%d", PID(e)));
         addReplyBulkSds(c, sdsnew("current:"));
@@ -393,6 +393,7 @@ void rwflestatusall(client *c)
             addReplyBulkSds(c, sdsnew("null"));
         else
             addReplyBulkSds(c, lcToSds(e->font_t));
+        addReplyBulkSds(c, leidToSds(e->pos_id));
 
         e = e->next;
     }

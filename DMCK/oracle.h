@@ -315,25 +315,19 @@ private:
         if (ignore_ne)
         {
             auto script_ig = ignore_nexist(script);
-            for (auto &sv_list : server)
-            {
-                auto sv_list_ig = ignore_nexist(sv_list);
-                if (sv_list_ig.size() != script_ig.size()) return false;
-                for (size_t i = 0; i < script_ig.size(); i++)
-                    if (sv_list_ig[i] != script_ig[i]) return false;
-            }
-            return true;
+            auto sv_list_ig = ignore_nexist(server[0]);
+            return list_equal(script_ig, sv_list_ig);
         }
         else
-        {
-            for (auto &sv_list : server)
-            {
-                if (sv_list.size() != script.size()) return false;
-                for (size_t i = 0; i < script.size(); i++)
-                    if (sv_list[i] != script[i]) return false;
-            }
-            return true;
-        }
+            return list_equal(server[0], script);
+    }
+
+    bool list_equal(std::vector<state> &a, std::vector<state> &b)
+    {
+        if (a.size() != b.size()) return false;
+        for (size_t i = 0; i < b.size(); i++)
+            if (a[i] != b[i]) return false;
+        return true;
     }
 
 public:
@@ -360,6 +354,10 @@ public:
             for (size_t i = 0; i < rpl->elements; i++)
                 svlist.emplace_back(rpl->element[i]);
         }
+        
+        for (size_t i = 0; i < server.size() - 1; i++)
+            if (!list_equal(server[i], server[i + 1])) return false;
+
         return inner_check(true);
     }
 };
