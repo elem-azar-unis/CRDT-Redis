@@ -1,10 +1,12 @@
 -------------------------------- MODULE rwf_list --------------------------------
 EXTENDS Integers, Sequences, TLC, FiniteSets
-CONSTANTS N, MaxOps, MaxElmts, Values
+CONSTANTS N, MaxOps, Values
 
 Dft_Values == {10, 20}
 
 Procs == 1..N 
+
+MaxElmts == MaxOps
 Elmts == 1..MaxElmts
 
 (*--algorithm rwf_list
@@ -17,34 +19,87 @@ variables
     printed = 0;
 
 define
-    Dft_eset_content == [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]
+    \* utilities
+    Pick(S) == CHOOSE s \in S : TRUE
+    RECURSIVE SetReduce(_, _, _)
+    SetReduce(Op(_, _), S, value) == IF S = {} THEN value
+                                     ELSE LET s == Pick(S)
+                                     IN SetReduce(Op, S \ {s}, Op(s, value)) 
+    Sum(S) == LET _op(a, b) == a + b
+              IN SetReduce(_op, S, 0)
+    
+    Range(f) == {f[x] : x \in DOMAIN f}
 
-    Inverse_leid(l_set, leid) == CHOOSE x \in Elmts : l_set[x] = leid
-    E_count(l_set) == Cardinality({x \in Elmts : l_set[x] /= -1})
-    Leid_order(l_set) == SortSeq([i \in 1..E_count(l_set) |-> l_set[i]], <)
-    E_order(l_set) == [i \in DOMAIN Leid_order(l_set) 
-                                |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
+    Max(S) == CHOOSE x \in S: 
+            \A y \in S: 
+              y <= x
+
+    Min(S) == CHOOSE x \in S: 
+                \A y \in S \ {x}: 
+                y > x
+    
+    \* autuals
+    
+    Dft_eset_content == [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]
+    
+    \* Leid. <<num, pid>> both start from 0.
+    Dft_leid == [j \in Elmts |-> <<0, 0>>]
+    Max_leid == [j \in Elmts |-> <<MaxElmts+1, 0>>]
+    \* compute (leid => integer value). for leid compare
+    Leid(l_set, e) == IF e = 0 THEN 0 ELSE 
+                      LET l == [j \in Elmts |-> (l_set[e][j][1] * N + l_set[e][j][2]) 
+                                                * ((MaxElmts * N + 1) ^ (MaxElmts - j))]
+                      IN Sum(Range(l))
+    \* get leid index from ledi value
+    Inverse_leid(l_set, leid) == CHOOSE x \in Elmts : Leid(l_set, x) = leid
+    
+    E_count(l_set) == Cardinality({x \in Elmts : l_set[x] /= Dft_leid})
+    Leid_order(l_set) == SortSeq([i \in 1..E_count(l_set) |-> Leid(l_set, i)], <)
+    \* get list order mapping. [the idx of 1st elmt, ..., the idx of last elmt]
+    E_order(l_set) == [i \in 1..E_count(l_set) |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
+
+    \* get next elmt of leid_idx prev from list.
+    Leid_suc(l_set, prev) == LET S == {e \in Elmts : Leid(l_set, e) > Leid(l_set, prev)}
+                             IN IF S = {} THEN Max_leid
+                                ELSE LET tmp == CHOOSE x \in S:
+                                                    \A y \in S \ {x}:
+                                                        Leid(l_set, y) > Leid(l_set, x)
+                                IN l_set[tmp]
+    
+    \* generate new leid between p and q. <<num, pid>> both start from 0. step: 1.
+    lprefix(p, i) == p[i][1]
+    rprefix(p, i) == IF p[i][1] = 0 THEN MaxElmts+1 ELSE p[i][1]
+    Leid_Gen(p, q, self) == 
+        LET idx == Min({x \in Elmts : (rprefix(q, x) - lprefix(p, x)) >= 2}) IN
+        IF p = Dft_leid THEN [j \in Elmts |-> IF j /= idx THEN <<0,0>> ELSE <<lprefix(p,idx)+1, self-1>>]
+        ELSE LET pnum == Max({x \in Elmts : p[x] /= <<0,0>>}) IN 
+             LET qnum == IF q = Max_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
+            [j \in Elmts |-> CASE j < idx /\ j <= pnum -> <<p[j][1], p[j][2]>>
+                               [] j < idx /\ j > pnum -> (IF j <= qnum THEN <<q[j][1], q[j][2]>>
+                                                          ELSE <<0, self-1>>)
+                               [] j = idx -> <<lprefix(p,idx)+1, self-1>>
+                               [] OTHER -> <<0,0>>]
+
+    \* for add operation to acquire leid of new element
+    Leid_New(l_set, self, prev, e) == IF l_set[e] /= Dft_leid THEN l_set[e]
+                                      ELSE LET p == IF prev = 0 THEN Dft_leid ELSE l_set[prev] 
+                                      IN Leid_Gen(p, Leid_suc(l_set, prev), self)
+    
     Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
     Lt(acq) == IF acq = [v |-> 0, t |-> -1, id |-> -1] THEN "null" ELSE <<acq.t, acq.id - 1>>
-
-    Leid(l_set, e) == IF e = 0 THEN 0 ELSE l_set[e]
-    Leid_Gen(p, level, self) == p + self * ((N + 1) ^ level)
-    Leid_New(l_set, level, self, prev, e) == IF l_set[e] /= -1 THEN l_set[e]
-                                             ELSE Leid_Gen(Leid(l_set, prev), level, self)
     
-    Min(a, b) == IF a <= b THEN a ELSE b
-    Max(a, b) == IF a <= b THEN b ELSE a
-    Max_RH(a, b) == [j \in Procs |-> Max(a[j], b[j])]
+    pMax(a, b) == IF a <= b THEN b ELSE a
+    Max_RH(a, b) == [j \in Procs |-> pMax(a[j], b[j])]
     
     \* read operations
     _Lookup(e_set, e) == e_set[e] /= Dft_eset_content
 
     \* prepare phases
-    _Add(e_set, t_set, l_set, level, self, prev, e, x) == 
-        IF ~_Lookup(e_set, e) /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= -1))
+    _Add(e_set, t_set, l_set, self, prev, e, x) == 
+        IF ~_Lookup(e_set, e) /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= Dft_leid))
         THEN
             [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
-             pos |-> Leid_New(l_set, level, self, prev, e), level |-> level - 1]
+             pos |-> Leid_New(l_set, self, prev, e)]
         ELSE [key |-> -1]
     
     _Update(e_set, t_set, e, i, t, self) == 
@@ -73,7 +128,7 @@ macro Remove(e, rhp) begin
 end macro;
 
 \* effect of add operation
-macro Add(e, x, p_ini, rh, pos, nlevel) begin
+macro Add(e, x, p_ini, rh, pos) begin
     if \E j \in Procs: t_set[e][j] < rh[j] then
         t_set[e] := Max_RH(rh, t_set[e]);
         if rh = t_set[e] then
@@ -85,7 +140,6 @@ macro Add(e, x, p_ini, rh, pos, nlevel) begin
             e_set[e] := [p_ini |-> p_ini, v_inn |-> x, v_acq |-> e_set[e].v_acq];
         end if;
     end if;
-    level := Min(level, nlevel);
     l_set[e] := pos;
 end macro;
 
@@ -104,7 +158,7 @@ macro Update(e, i, rh, lts) begin
             end if;
         end with;
     end if;
-    lt_set[e] := Max(lt_set[e], lts[1]);
+    lt_set[e] := pMax(lt_set[e], lts[1]);
 end macro;
 
 \* receive and process operations, one by one
@@ -112,7 +166,7 @@ macro Effect() begin
     if ops[self] /= {} then
         with msg \in ops[self] do
             if msg.op = "A" then
-                Add(msg.p.key, msg.p.val, msg.p.p_ini, msg.p.rh, msg.p.pos, msg.p.level);
+                Add(msg.p.key, msg.p.val, msg.p.p_ini, msg.p.rh, msg.p.pos);
             elsif msg.op = "R" then
                 Remove(msg.p.key, msg.p.rh);
             elsif msg.op = "U" then
@@ -128,8 +182,7 @@ process Set \in Procs
 variables
     e_set = [j \in Elmts |-> Dft_eset_content];
     t_set = [j \in Elmts |-> [k \in Procs |-> 0]];
-    l_set = [j \in Elmts |-> -1]; \* local set of leids
-    level = MaxElmts;
+    l_set = [j \in Elmts |-> Dft_leid]; \* local set of leids
     lt_set = [j \in Elmts |-> 0]; \* lamport clock
 begin Main:
     while TRUE do
@@ -141,12 +194,12 @@ begin Main:
                         \* add a new element
                         if elmtcount < MaxElmts then
                             with e = elmtcount + 1, v \in Values, prev \in {0} \union Elmts,
-                                addp = _Add(e_set, t_set, l_set, level, self, prev, e, v) do 
+                                addp = _Add(e_set, t_set, l_set, self, prev, e, v) do 
                                 \* select a random not new element to add
                                 history := Append(history, <<opcount, self, "Add", prev, e, v>>);
                                 if addp.key /= -1 then
                                     Broadcast("A", addp);
-                                    Add(e, v, self, addp.rh, addp.pos, addp.level);
+                                    Add(e, v, self, addp.rh, addp.pos);
                                     elmtcount := elmtcount + 1;
                                 end if;
                             end with;
@@ -156,7 +209,7 @@ begin Main:
                         \*
                         \* e \in {x \in Elmts : e_set[x] /= Dft_eset_content
                         \*                      \/ t_set[x] /= [k \in Procs |-> 0]
-                        \*                      \/ l_set[x] /= -1},
+                        \*                      \/ l_set[x] /= Dft_leid},
                         \*
                         \* This means that there is not any update of element e executed on x. 
                         \* However this will violate SEC. 
@@ -165,17 +218,17 @@ begin Main:
                         \* The readd can only be called on the elements whose leid (position id) 
                         \* is fixed, which is:
                         \*
-                        \* e \in {x \in Elmts : l_set[x] /= -1}
+                        \* e \in {x \in Elmts : l_set[x] /= Dft_leid}
                         \*
                         \* This has been fixed in the CRDT-Redis list implementations, with a 
                         \* corner case checking.
-                        with e \in {x \in Elmts : l_set[x] /= -1},
+                        with e \in {x \in Elmts : l_set[x] /= Dft_leid},
                              v \in Values, prev \in {0} \union Elmts,
-                             addp = _Add(e_set, t_set, l_set, level, self, prev, e, v) do 
+                             addp = _Add(e_set, t_set, l_set, self, prev, e, v) do 
                             history := Append(history, <<opcount, self, "Add", prev, e, v>>);
                             if addp.key /= -1 then
                                 Broadcast("A", addp);
-                                Add(e, v, self, addp.rh, addp.pos, addp.level);
+                                Add(e, v, self, addp.rh, addp.pos);
                             end if;
                         end with;
                     end either;
@@ -216,38 +269,90 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "480345d0" /\ chksum(tla) = "a1ac8c8d")
+\* BEGIN TRANSLATION (chksum(pcal) = "d761ee8a" /\ chksum(tla) = "b10038cf")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
+Pick(S) == CHOOSE s \in S : TRUE
+RECURSIVE SetReduce(_, _, _)
+SetReduce(Op(_, _), S, value) == IF S = {} THEN value
+                                 ELSE LET s == Pick(S)
+                                 IN SetReduce(Op, S \ {s}, Op(s, value))
+Sum(S) == LET _op(a, b) == a + b
+          IN SetReduce(_op, S, 0)
+
+Range(f) == {f[x] : x \in DOMAIN f}
+
+Max(S) == CHOOSE x \in S:
+        \A y \in S:
+          y <= x
+
+Min(S) == CHOOSE x \in S:
+            \A y \in S \ {x}:
+            y > x
+
+
+
 Dft_eset_content == [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]
 
-Inverse_leid(l_set, leid) == CHOOSE x \in Elmts : l_set[x] = leid
-E_count(l_set) == Cardinality({x \in Elmts : l_set[x] /= -1})
-Leid_order(l_set) == SortSeq([i \in 1..E_count(l_set) |-> l_set[i]], <)
-E_order(l_set) == [i \in DOMAIN Leid_order(l_set)
-                            |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
+
+Dft_leid == [j \in Elmts |-> <<0, 0>>]
+Max_leid == [j \in Elmts |-> <<MaxElmts+1, 0>>]
+
+Leid(l_set, e) == IF e = 0 THEN 0 ELSE
+                  LET l == [j \in Elmts |-> (l_set[e][j][1] * N + l_set[e][j][2])
+                                            * ((MaxElmts * N + 1) ^ (MaxElmts - j))]
+                  IN Sum(Range(l))
+
+Inverse_leid(l_set, leid) == CHOOSE x \in Elmts : Leid(l_set, x) = leid
+
+E_count(l_set) == Cardinality({x \in Elmts : l_set[x] /= Dft_leid})
+Leid_order(l_set) == SortSeq([i \in 1..E_count(l_set) |-> Leid(l_set, i)], <)
+
+E_order(l_set) == [i \in 1..E_count(l_set) |-> Inverse_leid(l_set, Leid_order(l_set)[i])]
+
+
+Leid_suc(l_set, prev) == LET S == {e \in Elmts : Leid(l_set, e) > Leid(l_set, prev)}
+                         IN IF S = {} THEN Max_leid
+                            ELSE LET tmp == CHOOSE x \in S:
+                                                \A y \in S \ {x}:
+                                                    Leid(l_set, y) > Leid(l_set, x)
+                            IN l_set[tmp]
+
+
+lprefix(p, i) == p[i][1]
+rprefix(p, i) == IF p[i][1] = 0 THEN MaxElmts+1 ELSE p[i][1]
+Leid_Gen(p, q, self) ==
+    LET idx == Min({x \in Elmts : (rprefix(q, x) - lprefix(p, x)) >= 2}) IN
+    IF p = Dft_leid THEN [j \in Elmts |-> IF j /= idx THEN <<0,0>> ELSE <<lprefix(p,idx)+1, self-1>>]
+    ELSE LET pnum == Max({x \in Elmts : p[x] /= <<0,0>>}) IN
+         LET qnum == IF q = Max_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
+        [j \in Elmts |-> CASE j < idx /\ j <= pnum -> <<p[j][1], p[j][2]>>
+                           [] j < idx /\ j > pnum -> (IF j <= qnum THEN <<q[j][1], q[j][2]>>
+                                                      ELSE <<0, self-1>>)
+                           [] j = idx -> <<lprefix(p,idx)+1, self-1>>
+                           [] OTHER -> <<0,0>>]
+
+
+Leid_New(l_set, self, prev, e) == IF l_set[e] /= Dft_leid THEN l_set[e]
+                                  ELSE LET p == IF prev = 0 THEN Dft_leid ELSE l_set[prev]
+                                  IN Leid_Gen(p, Leid_suc(l_set, prev), self)
+
 Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
 Lt(acq) == IF acq = [v |-> 0, t |-> -1, id |-> -1] THEN "null" ELSE <<acq.t, acq.id - 1>>
 
-Leid(l_set, e) == IF e = 0 THEN 0 ELSE l_set[e]
-Leid_Gen(p, level, self) == p + self * ((N + 1) ^ level)
-Leid_New(l_set, level, self, prev, e) == IF l_set[e] /= -1 THEN l_set[e]
-                                         ELSE Leid_Gen(Leid(l_set, prev), level, self)
-
-Min(a, b) == IF a <= b THEN a ELSE b
-Max(a, b) == IF a <= b THEN b ELSE a
-Max_RH(a, b) == [j \in Procs |-> Max(a[j], b[j])]
+pMax(a, b) == IF a <= b THEN b ELSE a
+Max_RH(a, b) == [j \in Procs |-> pMax(a[j], b[j])]
 
 
 _Lookup(e_set, e) == e_set[e] /= Dft_eset_content
 
 
-_Add(e_set, t_set, l_set, level, self, prev, e, x) ==
-    IF ~_Lookup(e_set, e) /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= -1))
+_Add(e_set, t_set, l_set, self, prev, e, x) ==
+    IF ~_Lookup(e_set, e) /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= Dft_leid))
     THEN
         [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
-         pos |-> Leid_New(l_set, level, self, prev, e), level |-> level - 1]
+         pos |-> Leid_New(l_set, self, prev, e)]
     ELSE [key |-> -1]
 
 _Update(e_set, t_set, e, i, t, self) ==
@@ -260,10 +365,10 @@ _Remove(e_set, t_set, self, e) ==
                                                        ELSE t_set[e][j]]]
     ELSE [key |-> -1]
 
-VARIABLES e_set, t_set, l_set, level, lt_set
+VARIABLES e_set, t_set, l_set, lt_set
 
 vars == << ops, opcount, elmtcount, history, printed, e_set, t_set, l_set, 
-           level, lt_set >>
+           lt_set >>
 
 ProcSet == (Procs)
 
@@ -276,8 +381,7 @@ Init == (* Global variables *)
         (* Process Set *)
         /\ e_set = [self \in Procs |-> [j \in Elmts |-> Dft_eset_content]]
         /\ t_set = [self \in Procs |-> [j \in Elmts |-> [k \in Procs |-> 0]]]
-        /\ l_set = [self \in Procs |-> [j \in Elmts |-> -1]]
-        /\ level = [self \in Procs |-> MaxElmts]
+        /\ l_set = [self \in Procs |-> [j \in Elmts |-> Dft_leid]]
         /\ lt_set = [self \in Procs |-> [j \in Elmts |-> 0]]
 
 Set(self) == \/ /\ IF opcount < MaxOps
@@ -286,7 +390,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                              THEN /\ LET e == elmtcount + 1 IN
                                                        \E v \in Values:
                                                          \E prev \in {0} \union Elmts:
-                                                           LET addp == _Add(e_set[self], t_set[self], l_set[self], level[self], self, prev, e, v) IN
+                                                           LET addp == _Add(e_set[self], t_set[self], l_set[self], self, prev, e, v) IN
                                                              /\ history' = Append(history, <<opcount', self, "Add", prev, e, v>>)
                                                              /\ IF addp.key /= -1
                                                                    THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
@@ -301,7 +405,6 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                          ELSE /\ TRUE
                                                                                               /\ e_set' = e_set
                                                                                    /\ t_set' = t_set
-                                                                        /\ level' = [level EXCEPT ![self] = Min(level[self], (addp.level))]
                                                                         /\ l_set' = [l_set EXCEPT ![self][e] = addp.pos]
                                                                         /\ elmtcount' = elmtcount + 1
                                                                    ELSE /\ TRUE
@@ -309,20 +412,18 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                         elmtcount, 
                                                                                         e_set, 
                                                                                         t_set, 
-                                                                                        l_set, 
-                                                                                        level >>
+                                                                                        l_set >>
                                              ELSE /\ TRUE
                                                   /\ UNCHANGED << ops, 
                                                                   elmtcount, 
                                                                   history, 
                                                                   e_set, 
                                                                   t_set, 
-                                                                  l_set, 
-                                                                  level >>
-                                    \/ /\ \E e \in {x \in Elmts : l_set[self][x] /= -1}:
+                                                                  l_set >>
+                                    \/ /\ \E e \in {x \in Elmts : l_set[self][x] /= Dft_leid}:
                                             \E v \in Values:
                                               \E prev \in {0} \union Elmts:
-                                                LET addp == _Add(e_set[self], t_set[self], l_set[self], level[self], self, prev, e, v) IN
+                                                LET addp == _Add(e_set[self], t_set[self], l_set[self], self, prev, e, v) IN
                                                   /\ history' = Append(history, <<opcount', self, "Add", prev, e, v>>)
                                                   /\ IF addp.key /= -1
                                                         THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
@@ -337,14 +438,12 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                               ELSE /\ TRUE
                                                                                    /\ e_set' = e_set
                                                                         /\ t_set' = t_set
-                                                             /\ level' = [level EXCEPT ![self] = Min(level[self], (addp.level))]
                                                              /\ l_set' = [l_set EXCEPT ![self][e] = addp.pos]
                                                         ELSE /\ TRUE
                                                              /\ UNCHANGED << ops, 
                                                                              e_set, 
                                                                              t_set, 
-                                                                             l_set, 
-                                                                             level >>
+                                                                             l_set >>
                                        /\ UNCHANGED elmtcount
                                  /\ UNCHANGED lt_set
                               \/ /\ \E e \in Elmts:
@@ -363,7 +462,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                    /\ UNCHANGED << ops, 
                                                                    e_set, 
                                                                    t_set >>
-                                 /\ UNCHANGED <<elmtcount, l_set, level, lt_set>>
+                                 /\ UNCHANGED <<elmtcount, l_set, lt_set>>
                               \/ /\ \E e \in Elmts:
                                       \E i \in Values:
                                         LET updp == _Update(e_set[self], t_set[self], e, i, lt_set[self][e], self) IN
@@ -382,17 +481,16 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                         ELSE /\ TRUE
                                                                              /\ e_set' = e_set
                                                                 /\ t_set' = t_set
-                                                     /\ lt_set' = [lt_set EXCEPT ![self][e] = Max(lt_set[self][e], (updp.lt)[1])]
+                                                     /\ lt_set' = [lt_set EXCEPT ![self][e] = pMax(lt_set[self][e], (updp.lt)[1])]
                                                 ELSE /\ TRUE
                                                      /\ UNCHANGED << ops, 
                                                                      e_set, 
                                                                      t_set, 
                                                                      lt_set >>
-                                 /\ UNCHANGED <<elmtcount, l_set, level>>
+                                 /\ UNCHANGED <<elmtcount, l_set>>
                       ELSE /\ TRUE
                            /\ UNCHANGED << ops, opcount, elmtcount, history, 
-                                           e_set, t_set, l_set, level, 
-                                           lt_set >>
+                                           e_set, t_set, l_set, lt_set >>
                 /\ UNCHANGED printed
              \/ /\ IF ops[self] /= {}
                       THEN /\ \E msg \in ops[self]:
@@ -407,7 +505,6 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                             ELSE /\ TRUE
                                                                  /\ e_set' = e_set
                                                       /\ t_set' = t_set
-                                           /\ level' = [level EXCEPT ![self] = Min(level[self], (msg.p.level))]
                                            /\ l_set' = [l_set EXCEPT ![self][(msg.p.key)] = msg.p.pos]
                                            /\ UNCHANGED lt_set
                                       ELSE /\ IF msg.op = "R"
@@ -430,20 +527,20 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                     ELSE /\ TRUE
                                                                                          /\ e_set' = e_set
                                                                             /\ t_set' = t_set
-                                                                 /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = Max(lt_set[self][(msg.p.key)], (msg.p.lt)[1])]
+                                                                 /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = pMax(lt_set[self][(msg.p.key)], (msg.p.lt)[1])]
                                                             ELSE /\ TRUE
                                                                  /\ UNCHANGED << e_set, 
                                                                                  t_set, 
                                                                                  lt_set >>
-                                           /\ UNCHANGED << l_set, level >>
+                                           /\ l_set' = l_set
                                 /\ history' = Append(history, <<msg.num, self, "effect">>)
                                 /\ ops' = [ops EXCEPT ![self] = ops[self] \ {msg}]
                       ELSE /\ TRUE
                            /\ UNCHANGED << ops, history, e_set, t_set, 
-                                           l_set, level, lt_set >>
+                                           l_set, lt_set >>
                 /\ IF self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops' = [j \in Procs |-> {}]
                       THEN /\ Assert(E_count(l_set'[self]) = elmtcount, 
-                                     "Failure of assertion at line 204, column 17.")
+                                     "Failure of assertion at line 257, column 17.")
                            /\ PrintT(history')
                            /\ PrintT([i \in DOMAIN E_order(l_set'[self]) |->
                                                <<E_order(l_set'[self])[i],
@@ -464,13 +561,12 @@ Spec == Init /\ [][Next]_vars
 
 \* ops[p1] = ops[p2] => op_exed[p1] = op_exed[p2]
 SEC == \A p1, p2 \in Procs: (p1 /= p2 /\ ops[p1] = ops[p2]) => (e_set[p1] = e_set[p2] 
-                                                               /\ t_set[p1] = t_set[p2] 
-                                                               /\ level[p1] = level[p2]
+                                                               /\ t_set[p1] = t_set[p2]
                                                                /\ l_set[p1] = l_set[p2]
                                                                /\ lt_set[p1] = lt_set[p2])
 
-Leid_TO == \A p \in Procs: \A i, j \in Elmts: (i /= j) => (l_set[p][i] = -1 
-                                                          \/ l_set[p][j] = -1 
+Leid_TO == \A p \in Procs: \A i, j \in Elmts: (i /= j) => (l_set[p][i] = Dft_leid
+                                                          \/ l_set[p][j] = Dft_leid 
                                                           \/ l_set[p][i] /= l_set[p][j])
 
 
