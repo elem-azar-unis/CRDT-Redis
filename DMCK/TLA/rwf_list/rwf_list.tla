@@ -9,6 +9,29 @@ Procs == 1..N
 MaxElmts == MaxOps
 Elmts == 1..MaxElmts
 
+\* utilities
+Pick(S) == CHOOSE s \in S : TRUE
+
+RECURSIVE SetReduce(_, _, _)
+SetReduce(Op(_, _), S, value) == IF S = {} THEN value
+                                 ELSE LET s == Pick(S)
+                                 IN SetReduce(Op, S \ {s}, Op(s, value)) 
+
+Sum(S) == LET _op(a, b) == a + b
+          IN SetReduce(_op, S, 0)
+
+Range(f) == {f[x] : x \in DOMAIN f}
+
+Max(S) == CHOOSE x \in S: 
+            \A y \in S: 
+              y <= x
+
+Min(S) == CHOOSE x \in S: 
+            \A y \in S \ {x}: 
+              y > x
+
+pMax(a, b) == IF a <= b THEN b ELSE a
+
 (*--algorithm rwf_list
 
 variables
@@ -19,36 +42,16 @@ variables
     printed = 0;
 
 define
-    \* utilities
-    Pick(S) == CHOOSE s \in S : TRUE
-    RECURSIVE SetReduce(_, _, _)
-    SetReduce(Op(_, _), S, value) == IF S = {} THEN value
-                                     ELSE LET s == Pick(S)
-                                     IN SetReduce(Op, S \ {s}, Op(s, value)) 
-    Sum(S) == LET _op(a, b) == a + b
-              IN SetReduce(_op, S, 0)
-    
-    Range(f) == {f[x] : x \in DOMAIN f}
-
-    Max(S) == CHOOSE x \in S: 
-            \A y \in S: 
-              y <= x
-
-    Min(S) == CHOOSE x \in S: 
-                \A y \in S \ {x}: 
-                y > x
-    
-    \* autuals
-    
+    \* default contents. represent "null"
     Dft_eset_content == [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]
-    
+
     \* Leid. <<num, pid>> both start from 0.
     Dft_leid == [j \in Elmts |-> <<0, 0>>]
-    Max_leid == [j \in Elmts |-> <<MaxElmts+1, 0>>]
+
     \* compute (leid => integer value). for leid compare
     Leid(l_set, e) == IF e = 0 THEN 0 ELSE 
                       LET l == [j \in Elmts |-> (l_set[e][j][1] * N + l_set[e][j][2]) 
-                                                * ((MaxElmts * N + 1) ^ (MaxElmts - j))]
+                                                * (((MaxElmts + 1) * N) ^ (MaxElmts - j))]
                       IN Sum(Range(l))
     \* get leid index from ledi value
     Inverse_leid(l_set, leid) == CHOOSE x \in Elmts : Leid(l_set, x) = leid
@@ -60,7 +63,7 @@ define
 
     \* get next elmt of leid_idx prev from list.
     Leid_suc(l_set, prev) == LET S == {e \in Elmts : Leid(l_set, e) > Leid(l_set, prev)}
-                             IN IF S = {} THEN Max_leid
+                             IN IF S = {} THEN Dft_leid
                                 ELSE LET tmp == CHOOSE x \in S:
                                                     \A y \in S \ {x}:
                                                         Leid(l_set, y) > Leid(l_set, x)
@@ -68,12 +71,13 @@ define
     
     \* generate new leid between p and q. <<num, pid>> both start from 0. step: 1.
     lprefix(p, i) == p[i][1]
-    rprefix(p, i) == IF p[i][1] = 0 THEN MaxElmts+1 ELSE p[i][1]
+    rprefix(p, i) == LET num == IF p = Dft_leid THEN 0 ELSE Max({x \in Elmts : p[x] /= <<0,0>>}) IN
+                     IF i > num THEN MaxElmts+1 ELSE p[i][1]
     Leid_Gen(p, q, self) == 
         LET idx == Min({x \in Elmts : (rprefix(q, x) - lprefix(p, x)) >= 2}) IN
         IF p = Dft_leid THEN [j \in Elmts |-> IF j /= idx THEN <<0,0>> ELSE <<lprefix(p,idx)+1, self-1>>]
         ELSE LET pnum == Max({x \in Elmts : p[x] /= <<0,0>>}) IN 
-             LET qnum == IF q = Max_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
+             LET qnum == IF q = Dft_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
             [j \in Elmts |-> CASE j < idx /\ j <= pnum -> <<p[j][1], p[j][2]>>
                                [] j < idx /\ j > pnum -> (IF j <= qnum THEN <<q[j][1], q[j][2]>>
                                                           ELSE <<0, self-1>>)
@@ -88,7 +92,6 @@ define
     Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
     Lt(acq) == IF acq = [v |-> 0, t |-> -1, id |-> -1] THEN "null" ELSE <<acq.t, acq.id - 1>>
     
-    pMax(a, b) == IF a <= b THEN b ELSE a
     Max_RH(a, b) == [j \in Procs |-> pMax(a[j], b[j])]
     
     \* read operations
@@ -269,39 +272,19 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "d761ee8a" /\ chksum(tla) = "b10038cf")
+\* BEGIN TRANSLATION (chksum(pcal) = "a2d08f0d" /\ chksum(tla) = "4a10c924")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
-Pick(S) == CHOOSE s \in S : TRUE
-RECURSIVE SetReduce(_, _, _)
-SetReduce(Op(_, _), S, value) == IF S = {} THEN value
-                                 ELSE LET s == Pick(S)
-                                 IN SetReduce(Op, S \ {s}, Op(s, value))
-Sum(S) == LET _op(a, b) == a + b
-          IN SetReduce(_op, S, 0)
-
-Range(f) == {f[x] : x \in DOMAIN f}
-
-Max(S) == CHOOSE x \in S:
-        \A y \in S:
-          y <= x
-
-Min(S) == CHOOSE x \in S:
-            \A y \in S \ {x}:
-            y > x
-
-
-
 Dft_eset_content == [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]
 
 
 Dft_leid == [j \in Elmts |-> <<0, 0>>]
-Max_leid == [j \in Elmts |-> <<MaxElmts+1, 0>>]
+
 
 Leid(l_set, e) == IF e = 0 THEN 0 ELSE
                   LET l == [j \in Elmts |-> (l_set[e][j][1] * N + l_set[e][j][2])
-                                            * ((MaxElmts * N + 1) ^ (MaxElmts - j))]
+                                            * (((MaxElmts + 1) * N) ^ (MaxElmts - j))]
                   IN Sum(Range(l))
 
 Inverse_leid(l_set, leid) == CHOOSE x \in Elmts : Leid(l_set, x) = leid
@@ -313,7 +296,7 @@ E_order(l_set) == [i \in 1..E_count(l_set) |-> Inverse_leid(l_set, Leid_order(l_
 
 
 Leid_suc(l_set, prev) == LET S == {e \in Elmts : Leid(l_set, e) > Leid(l_set, prev)}
-                         IN IF S = {} THEN Max_leid
+                         IN IF S = {} THEN Dft_leid
                             ELSE LET tmp == CHOOSE x \in S:
                                                 \A y \in S \ {x}:
                                                     Leid(l_set, y) > Leid(l_set, x)
@@ -321,12 +304,13 @@ Leid_suc(l_set, prev) == LET S == {e \in Elmts : Leid(l_set, e) > Leid(l_set, pr
 
 
 lprefix(p, i) == p[i][1]
-rprefix(p, i) == IF p[i][1] = 0 THEN MaxElmts+1 ELSE p[i][1]
+rprefix(p, i) == LET num == IF p = Dft_leid THEN 0 ELSE Max({x \in Elmts : p[x] /= <<0,0>>}) IN
+                 IF i > num THEN MaxElmts+1 ELSE p[i][1]
 Leid_Gen(p, q, self) ==
     LET idx == Min({x \in Elmts : (rprefix(q, x) - lprefix(p, x)) >= 2}) IN
     IF p = Dft_leid THEN [j \in Elmts |-> IF j /= idx THEN <<0,0>> ELSE <<lprefix(p,idx)+1, self-1>>]
     ELSE LET pnum == Max({x \in Elmts : p[x] /= <<0,0>>}) IN
-         LET qnum == IF q = Max_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
+         LET qnum == IF q = Dft_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
         [j \in Elmts |-> CASE j < idx /\ j <= pnum -> <<p[j][1], p[j][2]>>
                            [] j < idx /\ j > pnum -> (IF j <= qnum THEN <<q[j][1], q[j][2]>>
                                                       ELSE <<0, self-1>>)
@@ -341,7 +325,6 @@ Leid_New(l_set, self, prev, e) == IF l_set[e] /= Dft_leid THEN l_set[e]
 Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
 Lt(acq) == IF acq = [v |-> 0, t |-> -1, id |-> -1] THEN "null" ELSE <<acq.t, acq.id - 1>>
 
-pMax(a, b) == IF a <= b THEN b ELSE a
 Max_RH(a, b) == [j \in Procs |-> pMax(a[j], b[j])]
 
 
@@ -540,7 +523,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                            l_set, lt_set >>
                 /\ IF self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops' = [j \in Procs |-> {}]
                       THEN /\ Assert(E_count(l_set'[self]) = elmtcount, 
-                                     "Failure of assertion at line 257, column 17.")
+                                     "Failure of assertion at line 260, column 17.")
                            /\ PrintT(history')
                            /\ PrintT([i \in DOMAIN E_order(l_set'[self]) |->
                                                <<E_order(l_set'[self])[i],
