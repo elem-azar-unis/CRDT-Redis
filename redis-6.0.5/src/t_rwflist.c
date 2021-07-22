@@ -207,42 +207,43 @@ void rwflinsertCommand(client *c)
             ovhd_inc(-rwfle_overhead(e));
 #endif
             removeFunc(c, e, t);
+            robj *ht = GET_LIST_HT(rargv, 1);
+            // The element is newly inserted. Initialize it anyway.
+            if (e->oid == NULL)
+            {
+                e->oid = sdsdup(c->rargv[3]->ptr);
+                e->content = sdsdup(c->rargv[4]->ptr);
+                e->pos_id = sdsToLeid(c->rargv[9]->ptr);
+                rwfle *head = getHead(ht);
+                if (head == NULL) { setHead(ht, e); }
+                else if (leid_cmp(e->pos_id, head->pos_id) < 0)
+                {
+                    setHead(ht, e);
+                    e->next = head;
+                }
+                else
+                {
+                    rwfle *pre = GET_RWFLE(rargv, 0);
+                    rwfle *p, *q;
+                    if (pre != NULL && pre->pos_id != NULL)
+                        p = pre;
+                    else
+                        p = head;
+                    q = p->next;
+                    while (q != NULL && leid_cmp(e->pos_id, q->pos_id) > 0)
+                    {
+                        p = q;
+                        q = q->next;
+                    }
+                    p->next = e;
+                    e->next = q;
+                }
+            }
+            
             int exist_tmp = EXISTS(e);
             if (addCheck((reh *)e, t))
             {
-                robj *ht = GET_LIST_HT(rargv, 1);
                 if (!exist_tmp) incrLen(ht, 1);
-                // The element is newly inserted.
-                if (e->oid == NULL)
-                {
-                    e->oid = sdsdup(c->rargv[3]->ptr);
-                    e->content = sdsdup(c->rargv[4]->ptr);
-                    e->pos_id = sdsToLeid(c->rargv[9]->ptr);
-                    rwfle *head = getHead(ht);
-                    if (head == NULL) { setHead(ht, e); }
-                    else if (leid_cmp(e->pos_id, head->pos_id) < 0)
-                    {
-                        setHead(ht, e);
-                        e->next = head;
-                    }
-                    else
-                    {
-                        rwfle *pre = GET_RWFLE(rargv, 0);
-                        rwfle *p, *q;
-                        if (pre != NULL && pre->pos_id != NULL)
-                            p = pre;
-                        else
-                            p = head;
-                        q = p->next;
-                        while (q != NULL && leid_cmp(e->pos_id, q->pos_id) > 0)
-                        {
-                            p = q;
-                            q = q->next;
-                        }
-                        p->next = e;
-                        e->next = q;
-                    }
-                }
 
 #define IN_UPDATE_NORMAL(T) \
             if (e->T##_t == NULL) e->T = T;

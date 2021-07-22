@@ -310,32 +310,6 @@ private:
         return rtn;
     }
 
-    bool inner_check(bool ignore_ne)
-    {
-        if (ignore_ne)
-        {
-            auto script_ig = ignore_nexist(script);
-            for (auto &sv_list : server)
-            {
-                auto sv_list_ig = ignore_nexist(sv_list);
-                if (sv_list_ig.size() != script_ig.size()) return false;
-                for (size_t i = 0; i < script_ig.size(); i++)
-                    if (sv_list_ig[i] != script_ig[i]) return false;
-            }
-            return true;
-        }
-        else
-        {
-            for (auto &sv_list : server)
-            {
-                if (sv_list.size() != script.size()) return false;
-                for (size_t i = 0; i < script.size(); i++)
-                    if (sv_list[i] != script[i]) return false;
-            }
-            return true;
-        }
-    }
-
 public:
     explicit list_oracle(const std::string &str)
     {
@@ -360,7 +334,13 @@ public:
             for (size_t i = 0; i < rpl->elements; i++)
                 svlist.emplace_back(rpl->element[i]);
         }
-        return inner_check(true);
+        for (auto &sv_list : server)
+        {
+            if (sv_list.size() != script.size()) return false;
+            for (size_t i = 0; i < script.size(); i++)
+                if (sv_list[i] != script[i]) return false;
+        }
+        return true;
     }
 };
 

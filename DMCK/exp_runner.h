@@ -78,6 +78,8 @@ run(std::string_view filename, std::ostream& failure = std::cout, bool verbose =
     file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
     exp_env env{replica_num};
 
+    if (&failure != &std::cout) failure << replica_num << std::endl;
+
     for (int i = 0; i < 2 * skipped; ++i)
         file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
