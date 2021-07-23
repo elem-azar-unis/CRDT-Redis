@@ -85,8 +85,7 @@ define
                                [] OTHER -> <<0,0>>]
 
     \* for add operation to acquire leid of new element
-    Leid_New(l_set, self, prev, e) == IF l_set[e] /= Dft_leid THEN l_set[e]
-                                      ELSE LET p == IF prev = 0 THEN Dft_leid ELSE l_set[prev] 
+    Leid_New(l_set, self, prev, e) == LET p == IF prev = 0 THEN Dft_leid ELSE l_set[prev] 
                                       IN Leid_Gen(p, Leid_suc(l_set, prev), self)
     
     Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
@@ -99,20 +98,26 @@ define
 
     \* prepare phases
     _Add(e_set, t_set, l_set, self, prev, e, x) == 
-        IF ~_Lookup(e_set, e) /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= Dft_leid))
-        THEN
-            [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
+        IF ~_Lookup(e_set, e) /\ l_set[e] = Dft_leid 
+           /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= Dft_leid))
+        THEN [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
              pos |-> Leid_New(l_set, self, prev, e)]
         ELSE [key |-> -1]
     
+    _reAdd(e_set, t_set, l_set, self, e, x) == 
+        IF ~_Lookup(e_set, e) /\ l_set[e] /= Dft_leid
+        THEN [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e], pos |-> l_set[e]]
+        ELSE [key |-> -1]
+    
     _Update(e_set, t_set, e, i, t, self) == 
-        IF _Lookup(e_set, e) THEN [key |-> e, val |-> i, rh |-> t_set[e], lt |-> <<t+1, self>>]
+        IF _Lookup(e_set, e)
+        THEN [key |-> e, val |-> i, rh |-> t_set[e], lt |-> <<t+1, self>>]
         ELSE [key |-> -1]
     
     _Remove(e_set, t_set, self, e) == 
-        IF _Lookup(e_set, e) THEN 
-            [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN t_set[e][j] + 1 
-                                                           ELSE t_set[e][j]]]
+        IF _Lookup(e_set, e)
+        THEN [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN t_set[e][j] + 1 
+                                                             ELSE t_set[e][j]]]
         ELSE [key |-> -1] 
 end define;
 
@@ -193,8 +198,18 @@ begin Main:
             if opcount < MaxOps then
                 opcount := opcount + 1;
                 either \* Add
+                    \* Note that the insert operation should always insert a unique new element
+                    \* with a designated position (i.e. *prev* element), or a previously added
+                    \* element with "readd" being its *prev*. 
+                    \* 
+                    \* Otherwise it is undefined behavior. We do not check that.
+                    \* 
+                    \* This is reasonable that for collaborative text editing, the newly inserted
+                    \* element (characters, words, ...) should always be unique. And the "readd"
+                    \* semantics, which may be used for undo/redo scenarios, means that the element
+                    \* has been added from a global perspective.
                     either
-                        \* add a new element
+                        \* add uniquely a new element
                         if elmtcount < MaxElmts then
                             with e = elmtcount + 1, v \in Values, prev \in {0} \union Elmts,
                                 addp = _Add(e_set, t_set, l_set, self, prev, e, v) do 
@@ -208,27 +223,12 @@ begin Main:
                             end with;
                         end if;
                     or
-                        \* Select randomly an old but not concurrent-init element to add:
-                        \*
-                        \* e \in {x \in Elmts : e_set[x] /= Dft_eset_content
-                        \*                      \/ t_set[x] /= [k \in Procs |-> 0]
-                        \*                      \/ l_set[x] /= Dft_leid},
-                        \*
-                        \* This means that there is not any update of element e executed on x. 
-                        \* However this will violate SEC. 
-                        \* This is a bug found in implementation. Not a bug of the algorithm, 
-                        \* since the algorithm assumes that all newly inserted element are unique. 
-                        \* The readd can only be called on the elements whose leid (position id) 
-                        \* is fixed, which is:
-                        \*
-                        \* e \in {x \in Elmts : l_set[x] /= Dft_leid}
-                        \*
-                        \* This has been fixed in the CRDT-Redis list implementations, with a 
-                        \* corner case checking.
-                        with e \in {x \in Elmts : l_set[x] /= Dft_leid},
-                             v \in Values, prev \in {0} \union Elmts,
-                             addp = _Add(e_set, t_set, l_set, self, prev, e, v) do 
-                            history := Append(history, <<opcount, self, "Add", prev, e, v>>);
+                        \* Select an element to readd. 
+                        \* Additional coner case: e is not added. The readd should be denied.
+                        \* The prev element is strictly set to "readd" to indicate the semantics.
+                        with e \in Elmts, v \in Values,
+                             addp = _reAdd(e_set, t_set, l_set, self, e, v) do 
+                            history := Append(history, <<opcount, self, "reAdd", e, v>>);
                             if addp.key /= -1 then
                                 Broadcast("A", addp);
                                 Add(e, v, self, addp.rh, addp.pos);
@@ -272,7 +272,7 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "a2d08f0d" /\ chksum(tla) = "4a10c924")
+\* BEGIN TRANSLATION (chksum(pcal) = "4f885925" /\ chksum(tla) = "a72b1a85")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
@@ -318,8 +318,7 @@ Leid_Gen(p, q, self) ==
                            [] OTHER -> <<0,0>>]
 
 
-Leid_New(l_set, self, prev, e) == IF l_set[e] /= Dft_leid THEN l_set[e]
-                                  ELSE LET p == IF prev = 0 THEN Dft_leid ELSE l_set[prev]
+Leid_New(l_set, self, prev, e) == LET p == IF prev = 0 THEN Dft_leid ELSE l_set[prev]
                                   IN Leid_Gen(p, Leid_suc(l_set, prev), self)
 
 Value(c) == IF c.v_acq = [v |-> 0, t |-> -1, id |-> -1] THEN c.v_inn ELSE c.v_acq.v
@@ -332,20 +331,26 @@ _Lookup(e_set, e) == e_set[e] /= Dft_eset_content
 
 
 _Add(e_set, t_set, l_set, self, prev, e, x) ==
-    IF ~_Lookup(e_set, e) /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= Dft_leid))
-    THEN
-        [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
+    IF ~_Lookup(e_set, e) /\ l_set[e] = Dft_leid
+       /\ (prev = 0 \/ (_Lookup(e_set, prev) /\ l_set[prev] /= Dft_leid))
+    THEN [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e],
          pos |-> Leid_New(l_set, self, prev, e)]
     ELSE [key |-> -1]
 
+_reAdd(e_set, t_set, l_set, self, e, x) ==
+    IF ~_Lookup(e_set, e) /\ l_set[e] /= Dft_leid
+    THEN [key |-> e, val |-> x, p_ini |-> self, rh |-> t_set[e], pos |-> l_set[e]]
+    ELSE [key |-> -1]
+
 _Update(e_set, t_set, e, i, t, self) ==
-    IF _Lookup(e_set, e) THEN [key |-> e, val |-> i, rh |-> t_set[e], lt |-> <<t+1, self>>]
+    IF _Lookup(e_set, e)
+    THEN [key |-> e, val |-> i, rh |-> t_set[e], lt |-> <<t+1, self>>]
     ELSE [key |-> -1]
 
 _Remove(e_set, t_set, self, e) ==
-    IF _Lookup(e_set, e) THEN
-        [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN t_set[e][j] + 1
-                                                       ELSE t_set[e][j]]]
+    IF _Lookup(e_set, e)
+    THEN [key |-> e, rh |-> [j \in Procs |-> IF j = self THEN t_set[e][j] + 1
+                                                         ELSE t_set[e][j]]]
     ELSE [key |-> -1]
 
 VARIABLES e_set, t_set, l_set, lt_set
@@ -403,30 +408,29 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                   e_set, 
                                                                   t_set, 
                                                                   l_set >>
-                                    \/ /\ \E e \in {x \in Elmts : l_set[self][x] /= Dft_leid}:
+                                    \/ /\ \E e \in Elmts:
                                             \E v \in Values:
-                                              \E prev \in {0} \union Elmts:
-                                                LET addp == _Add(e_set[self], t_set[self], l_set[self], self, prev, e, v) IN
-                                                  /\ history' = Append(history, <<opcount', self, "Add", prev, e, v>>)
-                                                  /\ IF addp.key /= -1
-                                                        THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
-                                                                                        ELSE ops[j] \union {[op |-> "A", num |-> opcount', p |-> addp]}]
-                                                             /\ IF \E j \in Procs: t_set[self][e][j] < (addp.rh)[j]
-                                                                   THEN /\ t_set' = [t_set EXCEPT ![self][e] = Max_RH((addp.rh), t_set[self][e])]
-                                                                        /\ IF (addp.rh) = t_set'[self][e]
-                                                                              THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]]
-                                                                              ELSE /\ e_set' = [e_set EXCEPT ![self][e] = Dft_eset_content]
-                                                                   ELSE /\ IF (addp.rh) = t_set[self][e] /\ self > e_set[self][e].p_ini
-                                                                              THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> e_set[self][e].v_acq]]
-                                                                              ELSE /\ TRUE
-                                                                                   /\ e_set' = e_set
-                                                                        /\ t_set' = t_set
-                                                             /\ l_set' = [l_set EXCEPT ![self][e] = addp.pos]
-                                                        ELSE /\ TRUE
-                                                             /\ UNCHANGED << ops, 
-                                                                             e_set, 
-                                                                             t_set, 
-                                                                             l_set >>
+                                              LET addp == _reAdd(e_set[self], t_set[self], l_set[self], self, e, v) IN
+                                                /\ history' = Append(history, <<opcount', self, "reAdd", e, v>>)
+                                                /\ IF addp.key /= -1
+                                                      THEN /\ ops' = [j \in Procs |-> IF j = self THEN ops[j]
+                                                                                      ELSE ops[j] \union {[op |-> "A", num |-> opcount', p |-> addp]}]
+                                                           /\ IF \E j \in Procs: t_set[self][e][j] < (addp.rh)[j]
+                                                                 THEN /\ t_set' = [t_set EXCEPT ![self][e] = Max_RH((addp.rh), t_set[self][e])]
+                                                                      /\ IF (addp.rh) = t_set'[self][e]
+                                                                            THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]]
+                                                                            ELSE /\ e_set' = [e_set EXCEPT ![self][e] = Dft_eset_content]
+                                                                 ELSE /\ IF (addp.rh) = t_set[self][e] /\ self > e_set[self][e].p_ini
+                                                                            THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> e_set[self][e].v_acq]]
+                                                                            ELSE /\ TRUE
+                                                                                 /\ e_set' = e_set
+                                                                      /\ t_set' = t_set
+                                                           /\ l_set' = [l_set EXCEPT ![self][e] = addp.pos]
+                                                      ELSE /\ TRUE
+                                                           /\ UNCHANGED << ops, 
+                                                                           e_set, 
+                                                                           t_set, 
+                                                                           l_set >>
                                        /\ UNCHANGED elmtcount
                                  /\ UNCHANGED lt_set
                               \/ /\ \E e \in Elmts:

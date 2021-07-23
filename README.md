@@ -104,3 +104,7 @@ The operations of Lists are:
 * **[type]linsert L prev id content font size color property** : Add a new element *id* after *prev* into the list *L*, with the content *content*, and the initial properties *font* *size* *color* and *property*(bitmap that encodes bold, italic and underline). If *prev* is "null", it means insert the element at the beginning of the list. If *prev* is "readd", it means to re-add the element that is previously added and then removed, and restore its position.
 * **[type]lupdate L id type value** : Update the *type* property with *value* for element *id* in list *L*.
 * **[type]lrem L id** : Remove element *id* from the list *L*.
+
+Note that the insert operation should always insert a unique new element with a designated position (i.e. *prev* element), or a previously added element with "readd" being its *prev*. Otherwise it is undefined behavior.
+
+This is reasonable that for collaborative text editing, the newly inserted element (characters, words, ...) should always be unique. And the "readd" semantics, which may be used for undo/redo scenarios, means that you have seen the element. The element has been added at least from a global perspective.
