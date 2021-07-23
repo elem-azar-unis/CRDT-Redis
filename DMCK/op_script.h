@@ -96,7 +96,7 @@ public:
                 auto r = conn[stp.pid].exec(optable[stp.opid].full_op);
                 if (r.is_ok()) optable[stp.opid].effect_op = conn[stp.pid].get_inner_msg();
             }
-            else
+            else if (optable[stp.opid].effect_op.get() != nullptr)
                 conn[stp.pid].pass_inner_msg(optable[stp.opid].effect_op);
             if (verbose)
             {
@@ -170,6 +170,13 @@ private:
                 buf << "null ";
             else
                 buf << prev << " ";
+            buf << oid << " e " << value << " 0 0 0";
+        }
+        else if (type == "reAdd")
+        {
+            int value;
+            s >> oid >> value;
+            buf << "rwflinsert list" << crdt_num << " readd ";
             buf << oid << " e " << value << " 0 0 0";
         }
         else if (type == "Upd")

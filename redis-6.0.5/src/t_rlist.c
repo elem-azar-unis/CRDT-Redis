@@ -466,7 +466,17 @@ void rlinsertCommand(client *c)
                 leidFree(id);
             }
             else
+            {
+                if (strcmp(c->argv[2]->ptr, "readd") != 0)
+                {
+                    sds errs = sdscatfmt(
+                        sdsempty(), "-Element %S has set its position, can only be readded.\r\n",
+                        c->argv[3]->ptr);
+                    addReplySds(c, errs);
+                    return;
+                }
                 RARGV_ADD_SDS(leidToSds(e->pos_id));
+            }
             RARGV_ADD_SDS(vc_now(getCurrent(GET_LIST_HT(argv, 1))));
         CRDT_EFFECT
             vc *t = CR_GET_LAST;
