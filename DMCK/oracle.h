@@ -166,7 +166,7 @@ private:
         bool equals(const state_interface &s) const override
         {
             // will never throw, typeid checked by base class operator==
-            auto v = static_cast<const state &>(s);
+            const auto &v = static_cast<const state &>(s);
             if (eset && (v_inn != v.v_inn || v_acq != v.v_acq)) return false;
             return true;
         }
@@ -268,7 +268,7 @@ private:
         bool equals(const state_interface &s) const override
         {
             // will never throw, typeid checked by base class operator==
-            auto st = static_cast<const state &>(s);
+            const auto &st = static_cast<const state &>(s);
             if (eset && (oid != st.oid || v != st.v || lt != st.lt)) return false;
             return true;
         }
@@ -335,11 +335,7 @@ public:
                 svlist.emplace_back(rpl->element[i]);
         }
         for (auto &sv_list : server)
-        {
-            if (sv_list.size() != script.size()) return false;
-            for (size_t i = 0; i < script.size(); i++)
-                if (sv_list[i] != script[i]) return false;
-        }
+            if (sv_list != script) return false;
         return true;
     }
 };
