@@ -18,33 +18,33 @@ def read(fp: str, n: int) -> Iterable[List[str]]:
         yield lines
 
 
-def parse_history(h):
+def parse_history(h: str) -> str:
     h = h[4:-4].replace(' ', '').replace(',\"e\"', '').replace('\"', '')
     h = h.replace('>>,<<', ' ; ').replace(',', ' ')
     return h + ' ; '
 
 
-def parse_oracle(e, t):
+def parse_oracle(e: str, t: str) -> str:
     rtn = ""
     if e == r'{}':
         rtn += "n n n "
     else:
         e = e[2:-2].replace(' ', '').replace('\"', '')
-        e = {a.split('|->')[0]: a.split('|->')[1] for a in e.split(',')}
-        rtn += f"{e['p_ini']} {e['v_inn']} {e['v_acq']} "
+        tmp = {a.split('|->')[0]: a.split('|->')[1] for a in e.split(',')}
+        rtn += f"{tmp['p_ini']} {tmp['v_inn']} {tmp['v_acq']} "
 
     if t == r'{}':
         rtn += "n"
     else:
         t = t[2:-2].replace(' ', '').replace('\"', '')
         t = t.replace('<<', '').replace('>>', '')
-        t = t.split(',')
+        tmp = t.split(',')
         # for 't|->0,1,0,1' is splited with ','
-        while len(t) > 2:
-            t[-2] = t[-2] + ',' + t[-1]
-            t.pop()
-        t = {a.split('|->')[0]: a.split('|->')[1] for a in t}
-        rtn += t['t']
+        while len(tmp) > 2:
+            tmp[-2] = tmp[-2] + ',' + tmp[-1]
+            tmp.pop()
+        tmp = {a.split('|->')[0]: a.split('|->')[1] for a in tmp}
+        rtn += tmp['t']
 
     return rtn
 

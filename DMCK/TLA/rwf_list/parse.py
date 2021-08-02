@@ -1,4 +1,3 @@
-from os import replace
 from typing import Iterable, List
 
 
@@ -19,20 +18,19 @@ def read(fp: str, n: int) -> Iterable[List[str]]:
         yield lines
 
 
-def parse_history(h):
+def parse_history(h: str) -> str:
     h = h[4:-4].replace(' ', '').replace('\"', '')
     h = h.replace('>>,<<', ' ; ').replace(',', ' ')
     return h
 
 
-def parse_oracle(o):
+def parse_oracle(o: str) -> str:
     if o == '<< >>':
         return 'n'
     o = o[4:-6].replace(' ', '').replace('[p_ini|->', '')
     o = o.replace('v|->', '').replace('\"', '')
-    o = o.split('>>>>,<<')
     rtn = ""
-    for e in o:
+    for e in o.split('>>>>,<<'):
         tmp_rh = e.split('],<<')
         tmp_acq = tmp_rh[0].split('lt|->')
         rtn += tmp_acq[0].replace(',', ' ')
