@@ -79,7 +79,7 @@ define
         ELSE LET pnum == Max({x \in Elmts : p[x] /= <<0,0>>}) IN 
              LET qnum == IF q = Dft_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
             [j \in Elmts |-> CASE j < idx /\ j <= pnum -> <<p[j][1], p[j][2]>>
-                               [] j < idx /\ j > pnum -> (IF j <= qnum THEN <<q[j][1], q[j][2]>>
+                               [] j < idx /\ j > pnum -> (IF j < qnum THEN <<q[j][1], q[j][2]>>
                                                           ELSE <<0, self-1>>)
                                [] j = idx -> <<lprefix(p,idx)+1, self-1>>
                                [] OTHER -> <<0,0>>]
@@ -272,7 +272,7 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "4f885925" /\ chksum(tla) = "a72b1a85")
+\* BEGIN TRANSLATION (chksum(pcal) = "ad111479" /\ chksum(tla) = "aa9d5396")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
@@ -312,7 +312,7 @@ Leid_Gen(p, q, self) ==
     ELSE LET pnum == Max({x \in Elmts : p[x] /= <<0,0>>}) IN
          LET qnum == IF q = Dft_leid THEN 0 ELSE Max({x \in Elmts : q[x] /= <<0,0>>}) IN
         [j \in Elmts |-> CASE j < idx /\ j <= pnum -> <<p[j][1], p[j][2]>>
-                           [] j < idx /\ j > pnum -> (IF j <= qnum THEN <<q[j][1], q[j][2]>>
+                           [] j < idx /\ j > pnum -> (IF j < qnum THEN <<q[j][1], q[j][2]>>
                                                       ELSE <<0, self-1>>)
                            [] j = idx -> <<lprefix(p,idx)+1, self-1>>
                            [] OTHER -> <<0,0>>]
