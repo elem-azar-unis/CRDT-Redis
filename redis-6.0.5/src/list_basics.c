@@ -84,9 +84,9 @@ leid *constructLeid(leid *p, leid *q, vc *t)
         }
         for (int i = p->num; i < index; i++)
         {
-            rtn->p[i].pos = (q != NULL && i < q->num) ? q->p[i].pos : 0;
-            rtn->p[i].pid = (q != NULL && i < q->num) ? q->p[i].pid : t->id;
-            rtn->p[i].count = (q != NULL && i < q->num) ? q->p[i].count : count;
+            rtn->p[i].pos = 0;
+            rtn->p[i].pid = 0;
+            rtn->p[i].count = 0;
         }
     }
     else
