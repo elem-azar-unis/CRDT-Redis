@@ -4,7 +4,7 @@ Several Conflict-Free Replicated Data Types (CRDTs) implemented based on Redis(6
 
 Things we do for such implementation:
 
-* Enable Redis to replicate in P2P mode.
+* Enable Redis to replicate in multi-master mode.
 * Implement the CRDT framework.
 * Implement specific CRDTs according to their algorithms.
 

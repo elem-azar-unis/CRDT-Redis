@@ -131,6 +131,7 @@ end macro;
 macro Remove(e, rhp) begin
     if \E j \in Procs: t_set[e][j] < rhp[j] then
         t_set[e] := Max_RH(rhp, t_set[e]);
+        lt_set[e] := 0;
         e_set[e] := Dft_eset_content;
     end if;
 end macro;
@@ -139,6 +140,7 @@ end macro;
 macro Add(e, x, p_ini, rh, pos) begin
     if \E j \in Procs: t_set[e][j] < rh[j] then
         t_set[e] := Max_RH(rh, t_set[e]);
+        lt_set[e] := 0;
         if rh = t_set[e] then
             e_set[e] := [p_ini |-> p_ini, v_inn |-> x, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]];
         else e_set[e] := Dft_eset_content;
@@ -157,16 +159,19 @@ macro Update(e, i, rh, lts) begin
         t_set[e] := Max_RH(rh, t_set[e]);
         if rh = t_set[e] then
             e_set[e] := [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> i, t |-> lts[1], id |-> lts[2]]];
-        else e_set[e] := Dft_eset_content;
+            lt_set[e] := pMax(0, lts[1]);
+        else 
+            e_set[e] := Dft_eset_content;
+            lt_set[e] := 0;
         end if;
     else
         with old_acq = e_set[e].v_acq do
             if rh = t_set[e] /\ (old_acq.t < lts[1] \/ (old_acq.t = lts[1] /\ old_acq.id < lts[2])) then
                 e_set[e] := [p_ini |-> e_set[e].p_ini, v_inn |-> e_set[e].v_inn, v_acq |-> [v |-> i, t |-> lts[1], id |-> lts[2]]];
+                lt_set[e] := pMax(lt_set[e], lts[1]);
             end if;
         end with;
     end if;
-    lt_set[e] := pMax(lt_set[e], lts[1]);
 end macro;
 
 \* receive and process operations, one by one
@@ -272,7 +277,7 @@ begin Main:
 end process;
 
 end algorithm;*)
-\* BEGIN TRANSLATION (chksum(pcal) = "ad111479" /\ chksum(tla) = "aa9d5396")
+\* BEGIN TRANSLATION (chksum(pcal) = "279370a1" /\ chksum(tla) = "acd71e0a")
 VARIABLES ops, opcount, elmtcount, history, printed
 
 (* define statement *)
@@ -385,6 +390,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                                    ELSE ops[j] \union {[op |-> "A", num |-> opcount', p |-> addp]}]
                                                                         /\ IF \E j \in Procs: t_set[self][e][j] < (addp.rh)[j]
                                                                               THEN /\ t_set' = [t_set EXCEPT ![self][e] = Max_RH((addp.rh), t_set[self][e])]
+                                                                                   /\ lt_set' = [lt_set EXCEPT ![self][e] = 0]
                                                                                    /\ IF (addp.rh) = t_set'[self][e]
                                                                                          THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]]
                                                                                          ELSE /\ e_set' = [e_set EXCEPT ![self][e] = Dft_eset_content]
@@ -392,7 +398,8 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                          THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> e_set[self][e].v_acq]]
                                                                                          ELSE /\ TRUE
                                                                                               /\ e_set' = e_set
-                                                                                   /\ t_set' = t_set
+                                                                                   /\ UNCHANGED << t_set, 
+                                                                                                   lt_set >>
                                                                         /\ l_set' = [l_set EXCEPT ![self][e] = addp.pos]
                                                                         /\ elmtcount' = elmtcount + 1
                                                                    ELSE /\ TRUE
@@ -400,14 +407,16 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                         elmtcount, 
                                                                                         e_set, 
                                                                                         t_set, 
-                                                                                        l_set >>
+                                                                                        l_set, 
+                                                                                        lt_set >>
                                              ELSE /\ TRUE
                                                   /\ UNCHANGED << ops, 
                                                                   elmtcount, 
                                                                   history, 
                                                                   e_set, 
                                                                   t_set, 
-                                                                  l_set >>
+                                                                  l_set, 
+                                                                  lt_set >>
                                     \/ /\ \E e \in Elmts:
                                             \E v \in Values:
                                               LET addp == _reAdd(e_set[self], t_set[self], l_set[self], self, e, v) IN
@@ -417,6 +426,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                                       ELSE ops[j] \union {[op |-> "A", num |-> opcount', p |-> addp]}]
                                                            /\ IF \E j \in Procs: t_set[self][e][j] < (addp.rh)[j]
                                                                  THEN /\ t_set' = [t_set EXCEPT ![self][e] = Max_RH((addp.rh), t_set[self][e])]
+                                                                      /\ lt_set' = [lt_set EXCEPT ![self][e] = 0]
                                                                       /\ IF (addp.rh) = t_set'[self][e]
                                                                             THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]]
                                                                             ELSE /\ e_set' = [e_set EXCEPT ![self][e] = Dft_eset_content]
@@ -424,15 +434,16 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                             THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> self, v_inn |-> v, v_acq |-> e_set[self][e].v_acq]]
                                                                             ELSE /\ TRUE
                                                                                  /\ e_set' = e_set
-                                                                      /\ t_set' = t_set
+                                                                      /\ UNCHANGED << t_set, 
+                                                                                      lt_set >>
                                                            /\ l_set' = [l_set EXCEPT ![self][e] = addp.pos]
                                                       ELSE /\ TRUE
                                                            /\ UNCHANGED << ops, 
                                                                            e_set, 
                                                                            t_set, 
-                                                                           l_set >>
+                                                                           l_set, 
+                                                                           lt_set >>
                                        /\ UNCHANGED elmtcount
-                                 /\ UNCHANGED lt_set
                               \/ /\ \E e \in Elmts:
                                       LET rmvp == _Remove(e_set[self], t_set[self], self, e) IN
                                         /\ history' = Append(history, <<opcount', self, "Rmv", e>>)
@@ -441,15 +452,18 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                                               ELSE ops[j] \union {[op |-> "R", num |-> opcount', p |-> rmvp]}]
                                                    /\ IF \E j \in Procs: t_set[self][e][j] < (rmvp.rh)[j]
                                                          THEN /\ t_set' = [t_set EXCEPT ![self][e] = Max_RH((rmvp.rh), t_set[self][e])]
+                                                              /\ lt_set' = [lt_set EXCEPT ![self][e] = 0]
                                                               /\ e_set' = [e_set EXCEPT ![self][e] = Dft_eset_content]
                                                          ELSE /\ TRUE
                                                               /\ UNCHANGED << e_set, 
-                                                                              t_set >>
+                                                                              t_set, 
+                                                                              lt_set >>
                                               ELSE /\ TRUE
                                                    /\ UNCHANGED << ops, 
                                                                    e_set, 
-                                                                   t_set >>
-                                 /\ UNCHANGED <<elmtcount, l_set, lt_set>>
+                                                                   t_set, 
+                                                                   lt_set >>
+                                 /\ UNCHANGED <<elmtcount, l_set>>
                               \/ /\ \E e \in Elmts:
                                       \E i \in Values:
                                         LET updp == _Update(e_set[self], t_set[self], e, i, lt_set[self][e], self) IN
@@ -461,14 +475,17 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                            THEN /\ t_set' = [t_set EXCEPT ![self][e] = Max_RH((updp.rh), t_set[self][e])]
                                                                 /\ IF (updp.rh) = t_set'[self][e]
                                                                       THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> i, t |-> (updp.lt)[1], id |-> (updp.lt)[2]]]]
+                                                                           /\ lt_set' = [lt_set EXCEPT ![self][e] = pMax(0, (updp.lt)[1])]
                                                                       ELSE /\ e_set' = [e_set EXCEPT ![self][e] = Dft_eset_content]
+                                                                           /\ lt_set' = [lt_set EXCEPT ![self][e] = 0]
                                                            ELSE /\ LET old_acq == e_set[self][e].v_acq IN
                                                                      IF (updp.rh) = t_set[self][e] /\ (old_acq.t < (updp.lt)[1] \/ (old_acq.t = (updp.lt)[1] /\ old_acq.id < (updp.lt)[2]))
                                                                         THEN /\ e_set' = [e_set EXCEPT ![self][e] = [p_ini |-> e_set[self][e].p_ini, v_inn |-> e_set[self][e].v_inn, v_acq |-> [v |-> i, t |-> (updp.lt)[1], id |-> (updp.lt)[2]]]]
+                                                                             /\ lt_set' = [lt_set EXCEPT ![self][e] = pMax(lt_set[self][e], (updp.lt)[1])]
                                                                         ELSE /\ TRUE
-                                                                             /\ e_set' = e_set
+                                                                             /\ UNCHANGED << e_set, 
+                                                                                             lt_set >>
                                                                 /\ t_set' = t_set
-                                                     /\ lt_set' = [lt_set EXCEPT ![self][e] = pMax(lt_set[self][e], (updp.lt)[1])]
                                                 ELSE /\ TRUE
                                                      /\ UNCHANGED << ops, 
                                                                      e_set, 
@@ -484,6 +501,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                 /\ IF msg.op = "A"
                                       THEN /\ IF \E j \in Procs: t_set[self][(msg.p.key)][j] < (msg.p.rh)[j]
                                                  THEN /\ t_set' = [t_set EXCEPT ![self][(msg.p.key)] = Max_RH((msg.p.rh), t_set[self][(msg.p.key)])]
+                                                      /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = 0]
                                                       /\ IF (msg.p.rh) = t_set'[self][(msg.p.key)]
                                                             THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> (msg.p.p_ini), v_inn |-> (msg.p.val), v_acq |-> [v |-> 0, t |-> -1, id |-> -1]]]
                                                             ELSE /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = Dft_eset_content]
@@ -491,30 +509,34 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                                             THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> (msg.p.p_ini), v_inn |-> (msg.p.val), v_acq |-> e_set[self][(msg.p.key)].v_acq]]
                                                             ELSE /\ TRUE
                                                                  /\ e_set' = e_set
-                                                      /\ t_set' = t_set
+                                                      /\ UNCHANGED << t_set, 
+                                                                      lt_set >>
                                            /\ l_set' = [l_set EXCEPT ![self][(msg.p.key)] = msg.p.pos]
-                                           /\ UNCHANGED lt_set
                                       ELSE /\ IF msg.op = "R"
                                                  THEN /\ IF \E j \in Procs: t_set[self][(msg.p.key)][j] < (msg.p.rh)[j]
                                                             THEN /\ t_set' = [t_set EXCEPT ![self][(msg.p.key)] = Max_RH((msg.p.rh), t_set[self][(msg.p.key)])]
+                                                                 /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = 0]
                                                                  /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = Dft_eset_content]
                                                             ELSE /\ TRUE
                                                                  /\ UNCHANGED << e_set, 
-                                                                                 t_set >>
-                                                      /\ UNCHANGED lt_set
+                                                                                 t_set, 
+                                                                                 lt_set >>
                                                  ELSE /\ IF msg.op = "U"
                                                             THEN /\ IF \E j \in Procs: t_set[self][(msg.p.key)][j] < (msg.p.rh)[j]
                                                                        THEN /\ t_set' = [t_set EXCEPT ![self][(msg.p.key)] = Max_RH((msg.p.rh), t_set[self][(msg.p.key)])]
                                                                             /\ IF (msg.p.rh) = t_set'[self][(msg.p.key)]
                                                                                   THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> -1, v_inn |-> 0, v_acq |-> [v |-> (msg.p.val), t |-> (msg.p.lt)[1], id |-> (msg.p.lt)[2]]]]
+                                                                                       /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = pMax(0, (msg.p.lt)[1])]
                                                                                   ELSE /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = Dft_eset_content]
+                                                                                       /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = 0]
                                                                        ELSE /\ LET old_acq == e_set[self][(msg.p.key)].v_acq IN
                                                                                  IF (msg.p.rh) = t_set[self][(msg.p.key)] /\ (old_acq.t < (msg.p.lt)[1] \/ (old_acq.t = (msg.p.lt)[1] /\ old_acq.id < (msg.p.lt)[2]))
                                                                                     THEN /\ e_set' = [e_set EXCEPT ![self][(msg.p.key)] = [p_ini |-> e_set[self][(msg.p.key)].p_ini, v_inn |-> e_set[self][(msg.p.key)].v_inn, v_acq |-> [v |-> (msg.p.val), t |-> (msg.p.lt)[1], id |-> (msg.p.lt)[2]]]]
+                                                                                         /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = pMax(lt_set[self][(msg.p.key)], (msg.p.lt)[1])]
                                                                                     ELSE /\ TRUE
-                                                                                         /\ e_set' = e_set
+                                                                                         /\ UNCHANGED << e_set, 
+                                                                                                         lt_set >>
                                                                             /\ t_set' = t_set
-                                                                 /\ lt_set' = [lt_set EXCEPT ![self][(msg.p.key)] = pMax(lt_set[self][(msg.p.key)], (msg.p.lt)[1])]
                                                             ELSE /\ TRUE
                                                                  /\ UNCHANGED << e_set, 
                                                                                  t_set, 
@@ -527,7 +549,7 @@ Set(self) == \/ /\ IF opcount < MaxOps
                                            l_set, lt_set >>
                 /\ IF self = 1 /\ printed = 0 /\ opcount = MaxOps /\ ops' = [j \in Procs |-> {}]
                       THEN /\ Assert(E_count(l_set'[self]) = elmtcount, 
-                                     "Failure of assertion at line 260, column 17.")
+                                     "Failure of assertion at line 265, column 17.")
                            /\ PrintT(history')
                            /\ PrintT([i \in DOMAIN E_order(l_set'[self]) |->
                                                <<E_order(l_set'[self])[i],
