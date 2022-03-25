@@ -1,3 +1,5 @@
+> Notice: This is the original readme of the redis 6.0.5.
+
 This README is just a fast *quick start* document. You can find more detailed documentation at [redis.io](https://redis.io).
 
 What is Redis?

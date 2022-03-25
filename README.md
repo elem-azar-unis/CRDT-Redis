@@ -108,3 +108,16 @@ The operations of Lists are:
 Note that the insert operation should always insert a unique new element with a designated position (i.e. *prev* element), or a previously added element with "readd" being its *prev*. Otherwise it is undefined behavior.
 
 This is reasonable that for collaborative text editing, the newly inserted element (characters, words, ...) should always be unique. And the "readd" semantics, which may be used for undo/redo scenarios, means that you have seen the element. The element has been added at least from a global perspective.
+
+## Folders Of This Repo
+
+* *redis-6.0.5* : The CRDT-Redis source code. The main part of this repo.
+* *experiment* : Simple test and experimental evaluation for CRDT-Redis.
+  * Simple config, run and test.
+  * Randomized testing.
+  * Manual MET test.
+  * Experimental evaluation of memory overhead and consistency.
+* *MET* : Model-based explorative testing for CRDT-Redis.
+* *document* : Some technical papers of CRDT-Redis.
+
+You may find more info in the *readme.md* of the corresponding folders.

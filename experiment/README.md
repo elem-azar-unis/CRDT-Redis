@@ -4,7 +4,7 @@ Here are the tests and the experiments we do on our CRDT implementations. There 
 
 * *redis_test* : The testing bash scripts and server configuration files. Also used in the experiment.
   * **.sh* : Bash scripts for starting and testing on local machine.
-  * *test.py* : Local test we do to test the correctness of our CRDT implementations.
+  * *test.py* : Manual MET test, we do it locally to test the correctness of our CRDT implementations.
   * *connection.py* : Used for experiments using virtual machines. Construct the server part of experiment framework, close it and clean it when the experiment is finished. It use ssh to control the server VMs to start their Redis instances, construct replication among them, and add networking delay between them. When the experiment is finished, close all the server and remove their .rdb and .log files.
 * *bench* : The experiment code. Constructs the experiment, generates and runs operations, get logs and results.
   * *exp_env.h* : Construct the experiment environment. Start servers, construct replication, setup delays. Shutdown and cleanup when this round finishes.
@@ -23,7 +23,7 @@ Here are the tests and the experiments we do on our CRDT implementations. There 
 
 ## Experiment Framework
 
-<div align=center><img src="exp-crop.png" width="65%" height="65%"></div>
+<div align=center><img src="exp-crop.png" width="65%"></div>
 
 We run all server nodes and client nodes on a workstation. Logically we divide the Redis servers into 3 data centers. Each data center has 1-5 instances of Redis.
 We achieve this by designating different localhost IPs for different kind of connections (e.g. 127.0.0.1 for client-server connection, 127.0.0.2 for between data center connection, and 127.0.0.3 for within data center connection).
