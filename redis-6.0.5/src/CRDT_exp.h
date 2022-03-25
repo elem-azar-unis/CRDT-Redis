@@ -7,7 +7,7 @@
 
 #include "server.h"
 
-#define CRDT_EXPERIMENT
+// #define CRDT_EXPERIMENT
 #ifdef CRDT_EXPERIMENT
 
 // #define CRDT_LOG

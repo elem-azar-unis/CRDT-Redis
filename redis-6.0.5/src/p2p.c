@@ -1,10 +1,10 @@
 //
 // Created by user on 18-4-12.
 //
-#include <arpa/inet.h>
 
 #include "CRDT_exp.h"
 #include "server.h"
+#include <arpa/inet.h>
 
 static int exp_local = 0;
 
