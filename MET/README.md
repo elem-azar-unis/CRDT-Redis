@@ -8,7 +8,7 @@ MET helps with the correctness of the design and the implementation of CRDTs in 
 - **Implementation** : Conduct explorative testing using the output of former model checking. Systematically test the system with all possible scenarios.
 
 <div align=center><img src="met-framework.png" width="65%"></div>
-<center style="font-style:italic"> MET Framework </center>
+
 
 ## How To Do MET
 
