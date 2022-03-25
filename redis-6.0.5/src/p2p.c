@@ -1,8 +1,10 @@
 //
 // Created by user on 18-4-12.
 //
-#include "server.h"
 #include <arpa/inet.h>
+
+#include "CRDT_exp.h"
+#include "server.h"
 
 static int exp_local = 0;
 
@@ -40,6 +42,8 @@ int connectWithReplica(char *ip, int port)
     return C_OK;
 }
 
+#ifdef CRDT_EXPERIMENT
+
 void repltestCommand(client *c)
 {
     /* REPLICATE is not allowed in cluster mode. */
@@ -72,6 +76,8 @@ void repltestCommand(client *c)
         addReply(c, shared.ok);
     }
 }
+
+#endif
 
 void replicateCommand(client *c)
 {

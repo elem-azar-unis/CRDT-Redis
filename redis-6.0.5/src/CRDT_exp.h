@@ -16,6 +16,8 @@
 #define CRDT_ELE_STATUS
 // #define CRDT_TIME
 
+void repltestCommand(client *c);
+
 #endif
 
 #if defined(CRDT_LOG) || defined(CRDT_TIME)

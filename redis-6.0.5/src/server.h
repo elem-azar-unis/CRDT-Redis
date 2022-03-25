@@ -2415,7 +2415,6 @@ void aclCommand(client *c);
 void stralgoCommand(client *c);
 
 void replicateCommand(client *c);
-void repltestCommand(client* c);
 
 
 robj *getZsetOrCreate(redisDb *db, robj *zset_name, robj *element_name);
