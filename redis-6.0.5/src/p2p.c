@@ -106,6 +106,28 @@ void replicateCommand(client *c)
     server.p2p_count = (int)size;
     server.p2p_id = (int)id;
 
+    // ../../redis-6.0.5/src/redis-cli -h 127.0.0.1 -p 6379 REPLICATE 3 0 AUTOMAT 172.24.81.132 6379 172.24.81.136 6379 172.24.81.137 6379
+    // ../../redis-6.0.5/src/redis-cli -h 127.0.0.1 -p 6379 REPLICATE 3 1 AUTOMAT 172.24.81.132 6379 172.24.81.136 6379 172.24.81.137 6379
+    // ../../redis-6.0.5/src/redis-cli -h 127.0.0.1 -p 6379 REPLICATE 3 2 AUTOMAT 172.24.81.132 6379 172.24.81.136 6379 172.24.81.137 6379
+    if (!strcasecmp(c->argv[3]->ptr, "automat")) {
+        for (int i = 0; i < server.p2p_id; i = i + 2) {
+            long port;
+            getLongFromObjectOrReply(c, c->argv[4 + i + 1], &port, "invalid port number.");
+            if (connectWithReplica(c->argv[4 + i]->ptr, (int)port) == C_OK)
+            {
+                serverLog(LL_NOTICE, "Connected to REPLICA %s:%ld",
+                        (char *)(c->argv[4 + i + 1]->ptr), port);
+            }
+            else
+            {
+                addReplySds(c, sdsnew("-Something wrong connecting replicas.\r\n"));
+                return;
+            }
+        }
+        addReply(c, shared.ok);
+        return;
+    }
+
     if (c->argc > 3 && !strcasecmp(c->argv[3]->ptr, "exp_local"))
         exp_local = 1;
 
