@@ -248,11 +248,15 @@ Spec == Init /\ [][Next]_vars
 
 \* END TRANSLATION 
 
-Add_Rcd_Concurrent == \A rcd1, rcd2 \in a_set[1]:
+AA_Con == \A rcd1, rcd2 \in a_set[1]:
                         rcd1.t /= rcd2.t => VC_Concurrent(rcd1.t, rcd2.t)
 
-Rmv_Rcd_Concurrent == \A t1, t2 \in r_set[1]:
+RR_Con == \A t1, t2 \in r_set[1]:
                         t1 /= t2 => VC_Concurrent(t1, t2)
+
+AR_Con == \A rcd \in a_set[1]: \A t \in r_set[1]: VC_Concurrent(rcd.t, t)
+
+Rcd_Concurrent == AA_Con /\ AR_Con /\ RR_Con
 
 SEC == \A p1, p2 \in Procs: (p1 /= p2 /\ ops[p1] = ops[p2]) => 
                             (a_set[p1] = a_set[p2] /\ r_set[p1] = r_set[p2])
