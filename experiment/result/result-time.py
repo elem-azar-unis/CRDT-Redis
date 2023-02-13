@@ -91,19 +91,19 @@ def cmp_o_r(name, read_lable, read_func, root_dir, updd_name, ard_name, step=10,
     plt.subplot(1, 2, 1)
     if (ylim is not None):
         plt.ylim(ylim)
-    plt.plot(x1, updd_rread, linestyle="-", label="Add-Win: inc-dom")
-    plt.plot(x1, ard_rread, linestyle="-", label="Add-Win: a/r-dom")
-    plt.plot(x1, updd_rwfread, linestyle="-", label="Rmv-Win: inc-dom")
-    plt.plot(x1, ard_rwfread, linestyle="-", label="Rmv-Win: a/r-dom")
+    plt.plot(x1, updd_rread, linestyle="-", label="Add-Win: inc dom")
+    plt.plot(x1, ard_rread, linestyle="-", label="Add-Win: a-r dom")
+    plt.plot(x1, updd_rwfread, linestyle="-", label="Rmv-Win: inc dom")
+    plt.plot(x1, ard_rwfread, linestyle="-", label="Rmv-Win: a-r dom")
     plt.xlabel(xlable)
     plt.ylabel(read_lable)
     plt.legend()
 
     plt.subplot(1, 2, 2)
-    plt.plot(x2, updd_rovhd, linestyle="-", label="Add-Win: inc-dom")
-    plt.plot(x2, ard_rovhd, linestyle="-", label="Add-Win: a/r-dom")
-    plt.plot(x2, updd_rwfovhd, linestyle="-", label="Rmv-Win: inc-dom")
-    plt.plot(x2, ard_rwfovhd, linestyle="-", label="Rmv-Win: a/r-dom")
+    plt.plot(x2, updd_rovhd, linestyle="-", label="Add-Win: inc dom")
+    plt.plot(x2, ard_rovhd, linestyle="-", label="Add-Win: a-r dom")
+    plt.plot(x2, updd_rwfovhd, linestyle="-", label="Rmv-Win: inc dom")
+    plt.plot(x2, ard_rwfovhd, linestyle="-", label="Rmv-Win: a-r dom")
     plt.xlabel(xlable)
     plt.ylabel("overhead: byte")
     plt.legend()
@@ -186,7 +186,7 @@ def cmp_r_rwf(name, read_lable, read_func, root_dir, updd_name, ard_name, step=1
           statistics.mean([abs(x) for x in ard_rwfread]), freq(ard_rwfread))
 
 
-cmp_o_r("rpq_o_r", "read max diff", rpq_read,
+cmp_o_r("rpq_o_r", "get_max diff", rpq_read,
         "rpq", "default", "ardominant", 1, (-150, 150))
 
 # cmp_r_rwf("rpq_r_rwf", "read max diff", rpq_read,
