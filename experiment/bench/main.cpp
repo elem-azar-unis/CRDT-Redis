@@ -166,28 +166,8 @@ void test_count_dis_one(const char *ip, const int port, rpq_type zt)
 }
 */
 
-int main(int argc, char *argv[])
+void rwf_exp()
 {
-    // time_max();
-    // test_count_dis_one(ips[0],6379);
-
-    istream::sync_with_stdio(false);
-    ostream::sync_with_stdio(false);
-
-    if (argc == 2)
-        exp_env::sudo_pwd = argv[1];
-    else if (argc == 1)
-    {
-        cout << "please enter the password for sudo: ";
-        cin >> exp_env::sudo_pwd;
-        cout << "\n";
-    }
-    else
-    {
-        cout << "error. too many input arguments." << endl;
-        return -1;
-    }
-
     rpq_exp re;
     list_exp le;
 
@@ -217,6 +197,40 @@ int main(int argc, char *argv[])
         le.test_replica(i);
         le.test_speed(i);
     }
+}
+
+void crpq_exp() 
+{
+    rpq_exp re;
+    exp_setting::compare = false;
+    re.test_default_settings();
+    re.test_patterns();
+}
+
+int main(int argc, char *argv[])
+{
+    // time_max();
+    // test_count_dis_one(ips[0],6379);
+
+    istream::sync_with_stdio(false);
+    ostream::sync_with_stdio(false);
+
+    if (argc == 2)
+        exp_env::sudo_pwd = argv[1];
+    else if (argc == 1)
+    {
+        cout << "please enter the password for sudo: ";
+        cin >> exp_env::sudo_pwd;
+        cout << "\n";
+    }
+    else
+    {
+        cout << "error. too many input arguments." << endl;
+        return -1;
+    }
+
+    // rwf_exp();
+    crpq_exp();
 
     return 0;
 }

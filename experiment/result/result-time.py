@@ -60,6 +60,69 @@ def smooth(x, lenth, step):
     return ret
 
 
+def cmp_o_r(name, read_lable, read_func, root_dir, updd_name, ard_name, step=10, ylim=None):
+    xlable = 'time: second'
+
+    updd_rread, updd_rovhd = read_func(root_dir, updd_name, "o")
+    updd_rwfread, updd_rwfovhd = read_func(root_dir, updd_name, "r")
+
+    ard_rread, ard_rovhd = read_func(root_dir, ard_name, "o")
+    ard_rwfread, ard_rwfovhd = read_func(root_dir, ard_name, "r")
+
+    lread = min(len(updd_rread), len(updd_rwfread),
+                len(ard_rread), len(ard_rwfread))
+    lovhd = min(len(updd_rovhd), len(updd_rwfovhd),
+                len(ard_rovhd), len(ard_rwfovhd))
+
+    x1 = [ceil(i*step+step/2) for i in range(floor(lread/step))]
+    updd_rread = smooth(updd_rread, lread, step)
+    updd_rwfread = smooth(updd_rwfread, lread, step)
+    ard_rread = smooth(ard_rread, lread, step)
+    ard_rwfread = smooth(ard_rwfread, lread, step)
+
+    x2 = [ceil(i*step+step/2) for i in range(floor(lovhd/step))]
+    updd_rovhd = smooth(updd_rovhd, lovhd, step)
+    updd_rwfovhd = smooth(updd_rwfovhd, lovhd, step)
+    ard_rovhd = smooth(ard_rovhd, lovhd, step)
+    ard_rwfovhd = smooth(ard_rwfovhd, lovhd, step)
+
+    fig = plt.figure(figsize=(11, 4))
+
+    plt.subplot(1, 2, 1)
+    if (ylim is not None):
+        plt.ylim(ylim)
+    plt.plot(x1, updd_rread, linestyle="-", label="upd_d: Add-Win")
+    plt.plot(x1, updd_rwfread, linestyle="-", label="upd_d: Rmv-Win")
+    plt.plot(x1, ard_rread, linestyle="-", label="ar_d: Add-Win")
+    plt.plot(x1, ard_rwfread, linestyle="-", label="ar_d: Rmv-Win")
+    plt.xlabel(xlable)
+    plt.ylabel(read_lable)
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(x2, updd_rovhd, linestyle="-", label="upd_d: Add-Win")
+    plt.plot(x2, updd_rwfovhd, linestyle="-", label="upd_d: Rmv-Win")
+    plt.plot(x2, ard_rovhd, linestyle="-", label="ar_d: Add-Win")
+    plt.plot(x2, ard_rwfovhd, linestyle="-", label="ar_d: Rmv-Win")
+    plt.xlabel(xlable)
+    plt.ylabel("overhead: byte")
+    plt.legend()
+
+    plt.tight_layout()
+    plt.savefig(f"{name}.pdf")
+    plt.close(fig)
+
+    print(name)
+    print("upd_d: Add-Win", statistics.mean(updd_rovhd),
+          statistics.mean([abs(x) for x in updd_rread]), freq(updd_rread))
+    print("upd_d: Rmv-Win", statistics.mean(updd_rwfovhd),
+          statistics.mean([abs(x) for x in updd_rwfread]), freq(updd_rwfread))
+    print("ar_d: Add-Win", statistics.mean(ard_rovhd),
+          statistics.mean([abs(x) for x in ard_rread]), freq(ard_rread))
+    print("ar_d: Rmv-Win", statistics.mean(ard_rwfovhd),
+          statistics.mean([abs(x) for x in ard_rwfread]), freq(ard_rwfread))
+
+
 def cmp_r_rwf(name, read_lable, read_func, root_dir, updd_name, ard_name, step=10, ylim=None):
     xlable = 'time: second'
 
@@ -123,14 +186,17 @@ def cmp_r_rwf(name, read_lable, read_func, root_dir, updd_name, ard_name, step=1
           statistics.mean([abs(x) for x in ard_rwfread]), freq(ard_rwfread))
 
 
-cmp_r_rwf("rpq_r_rwf", "read max diff", rpq_read,
-          "rpq", "default", "ardominant", 1, (-300, 300))
-cmp_r_rwf("rpq_cmp_r_rwf", "read max diff", rpq_read,
-          "rpq,cmp", "default", "ardominant", 1, (-300, 300))
-cmp_r_rwf("list_r_rwf",  "list editing distance",
-          list_read, "list", "upddominant", "default", 1)
-cmp_r_rwf("list_cmp_r_rwf",  "list editing distance",
-          list_read, "list,cmp", "upddominant", "default", 1)
+cmp_o_r("rpq_o_r", "read max diff", rpq_read,
+          "rpq", "default", "ardominant", 1, (-150, 150))
+
+# cmp_r_rwf("rpq_r_rwf", "read max diff", rpq_read,
+#           "rpq", "default", "ardominant", 1, (-300, 300))
+# cmp_r_rwf("rpq_cmp_r_rwf", "read max diff", rpq_read,
+#           "rpq,cmp", "default", "ardominant", 1, (-300, 300))
+# cmp_r_rwf("list_r_rwf",  "list editing distance",
+#           list_read, "list", "upddominant", "default", 1)
+# cmp_r_rwf("list_cmp_r_rwf",  "list editing distance",
+#           list_read, "list,cmp", "upddominant", "default", 1)
 
 
 print("Data skipped: ", data_skipped)
