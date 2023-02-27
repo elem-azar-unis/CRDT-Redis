@@ -41,6 +41,9 @@ def dt_read(root_dir, pattern, dt_type, speed, diff_file, lambda_diff):
     return diff, ovhd
 
 
+def rpq_or_read(root_dir, pattern, ztype):
+    return dt_read(root_dir, pattern, ztype, 10000, "max.csv", lambda x: abs(x[1] - x[3]))
+
 def rpq_read(root_dir, pattern, ztype):
     return dt_read(root_dir, pattern, ztype, 10000, "max.csv", lambda x: x[1] - x[3])
 
@@ -186,8 +189,8 @@ def cmp_r_rwf(name, read_lable, read_func, root_dir, updd_name, ard_name, step=1
           statistics.mean([abs(x) for x in ard_rwfread]), freq(ard_rwfread))
 
 
-cmp_o_r("rpq_o_r", "get_max diff", rpq_read,
-        "rpq", "default", "ardominant", 1, (-150, 150))
+cmp_o_r("rpq_o_r", "get_max diff", rpq_or_read,
+        "rpq", "default", "ardominant", 1, (0, 150))
 
 # cmp_r_rwf("rpq_r_rwf", "read max diff", rpq_read,
 #           "rpq", "default", "ardominant", 1, (-300, 300))
