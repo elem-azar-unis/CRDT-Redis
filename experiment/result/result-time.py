@@ -190,12 +190,12 @@ def cmp_r_rwf(name, read_lable, read_func, root_dir, updd_name, ard_name, step=1
 
 
 cmp_o_r("rpq_o_r", "get_max diff", rpq_or_read,
-        "rpq", "default", "ardominant", 1, (0, 150))
+        "rpq", "incdominant", "default", 1, (0, 150))
 
 # cmp_r_rwf("rpq_r_rwf", "read max diff", rpq_read,
-#           "rpq", "default", "ardominant", 1, (-300, 300))
+#           "rpq", "default", "incdominant", 1, (-300, 300))
 # cmp_r_rwf("rpq_cmp_r_rwf", "read max diff", rpq_read,
-#           "rpq,cmp", "default", "ardominant", 1, (-300, 300))
+#           "rpq,cmp", "default", "incdominant", 1, (-300, 300))
 # cmp_r_rwf("list_r_rwf",  "list editing distance",
 #           list_read, "list", "upddominant", "default", 1)
 # cmp_r_rwf("list_cmp_r_rwf",  "list editing distance",

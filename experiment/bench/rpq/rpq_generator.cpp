@@ -23,7 +23,7 @@ rpq_generator::rpq_op_gen_pattern& rpq_generator::get_pattern(const string& name
                                                       .PR_REM_CA = 0.1,
                                                       .PR_REM_CR = 0.1}},
 
-                                                    {"ardominant",
+                                                    {"incdominant",
                                                      {.PR_ADD = 0.11,
                                                       .PR_INC = 0.8,
                                                       .PR_REM = 0.09,
